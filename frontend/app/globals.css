@@ -1,16 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #0F4C81;
-  --color-primary-dark: #0a3559;
-  --color-primary-light: #E6F0F9;
-  --color-accent: #FF6B35;
-  --color-accent-dark: #E55524;
+  /* Основной — глубокий морской синий (как у референса) */
+  --color-primary: #1E5C80;
+  --color-primary-dark: #15425C;
+  --color-primary-light: #E8F1F7;
+  /* Акцент — светло-голубой */
+  --color-secondary: #49A8DE;
+  --color-tertiary: #4CAEC0;
+  /* CTA — золотой/жёлтый (как у референса) */
+  --color-accent: #FFD700;
+  --color-accent-dark: #E6C200;
+  /* Тёплый дополнительный — песочный */
+  --color-warm: #F0D7AA;
+  /* База */
   --color-bg: #ffffff;
-  --color-bg-soft: #F8FAFC;
+  --color-bg-soft: #F4F8FB;
   --color-text: #1A1A1A;
   --color-text-muted: #64748B;
-  --color-border: #E2E8F0;
+  --color-border: #CAD9E0;
 }
 
 @theme inline {
