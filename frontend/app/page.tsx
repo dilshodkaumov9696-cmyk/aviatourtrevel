@@ -44,7 +44,6 @@ function fmtDate(d: string): string {
 export default function Home() {
   // Form state
   const [tripType, setTripType] = useState<TripType>("round-trip");
-  const [flexDates, setFlexDates] = useState(false);
   const [originAirport, setOriginAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
   const [departDate, setDepartDate] = useState("");
@@ -161,10 +160,9 @@ export default function Home() {
       return;
     }
 
-    const flex = flexDates ? " (±3 дня)" : "";
     alert(
       `${originAirport!.iata} → ${destAirport!.iata}\n` +
-        `${fmtDate(departDate)}${returnDate ? " — " + fmtDate(returnDate) : ""}${flex}\n` +
+        `${fmtDate(departDate)}${returnDate ? " — " + fmtDate(returnDate) : ""}\n` +
         passengersLabel(passengers, cabin)
     );
   }
@@ -217,53 +215,28 @@ export default function Home() {
             noValidate
             className="mt-10 rounded-2xl bg-white shadow-2xl text-left overflow-visible"
           >
-            {/* Trip type toggle + flexible dates */}
-            <div className="px-5 pt-4 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex gap-1">
-                {TRIP_TABS.map(({ t, label }) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => {
-                      setTripType(t);
-                      if (t === "one-way") {
-                        setReturnDate("");
-                        setErrors((p) => ({ ...p, returnDate: "" }));
-                      }
-                    }}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                      tripType === t
-                        ? "bg-[var(--color-primary)] text-white"
-                        : "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg-soft)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {tripType !== "multi" && (
+            {/* Trip type toggle */}
+            <div className="px-5 pt-4 flex flex-wrap items-center gap-1">
+              {TRIP_TABS.map(({ t, label }) => (
                 <button
+                  key={t}
                   type="button"
-                  onClick={() => setFlexDates((v) => !v)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    flexDates
-                      ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                      : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
+                  onClick={() => {
+                    setTripType(t);
+                    if (t === "one-way") {
+                      setReturnDate("");
+                      setErrors((p) => ({ ...p, returnDate: "" }));
+                    }
+                  }}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
+                    tripType === t
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg-soft)]"
                   }`}
                 >
-                  <span
-                    className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] leading-none ${
-                      flexDates
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                        : "border-[var(--color-border)]"
-                    }`}
-                  >
-                    {flexDates && "✓"}
-                  </span>
-                  Гибкие даты ±3 дня
+                  {label}
                 </button>
-              )}
+              ))}
             </div>
 
             {/* --- Простой маршрут (туда / туда-обратно) --- */}
@@ -280,6 +253,7 @@ export default function Home() {
                     label="Откуда"
                     placeholder={errors.origin || "Город или аэропорт"}
                     error={undefined}
+                    excludeIata={destAirport?.iata}
                   />
                 </div>
 
@@ -306,6 +280,7 @@ export default function Home() {
                     label="Куда"
                     placeholder={errors.destination || "Город или аэропорт"}
                     error={undefined}
+                    excludeIata={originAirport?.iata}
                   />
                 </div>
 

@@ -16,12 +16,13 @@ const MONTHS_RU = [
   "Январь","Февраль","Март","Апрель","Май","Июнь",
   "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь",
 ];
+const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
 const DAYS_RU = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
 
 function todayStr(): string {
-  return new Date().toISOString().split("T")[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-
 function addMonths(year: number, month: number, delta: number): { year: number; month: number } {
   let m = month + delta;
   let y = year;
@@ -29,60 +30,53 @@ function addMonths(year: number, month: number, delta: number): { year: number; 
   while (m < 0) { m += 12; y--; }
   return { year: y, month: m };
 }
-
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
-
 function firstWeekday(year: number, month: number): number {
   const d = new Date(year, month, 1).getDay();
-  return d === 0 ? 6 : d - 1; // Mon=0 … Sun=6
+  return d === 0 ? 6 : d - 1; // Пн=0 … Вс=6
 }
-
 function dateStr(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
+function fmtShort(d: string): string {
+  if (!d) return "";
+  const [, m, day] = d.split("-");
+  return `${parseInt(day)} ${MONTHS_SHORT[parseInt(m) - 1]}`;
+}
+
+type DayState = "past" | "normal" | "single" | "start" | "end" | "between";
 
 interface MonthProps {
   year: number;
   month: number;
   today: string;
   departDate: string;
-  returnDate: string;
-  hovered: string;
-  selectingReturn: boolean;
+  effectiveEnd: string;
   tripType: "one-way" | "round-trip";
   onDayClick: (d: string) => void;
   onDayHover: (d: string) => void;
-  onDayLeave: () => void;
+  className?: string;
 }
 
 function MonthGrid({
-  year, month, today,
-  departDate, returnDate, hovered,
-  selectingReturn, tripType,
-  onDayClick, onDayHover, onDayLeave,
+  year, month, today, departDate, effectiveEnd, tripType,
+  onDayClick, onDayHover, className = "",
 }: MonthProps) {
   const offset = firstWeekday(year, month);
   const count = daysInMonth(year, month);
+  const hasRange = tripType === "round-trip" && !!departDate && !!effectiveEnd && departDate < effectiveEnd;
 
-  const rangeEnd = tripType === "round-trip" && selectingReturn && hovered
-    ? hovered
-    : returnDate;
-
-  function classify(d: string): "past" | "depart" | "return" | "in-range" | "hover-end" | "normal" {
+  function classify(d: string): DayState {
     if (d < today) return "past";
-    if (d === departDate) return "depart";
-    if (d === returnDate) return "return";
-    if (tripType === "round-trip" && selectingReturn && d === hovered && hovered > departDate)
-      return "hover-end";
-    if (
-      departDate && rangeEnd && tripType === "round-trip" &&
-      departDate < rangeEnd &&
-      d > departDate && d < rangeEnd
-    )
-      return "in-range";
-    return "normal";
+    if (hasRange) {
+      if (d === departDate) return "start";
+      if (d === effectiveEnd) return "end";
+      if (d > departDate && d < effectiveEnd) return "between";
+      return "normal";
+    }
+    return d === departDate ? "single" : "normal";
   }
 
   const cells: (string | null)[] = [
@@ -91,8 +85,8 @@ function MonthGrid({
   ];
 
   return (
-    <div>
-      <div className="text-center text-sm font-semibold text-[var(--color-text)] mb-3 px-2">
+    <div className={`w-[280px] ${className}`}>
+      <div className="text-center text-sm font-semibold text-[var(--color-text)] mb-3">
         {MONTHS_RU[month]} {year}
       </div>
       <div className="grid grid-cols-7">
@@ -102,39 +96,33 @@ function MonthGrid({
           </div>
         ))}
         {cells.map((d, i) => {
-          if (!d) return <div key={`e${i}`} />;
-          const cls = classify(d);
+          if (!d) return <div key={`e${i}`} className="h-10" />;
+          const state = classify(d);
           const day = parseInt(d.split("-")[2]);
+          const isToday = d === today;
 
-          const outerRange =
-            cls === "in-range"
-              ? "bg-[var(--color-primary-light)]"
-              : cls === "depart" && (returnDate || (selectingReturn && hovered > d))
-              ? "bg-gradient-to-r from-transparent via-transparent to-[var(--color-primary-light)]"
-              : (cls === "return" || cls === "hover-end") && departDate < d
-              ? "bg-gradient-to-l from-transparent via-transparent to-[var(--color-primary-light)]"
-              : "";
-
-          const btnCls =
-            cls === "past"
+          const btn =
+            state === "past"
               ? "text-gray-300 cursor-default"
-              : cls === "depart" || cls === "return"
-              ? "bg-[var(--color-primary)] text-white font-bold rounded-full cursor-pointer"
-              : cls === "hover-end"
-              ? "bg-[var(--color-secondary)] text-white font-bold rounded-full cursor-pointer"
-              : cls === "in-range"
-              ? "text-[var(--color-primary)] font-medium cursor-pointer hover:rounded-full hover:bg-[var(--color-primary)] hover:text-white"
-              : "text-[var(--color-text)] cursor-pointer hover:bg-[var(--color-bg-soft)] rounded-full";
+              : state === "start" || state === "end" || state === "single"
+              ? "bg-[var(--color-primary)] text-white font-semibold cursor-pointer"
+              : state === "between"
+              ? "text-[var(--color-primary)] font-medium cursor-pointer hover:bg-[var(--color-primary)] hover:text-white"
+              : `text-[var(--color-text)] cursor-pointer hover:bg-[var(--color-bg-soft)] ${isToday ? "font-bold text-[var(--color-primary)]" : ""}`;
 
           return (
-            <div key={d} className={`h-8 flex items-center justify-center ${outerRange}`}>
+            <div key={d} className="relative h-10 flex items-center justify-center">
+              {/* подложка диапазона */}
+              {state === "between" && <span className="absolute inset-y-1 inset-x-0 bg-[var(--color-primary-light)]" />}
+              {state === "start" && <span className="absolute inset-y-1 left-1/2 right-0 bg-[var(--color-primary-light)]" />}
+              {state === "end" && <span className="absolute inset-y-1 left-0 right-1/2 bg-[var(--color-primary-light)]" />}
+
               <button
                 type="button"
-                disabled={cls === "past"}
-                onClick={() => cls !== "past" && onDayClick(d)}
-                onMouseEnter={() => cls !== "past" && onDayHover(d)}
-                onMouseLeave={onDayLeave}
-                className={`w-8 h-8 flex items-center justify-center text-sm transition-colors ${btnCls}`}
+                disabled={state === "past"}
+                onClick={() => state !== "past" && onDayClick(d)}
+                onMouseEnter={() => state !== "past" && onDayHover(d)}
+                className={`relative z-10 w-9 h-9 flex items-center justify-center text-sm rounded-full transition-colors ${btn}`}
               >
                 {day}
               </button>
@@ -155,20 +143,24 @@ export default function DateRangePicker({
   const now = new Date();
   const [leftYear, setLeftYear] = useState(now.getFullYear());
   const [leftMonth, setLeftMonth] = useState(now.getMonth());
-  const [selectingReturn, setSelectingReturn] = useState(
-    initialField === "return" && !!departDate
-  );
+  const [selectingReturn, setSelectingReturn] = useState(initialField === "return" && !!departDate);
   const [hovered, setHovered] = useState("");
 
+  const today = todayStr();
   const right = addMonths(leftYear, leftMonth, 1);
+  const atCurrentMonth = leftYear === now.getFullYear() && leftMonth === now.getMonth();
+
+  const effectiveEnd =
+    tripType === "round-trip" && selectingReturn && hovered && hovered > departDate
+      ? hovered
+      : returnDate;
 
   function prev() {
+    if (atCurrentMonth) return;
     const p = addMonths(leftYear, leftMonth, -1);
-    if (p.year < now.getFullYear() || (p.year === now.getFullYear() && p.month < now.getMonth())) return;
     setLeftYear(p.year);
     setLeftMonth(p.month);
   }
-
   function next() {
     const n = addMonths(leftYear, leftMonth, 1);
     setLeftYear(n.year);
@@ -181,113 +173,120 @@ export default function DateRangePicker({
       onClose();
       return;
     }
-
     if (!selectingReturn) {
       onDepartChange(d);
       onReturnChange("");
       setSelectingReturn(true);
       setHovered("");
+    } else if (d <= departDate) {
+      onDepartChange(d);
+      onReturnChange("");
+      setHovered("");
     } else {
-      if (d <= departDate) {
-        // Reset: picked date before depart → restart
-        onDepartChange(d);
-        onReturnChange("");
-        setHovered("");
-      } else {
-        onReturnChange(d);
-        onClose();
-      }
+      onReturnChange(d);
+      onClose();
     }
   }
 
-  const today = todayStr();
+  function reset() {
+    onDepartChange("");
+    onReturnChange("");
+    setSelectingReturn(false);
+    setHovered("");
+  }
 
-  const commonProps = {
+  const common = {
     today,
     departDate,
-    returnDate,
-    hovered,
-    selectingReturn,
+    effectiveEnd,
     tripType,
     onDayClick: handleDayClick,
     onDayHover: setHovered,
-    onDayLeave: () => setHovered(""),
   };
 
-  function fmtTab(d: string): string {
-    if (!d) return "";
-    const [, m, day] = d.split("-");
-    const months = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-    return ` · ${parseInt(day)} ${months[parseInt(m) - 1]}`;
-  }
-
   return (
-    <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-2xl p-5 select-none">
-      {/* Header tabs (round-trip only) */}
-      {tripType === "round-trip" && (
-        <div className="flex gap-1 mb-4 border-b border-[var(--color-border)] pb-3">
+    <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-2xl p-4 md:p-5 select-none w-[316px] md:w-auto">
+      {/* Шапка: вкладки туда/обратно или заголовок */}
+      {tripType === "round-trip" ? (
+        <div className="flex gap-2 mb-4">
           <button
             type="button"
             onClick={() => setSelectingReturn(false)}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+            className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition text-left ${
               !selectingReturn
                 ? "bg-[var(--color-primary)] text-white"
-                : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
+                : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
             }`}
           >
-            Туда{fmtTab(departDate)}
+            <span className="block text-[11px] uppercase tracking-wide opacity-70">Туда</span>
+            {departDate ? fmtShort(departDate) : "выберите"}
           </button>
           <button
             type="button"
             onClick={() => { if (departDate) setSelectingReturn(true); }}
             disabled={!departDate}
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition text-left disabled:opacity-40 disabled:cursor-not-allowed ${
               selectingReturn
                 ? "bg-[var(--color-primary)] text-white"
-                : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
+                : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)]"
             }`}
           >
-            Обратно{fmtTab(returnDate)}
+            <span className="block text-[11px] uppercase tracking-wide opacity-70">Обратно</span>
+            {returnDate ? fmtShort(returnDate) : "выберите"}
           </button>
+        </div>
+      ) : (
+        <div className="text-sm font-semibold text-[var(--color-text)] mb-4 px-1">
+          Когда летим?
         </div>
       )}
 
-      {/* Navigation + calendars */}
-      <div className="flex items-start gap-6">
-        {/* Prev arrow */}
+      {/* Навигация */}
+      <div className="flex items-center justify-between mb-1">
         <button
           type="button"
           onClick={prev}
-          className="mt-1 w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition text-lg flex-shrink-0"
+          disabled={atCurrentMonth}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)] transition text-xl disabled:opacity-25 disabled:cursor-not-allowed"
         >
           ‹
         </button>
-
-        {/* Left month */}
-        <MonthGrid year={leftYear} month={leftMonth} {...commonProps} />
-
-        {/* Right month (round-trip only) */}
-        {tripType === "round-trip" && (
-          <MonthGrid year={right.year} month={right.month} {...commonProps} />
-        )}
-
-        {/* Next arrow */}
         <button
           type="button"
           onClick={next}
-          className="mt-1 w-7 h-7 flex items-center justify-center rounded-full hover:bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition text-lg flex-shrink-0"
+          className="w-8 h-8 flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)] transition text-xl"
         >
           ›
         </button>
       </div>
 
-      {/* Hint */}
-      <div className="mt-4 text-xs text-[var(--color-text-muted)] text-center">
-        {tripType === "round-trip"
-          ? selectingReturn
-            ? "Выберите дату возврата"
-            : "Выберите дату вылета"
-          : "Выберите дату вылета"}
+      {/* Месяцы */}
+      <div
+        className="flex gap-6 justify-center"
+        onMouseLeave={() => setHovered("")}
+      >
+        <MonthGrid year={leftYear} month={leftMonth} {...common} />
+        {tripType === "round-trip" && (
+          <MonthGrid year={right.year} month={right.month} {...common} className="hidden md:block" />
+        )}
+      </div>
+
+      {/* Подвал */}
+      <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
+        <span className="text-xs text-[var(--color-text-muted)]">
+          {tripType === "round-trip"
+            ? selectingReturn ? "Выберите дату возврата" : "Выберите дату вылета"
+            : "Выберите дату вылета"}
+        </span>
+        {tripType === "round-trip" && departDate && (
+          <button
+            type="button"
+            onClick={reset}
+            className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+          >
+            Сбросить
+          </button>
+        )}
       </div>
     </div>
   );

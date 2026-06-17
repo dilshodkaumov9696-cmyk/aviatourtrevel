@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { airports, Airport } from "../data/airports";
+import { Airport, loadAirports, rankAirports } from "../data/airports";
 
 interface Props {
   airport: Airport | null;
@@ -9,42 +9,49 @@ interface Props {
   label: string;
   placeholder: string;
   error?: string;
+  excludeIata?: string;
 }
 
-export default function AirportInput({ airport, onChange, label, placeholder, error }: Props) {
+export default function AirportInput({ airport, onChange, label, placeholder, error, excludeIata }: Props) {
   const [query, setQuery] = useState(airport?.city ?? "");
+  const [all, setAll] = useState<Airport[]>([]);
   const [results, setResults] = useState<Airport[]>([]);
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const justSelectedRef = useRef(false); // не переоткрывать список сразу после выбора
 
-  // Sync when airport changes externally (swap)
+  // Загружаем полную базу один раз (кеш на уровне модуля)
   useEffect(() => {
+    loadAirports().then(setAll).catch(() => {});
+  }, []);
+
+  // Sync when airport changes externally (swap / выбор) — без переоткрытия списка
+  useEffect(() => {
+    justSelectedRef.current = true;
     setQuery(airport?.city ?? "");
   }, [airport]);
 
   // Filter airports as user types
   useEffect(() => {
+    // Только что выбрали аэропорт — не переоткрывать выпадашку из-за смены query
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      setResults([]);
+      setOpen(false);
+      return;
+    }
     if (query.length < 1) {
       setResults([]);
       setOpen(false);
       return;
     }
-    const q = query.toLowerCase();
-    const filtered = airports
-      .filter(
-        (a) =>
-          a.iata.toLowerCase().startsWith(q) ||
-          a.city.toLowerCase().includes(q) ||
-          a.name.toLowerCase().includes(q) ||
-          a.country.toLowerCase().includes(q)
-      )
-      .slice(0, 7);
+    const filtered = rankAirports(all, query, 7, excludeIata);
     setResults(filtered);
     setOpen(filtered.length > 0);
     setHighlighted(0);
-  }, [query]);
+  }, [query, all, excludeIata]);
 
   // Close on outside click, reset to last valid value
   useEffect(() => {
@@ -59,7 +66,9 @@ export default function AirportInput({ airport, onChange, label, placeholder, er
   }, [airport]);
 
   function select(a: Airport) {
+    justSelectedRef.current = true;
     setQuery(a.city);
+    setResults([]);
     setOpen(false);
     onChange(a);
   }
@@ -132,13 +141,13 @@ export default function AirportInput({ airport, onChange, label, placeholder, er
       )}
 
       {open && (
-        <ul className="absolute top-full left-0 mt-2 z-50 bg-white border border-[var(--color-border)] rounded-xl shadow-2xl py-1 min-w-[270px]">
+        <ul className="absolute top-full left-0 mt-2 z-50 bg-white border border-[var(--color-border)] rounded-xl shadow-2xl py-1 min-w-[280px] max-h-[340px] overflow-auto">
           {results.map((a, i) => (
             <li
               key={a.iata}
               onMouseDown={() => select(a)}
               onMouseEnter={() => setHighlighted(i)}
-              className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition ${
+              className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition ${
                 i === highlighted
                   ? "bg-[var(--color-primary-light)]"
                   : "hover:bg-[var(--color-bg-soft)]"

@@ -5,113 +5,59 @@ export interface Airport {
   country: string;
 }
 
-export const airports: Airport[] = [
-  // Россия
-  { iata: "SVO", city: "Москва", name: "Шереметьево", country: "Россия" },
-  { iata: "DME", city: "Москва", name: "Домодедово", country: "Россия" },
-  { iata: "VKO", city: "Москва", name: "Внуково", country: "Россия" },
-  { iata: "LED", city: "Санкт-Петербург", name: "Пулково", country: "Россия" },
-  { iata: "AER", city: "Сочи", name: "Адлер", country: "Россия" },
-  { iata: "KZN", city: "Казань", name: "Казань", country: "Россия" },
-  { iata: "SVX", city: "Екатеринбург", name: "Кольцово", country: "Россия" },
-  { iata: "OVB", city: "Новосибирск", name: "Толмачёво", country: "Россия" },
-  { iata: "ROV", city: "Ростов-на-Дону", name: "Платов", country: "Россия" },
-  { iata: "UFA", city: "Уфа", name: "Уфа", country: "Россия" },
-  { iata: "IKT", city: "Иркутск", name: "Иркутск", country: "Россия" },
-  { iata: "KHV", city: "Хабаровск", name: "Новый", country: "Россия" },
-  { iata: "VVO", city: "Владивосток", name: "Кневичи", country: "Россия" },
-  { iata: "KRR", city: "Краснодар", name: "Пашковский", country: "Россия" },
-  { iata: "CEK", city: "Челябинск", name: "Баландино", country: "Россия" },
-  { iata: "GOJ", city: "Нижний Новгород", name: "Стригино", country: "Россия" },
-  { iata: "KUF", city: "Самара", name: "Курумоч", country: "Россия" },
-  { iata: "PEE", city: "Пермь", name: "Большое Савино", country: "Россия" },
-  { iata: "VOZ", city: "Воронеж", name: "Чертовицкое", country: "Россия" },
-  { iata: "MMK", city: "Мурманск", name: "Мурманск", country: "Россия" },
-  { iata: "MRV", city: "Минеральные Воды", name: "Минеральные Воды", country: "Россия" },
-  { iata: "ASF", city: "Астрахань", name: "Астрахань", country: "Россия" },
-  { iata: "OMS", city: "Омск", name: "Центральный", country: "Россия" },
-  { iata: "PKC", city: "Петропавловск-Камчатский", name: "Елизово", country: "Россия" },
-  { iata: "YKS", city: "Якутск", name: "Якутск", country: "Россия" },
-  { iata: "UUS", city: "Южно-Сахалинск", name: "Хомутово", country: "Россия" },
-  // ОАЭ
-  { iata: "DXB", city: "Дубай", name: "Международный", country: "ОАЭ" },
-  { iata: "AUH", city: "Абу-Даби", name: "Зайед", country: "ОАЭ" },
-  { iata: "SHJ", city: "Шарджа", name: "Шарджа", country: "ОАЭ" },
-  // Турция
-  { iata: "IST", city: "Стамбул", name: "Стамбул", country: "Турция" },
-  { iata: "SAW", city: "Стамбул", name: "Сабиха Гёкчен", country: "Турция" },
-  { iata: "AYT", city: "Анталья", name: "Анталья", country: "Турция" },
-  { iata: "DLM", city: "Даламан", name: "Даламан", country: "Турция" },
-  { iata: "BJV", city: "Бодрум", name: "Мильяс-Бодрум", country: "Турция" },
-  { iata: "ADB", city: "Измир", name: "Аднан Мендерес", country: "Турция" },
-  // Египет
-  { iata: "HRG", city: "Хургада", name: "Хургада", country: "Египет" },
-  { iata: "SSH", city: "Шарм-эль-Шейх", name: "Шарм-эль-Шейх", country: "Египет" },
-  { iata: "CAI", city: "Каир", name: "Каирский", country: "Египет" },
-  // Европа
-  { iata: "BCN", city: "Барселона", name: "Эль-Прат", country: "Испания" },
-  { iata: "MAD", city: "Мадрид", name: "Барахас", country: "Испания" },
-  { iata: "PMI", city: "Пальма-де-Майорка", name: "Сон-Сан-Жоан", country: "Испания" },
-  { iata: "FCO", city: "Рим", name: "Фьюмичино", country: "Италия" },
-  { iata: "MXP", city: "Милан", name: "Мальпенса", country: "Италия" },
-  { iata: "VCE", city: "Венеция", name: "Марко Поло", country: "Италия" },
-  { iata: "CDG", city: "Париж", name: "Шарль де Голль", country: "Франция" },
-  { iata: "NCE", city: "Ницца", name: "Лазурный берег", country: "Франция" },
-  { iata: "LHR", city: "Лондон", name: "Хитроу", country: "Великобритания" },
-  { iata: "LGW", city: "Лондон", name: "Гатвик", country: "Великобритания" },
-  { iata: "FRA", city: "Франкфурт", name: "Рейн-Майн", country: "Германия" },
-  { iata: "MUC", city: "Мюнхен", name: "Мюнхен", country: "Германия" },
-  { iata: "AMS", city: "Амстердам", name: "Схипхол", country: "Нидерланды" },
-  { iata: "PRG", city: "Прага", name: "Вацлав Гавел", country: "Чехия" },
-  { iata: "VIE", city: "Вена", name: "Швехат", country: "Австрия" },
-  { iata: "BUD", city: "Будапешт", name: "Ференц Лист", country: "Венгрия" },
-  { iata: "WAW", city: "Варшава", name: "Фредерик Шопен", country: "Польша" },
-  { iata: "RIX", city: "Рига", name: "Рижский", country: "Латвия" },
-  { iata: "TLL", city: "Таллин", name: "Юлемисте", country: "Эстония" },
-  { iata: "HEL", city: "Хельсинки", name: "Вантаа", country: "Финляндия" },
-  { iata: "ARN", city: "Стокгольм", name: "Арланда", country: "Швеция" },
-  { iata: "ATH", city: "Афины", name: "Элефтериос Венизелос", country: "Греция" },
-  { iata: "HER", city: "Ираклион", name: "Никос Казандзакис", country: "Греция" },
-  { iata: "RHO", city: "Родос", name: "Диагорас", country: "Греция" },
-  { iata: "SKG", city: "Салоники", name: "Македония", country: "Греция" },
-  { iata: "LCA", city: "Ларнака", name: "Ларнака", country: "Кипр" },
-  { iata: "PFO", city: "Пафос", name: "Пафос", country: "Кипр" },
-  // СНГ
-  { iata: "TBS", city: "Тбилиси", name: "Тбилиси", country: "Грузия" },
-  { iata: "BUS", city: "Батуми", name: "Батуми", country: "Грузия" },
-  { iata: "EVN", city: "Ереван", name: "Звартноц", country: "Армения" },
-  { iata: "GYD", city: "Баку", name: "Гейдар Алиев", country: "Азербайджан" },
-  { iata: "ALA", city: "Алматы", name: "Алматы", country: "Казахстан" },
-  { iata: "NQZ", city: "Астана", name: "Астана", country: "Казахстан" },
-  { iata: "TAS", city: "Ташкент", name: "Юнусабад", country: "Узбекистан" },
-  { iata: "FRU", city: "Бишкек", name: "Манас", country: "Кыргызстан" },
-  { iata: "ASB", city: "Ашхабад", name: "Огузхан", country: "Туркменистан" },
-  // Азия
-  { iata: "BKK", city: "Бангкок", name: "Суварнабуми", country: "Таиланд" },
-  { iata: "HKT", city: "Пхукет", name: "Пхукет", country: "Таиланд" },
-  { iata: "CNX", city: "Чиангмай", name: "Чиангмай", country: "Таиланд" },
-  { iata: "DPS", city: "Бали", name: "Нгурах-Рай", country: "Индонезия" },
-  { iata: "KUL", city: "Куала-Лумпур", name: "KLIA", country: "Малайзия" },
-  { iata: "SIN", city: "Сингапур", name: "Чанги", country: "Сингапур" },
-  { iata: "HKG", city: "Гонконг", name: "Чхеклапкок", country: "Гонконг" },
-  { iata: "PEK", city: "Пекин", name: "Столичный", country: "Китай" },
-  { iata: "PVG", city: "Шанхай", name: "Пудун", country: "Китай" },
-  { iata: "NRT", city: "Токио", name: "Нарита", country: "Япония" },
-  { iata: "ICN", city: "Сеул", name: "Инчхон", country: "Южная Корея" },
-  { iata: "DEL", city: "Нью-Дели", name: "Индира Ганди", country: "Индия" },
-  { iata: "BOM", city: "Мумбаи", name: "Чхатрапати Шиваджи", country: "Индия" },
-  { iata: "GOI", city: "Гоа", name: "Даболим", country: "Индия" },
-  { iata: "CMB", city: "Коломбо", name: "Катунаяке", country: "Шри-Ланка" },
-  { iata: "MLE", city: "Мале", name: "Велана", country: "Мальдивы" },
-  { iata: "SEZ", city: "Маэ", name: "Сейшельский", country: "Сейшелы" },
-  { iata: "MRU", city: "Порт-Луи", name: "Сэр Сивусагур Рамгулам", country: "Маврикий" },
-  // Америка
-  { iata: "JFK", city: "Нью-Йорк", name: "Джон Кеннеди", country: "США" },
-  { iata: "LAX", city: "Лос-Анджелес", name: "Международный", country: "США" },
-  { iata: "MIA", city: "Майами", name: "Международный", country: "США" },
-  { iata: "CUN", city: "Канкун", name: "Канкун", country: "Мексика" },
-  { iata: "HAV", city: "Гавана", name: "Хосе Марти", country: "Куба" },
-  { iata: "PUJ", city: "Пунта-Кана", name: "Пунта-Кана", country: "Доминикана" },
-  { iata: "GRU", city: "Сан-Паулу", name: "Гуарульос", country: "Бразилия" },
-  { iata: "EZE", city: "Буэнос-Айрес", name: "Эсейса", country: "Аргентина" },
-];
+// Полная база (~4000 flightable-аэропортов) лежит в /public/airports.json
+// и загружается один раз на клиенте. Кешируется на уровне модуля.
+let cache: Airport[] | null = null;
+let inflight: Promise<Airport[]> | null = null;
+
+export function loadAirports(): Promise<Airport[]> {
+  if (cache) return Promise.resolve(cache);
+  if (!inflight) {
+    inflight = fetch("/airports.json")
+      .then((r) => r.json())
+      .then((data: Airport[]) => {
+        cache = data;
+        return data;
+      })
+      .catch((e) => {
+        inflight = null;
+        throw e;
+      });
+  }
+  return inflight;
+}
+
+// Ранжирование: точный IATA → начало города → начало названия → вхождение.
+// excludeIata — исключить уже выбранный в паре аэропорт (чтобы не выбрать дважды).
+export function rankAirports(
+  list: Airport[],
+  query: string,
+  limit = 7,
+  excludeIata?: string,
+): Airport[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  const scored: { a: Airport; s: number }[] = [];
+  for (const a of list) {
+    if (excludeIata && a.iata === excludeIata) continue;
+    const iata = a.iata.toLowerCase();
+    const city = a.city.toLowerCase();
+    const name = a.name.toLowerCase();
+    const country = a.country.toLowerCase();
+
+    let s = 99;
+    if (iata === q) s = 0;
+    else if (iata.startsWith(q)) s = 1;
+    else if (city.startsWith(q)) s = 2;
+    else if (name.startsWith(q)) s = 3;
+    else if (city.includes(q)) s = 4;
+    else if (name.includes(q)) s = 5;
+    else if (country.includes(q)) s = 6;
+
+    if (s < 99) scored.push({ a, s });
+  }
+
+  scored.sort((x, y) => x.s - y.s || x.a.city.length - y.a.city.length);
+  return scored.slice(0, limit).map((x) => x.a);
+}

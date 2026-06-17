@@ -64,6 +64,7 @@ export default function MultiCitySegments({
               onChange={(a) => onUpdate(seg.id, { from: a })}
               label="Откуда"
               placeholder={errors[`from${seg.id}`] || "Город или аэропорт"}
+              excludeIata={seg.to?.iata}
             />
           </div>
 
@@ -84,6 +85,7 @@ export default function MultiCitySegments({
               onChange={(a) => onUpdate(seg.id, { to: a })}
               label="Куда"
               placeholder={errors[`to${seg.id}`] || "Город или аэропорт"}
+              excludeIata={seg.from?.iata}
             />
           </div>
 
