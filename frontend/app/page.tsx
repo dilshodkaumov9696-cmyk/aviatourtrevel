@@ -12,6 +12,7 @@ import AuthModal from "./components/AuthModal";
 import LanguageSwitcher from "./components/LanguageSwitcher";
 import CurrencySwitcher from "./components/CurrencySwitcher";
 import MobileMenu from "./components/MobileMenu";
+import Footer from "./components/Footer";
 import { Airport } from "./data/airports";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
@@ -548,13 +549,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[var(--color-primary-dark)] text-white/80 py-8 mt-auto">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-sm">© 2026 Aviator. Сайт продажи авиабилетов.</div>
-          <div className="text-xs text-white/50">aviator_web v0.1.0 · dev</div>
-        </div>
-      </footer>
+      <Footer />
 
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
