@@ -75,7 +75,7 @@ export default function MultiCitySegments({
               type="button"
               onClick={() => onSwap(seg.id)}
               title="Поменять местами"
-              className="absolute z-10 top-1/2 -translate-y-1/2 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] bg-white text-[var(--color-primary)] shadow-sm hover:bg-[var(--color-primary-light)] transition"
+              className="absolute z-10 top-1/2 -translate-y-1/2 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm hover:bg-[var(--color-primary-light)] transition"
             >
               <IconSwap size={15} className="rotate-90 sm:rotate-0" />
             </button>

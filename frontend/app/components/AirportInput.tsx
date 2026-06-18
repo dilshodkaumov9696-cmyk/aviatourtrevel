@@ -126,7 +126,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
       </div>
 
       {open && (
-        <ul className="absolute top-full left-0 mt-2 z-50 bg-white border border-[var(--color-border)] rounded-xl shadow-2xl py-1 min-w-[280px] max-h-[340px] overflow-auto">
+        <ul className="absolute top-full left-0 mt-2 z-50 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-2xl py-1 min-w-[280px] max-h-[340px] overflow-auto">
           {results.map((a, i) => (
             <li
               key={a.iata}

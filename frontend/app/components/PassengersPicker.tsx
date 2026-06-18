@@ -77,7 +77,7 @@ export default function PassengersPicker({
       </div>
 
       {open && (
-        <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-2 z-50 bg-white border border-[var(--color-border)] rounded-xl shadow-2xl p-4 w-72`}>
+        <div className={`absolute top-full ${align === "right" ? "right-0" : "left-0"} mt-2 z-50 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-2xl p-4 w-72`}>
           {PAX_ROWS.map(({ key, label, sub }) => (
             <div key={key} className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-0">
               <div>

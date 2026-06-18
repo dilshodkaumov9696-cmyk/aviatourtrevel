@@ -103,7 +103,7 @@ function MonthGrid({
 
           const btn =
             state === "past"
-              ? "text-gray-300 cursor-default"
+              ? "text-[var(--color-text-muted)] opacity-40 cursor-default"
               : state === "start" || state === "end" || state === "single"
               ? "bg-[var(--color-primary)] text-white font-semibold cursor-pointer"
               : state === "between"
@@ -207,7 +207,7 @@ export default function DateRangePicker({
   };
 
   return (
-    <div className="animate-fade-in-down bg-white border border-[var(--color-border)] rounded-2xl shadow-2xl p-4 md:p-5 select-none w-[316px] md:w-auto">
+    <div className="animate-fade-in-down bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl p-4 md:p-5 select-none w-[316px] md:w-auto">
       {/* Шапка */}
       {isRange ? (
         <div className="flex gap-2 mb-4">

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Тёмная тема переключается классом .dark на <html> (не системной @media) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Основной — глубокий морской синий (как у референса) */
   --color-primary: #1E5C80;
@@ -16,9 +19,28 @@
   /* База */
   --color-bg: #ffffff;
   --color-bg-soft: #F4F8FB;
+  --color-surface: #ffffff;
   --color-text: #1A1A1A;
   --color-text-muted: #64748B;
   --color-border: #CAD9E0;
+}
+
+/* Тёмная тема — морской бренд сохраняем, поверхности уходят в тёмный сланец */
+.dark {
+  --color-primary: #4AA3D8;
+  --color-primary-dark: #2E7BAD;
+  --color-primary-light: #1B3A4D;
+  --color-secondary: #5BB4E6;
+  --color-tertiary: #5FBFD0;
+  --color-accent: #FFD700;
+  --color-accent-dark: #E6C200;
+  --color-warm: #E9CFA0;
+  --color-bg: #0D1A24;
+  --color-bg-soft: #1B2C39;
+  --color-surface: #14232E;
+  --color-text: #E7EFF5;
+  --color-text-muted: #93A6B5;
+  --color-border: #2C404E;
 }
 
 @theme inline {
@@ -31,8 +53,48 @@
   --color-muted: var(--color-text-muted);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Якорные секции не прячутся под будущий sticky-хедер */
+[id] {
+  scroll-margin-top: 80px;
+}
+
+/* Анимации (модалка, попапы, календарь) */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+.animate-fade-in-down { animation: fade-in-down 0.22s ease-out; }
+.animate-scale-in { animation: scale-in 0.2s ease-out; }
+.animate-slide-in-right { animation: slide-in-right 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .animate-fade-in,
+  .animate-fade-in-down,
+  .animate-scale-in,
+  .animate-slide-in-right { animation: none; }
 }
