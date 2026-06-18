@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface Props {
-  tripType: "one-way" | "round-trip";
+  mode: "single" | "range";
   departDate: string;
   returnDate: string;
   onDepartChange: (d: string) => void;
@@ -35,7 +35,7 @@ function daysInMonth(year: number, month: number): number {
 }
 function firstWeekday(year: number, month: number): number {
   const d = new Date(year, month, 1).getDay();
-  return d === 0 ? 6 : d - 1; // Пн=0 … Вс=6
+  return d === 0 ? 6 : d - 1;
 }
 function dateStr(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -54,19 +54,19 @@ interface MonthProps {
   today: string;
   departDate: string;
   effectiveEnd: string;
-  tripType: "one-way" | "round-trip";
+  isRange: boolean;
   onDayClick: (d: string) => void;
   onDayHover: (d: string) => void;
   className?: string;
 }
 
 function MonthGrid({
-  year, month, today, departDate, effectiveEnd, tripType,
+  year, month, today, departDate, effectiveEnd, isRange,
   onDayClick, onDayHover, className = "",
 }: MonthProps) {
   const offset = firstWeekday(year, month);
   const count = daysInMonth(year, month);
-  const hasRange = tripType === "round-trip" && !!departDate && !!effectiveEnd && departDate < effectiveEnd;
+  const hasRange = isRange && !!departDate && !!effectiveEnd && departDate < effectiveEnd;
 
   function classify(d: string): DayState {
     if (d < today) return "past";
@@ -112,7 +112,6 @@ function MonthGrid({
 
           return (
             <div key={d} className="relative h-10 flex items-center justify-center">
-              {/* подложка диапазона */}
               {state === "between" && <span className="absolute inset-y-1 inset-x-0 bg-[var(--color-primary-light)]" />}
               {state === "start" && <span className="absolute inset-y-1 left-1/2 right-0 bg-[var(--color-primary-light)]" />}
               {state === "end" && <span className="absolute inset-y-1 left-0 right-1/2 bg-[var(--color-primary-light)]" />}
@@ -135,15 +134,16 @@ function MonthGrid({
 }
 
 export default function DateRangePicker({
-  tripType, departDate, returnDate,
+  mode, departDate, returnDate,
   onDepartChange, onReturnChange,
   initialField = "depart",
   onClose,
 }: Props) {
+  const isRange = mode === "range";
   const now = new Date();
   const [leftYear, setLeftYear] = useState(now.getFullYear());
   const [leftMonth, setLeftMonth] = useState(now.getMonth());
-  const [selectingReturn, setSelectingReturn] = useState(initialField === "return" && !!departDate);
+  const [selectingReturn, setSelectingReturn] = useState(isRange && initialField === "return" && !!departDate);
   const [hovered, setHovered] = useState("");
 
   const today = todayStr();
@@ -151,9 +151,7 @@ export default function DateRangePicker({
   const atCurrentMonth = leftYear === now.getFullYear() && leftMonth === now.getMonth();
 
   const effectiveEnd =
-    tripType === "round-trip" && selectingReturn && hovered && hovered > departDate
-      ? hovered
-      : returnDate;
+    isRange && selectingReturn && hovered && hovered > departDate ? hovered : returnDate;
 
   function prev() {
     if (atCurrentMonth) return;
@@ -168,7 +166,7 @@ export default function DateRangePicker({
   }
 
   function handleDayClick(d: string) {
-    if (tripType === "one-way") {
+    if (!isRange) {
       onDepartChange(d);
       onClose();
       return;
@@ -188,6 +186,10 @@ export default function DateRangePicker({
     }
   }
 
+  function chooseOneWay() {
+    onReturnChange("");
+    onClose();
+  }
   function reset() {
     onDepartChange("");
     onReturnChange("");
@@ -199,15 +201,15 @@ export default function DateRangePicker({
     today,
     departDate,
     effectiveEnd,
-    tripType,
+    isRange,
     onDayClick: handleDayClick,
     onDayHover: setHovered,
   };
 
   return (
-    <div className="bg-white border border-[var(--color-border)] rounded-2xl shadow-2xl p-4 md:p-5 select-none w-[316px] md:w-auto">
-      {/* Шапка: вкладки туда/обратно или заголовок */}
-      {tripType === "round-trip" ? (
+    <div className="animate-fade-in-down bg-white border border-[var(--color-border)] rounded-2xl shadow-2xl p-4 md:p-5 select-none w-[316px] md:w-auto">
+      {/* Шапка */}
+      {isRange ? (
         <div className="flex gap-2 mb-4">
           <button
             type="button"
@@ -236,9 +238,7 @@ export default function DateRangePicker({
           </button>
         </div>
       ) : (
-        <div className="text-sm font-semibold text-[var(--color-text)] mb-4 px-1">
-          Когда летим?
-        </div>
+        <div className="text-sm font-semibold text-[var(--color-text)] mb-4 px-1">Когда летим?</div>
       )}
 
       {/* Навигация */}
@@ -261,12 +261,9 @@ export default function DateRangePicker({
       </div>
 
       {/* Месяцы */}
-      <div
-        className="flex gap-6 justify-center"
-        onMouseLeave={() => setHovered("")}
-      >
+      <div className="flex gap-6 justify-center" onMouseLeave={() => setHovered("")}>
         <MonthGrid year={leftYear} month={leftMonth} {...common} />
-        {tripType === "round-trip" && (
+        {isRange && (
           <MonthGrid year={right.year} month={right.month} {...common} className="hidden md:block" />
         )}
       </div>
@@ -274,18 +271,27 @@ export default function DateRangePicker({
       {/* Подвал */}
       <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
         <span className="text-xs text-[var(--color-text-muted)]">
-          {tripType === "round-trip"
+          {isRange
             ? selectingReturn ? "Выберите дату возврата" : "Выберите дату вылета"
             : "Выберите дату вылета"}
         </span>
-        {tripType === "round-trip" && departDate && (
-          <button
-            type="button"
-            onClick={reset}
-            className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-          >
-            Сбросить
-          </button>
+        {isRange && departDate && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={chooseOneWay}
+              className="text-xs font-semibold text-[var(--color-primary)] border border-[var(--color-primary)] rounded-lg px-3 py-1.5 hover:bg-[var(--color-primary-light)] transition"
+            >
+              В одну сторону
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="text-xs font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:underline"
+            >
+              Сбросить
+            </button>
+          </div>
         )}
       </div>
     </div>

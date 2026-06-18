@@ -4,36 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
-import { Airport } from "./data/airports";
-
-type TripType = "one-way" | "round-trip" | "multi";
-type CabinClass = "economy" | "business" | "first";
-
-const CABIN_LABELS: Record<CabinClass, string> = {
-  economy: "Эконом",
-  business: "Бизнес",
-  first: "Первый",
-};
-
-const TRIP_TABS: { t: TripType; label: string }[] = [
-  { t: "round-trip", label: "Туда-обратно" },
-  { t: "one-way", label: "В одну сторону" },
-  { t: "multi", label: "Сложный маршрут" },
-];
+import PassengersPicker, { Passengers, CabinClass, passengersLabel } from "./components/PassengersPicker";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
+import FlightMap from "./components/FlightMap";
+import ThemeToggle from "./components/ThemeToggle";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-
-interface Passengers {
-  adults: number;
-  children: number;
-  infants: number;
-}
-
-function passengersLabel(p: Passengers, cabin: CabinClass): string {
-  const total = p.adults + p.children + p.infants;
-  const word = total === 1 ? "пассажир" : total < 5 ? "пассажира" : "пассажиров";
-  return `${total} ${word}, ${CABIN_LABELS[cabin]}`;
-}
 
 function fmtDate(d: string): string {
   if (!d) return "";
@@ -41,51 +17,42 @@ function fmtDate(d: string): string {
   return `${parseInt(day)} ${MONTHS_SHORT[parseInt(m) - 1]}`;
 }
 
+const boxBase =
+  "flex items-center gap-2.5 min-h-[52px] rounded-xl border bg-[var(--color-bg-soft)] px-3.5 py-1.5 transition-all duration-200 cursor-pointer hover:border-[var(--color-primary)]";
+
 export default function Home() {
-  // Form state
-  const [tripType, setTripType] = useState<TripType>("round-trip");
+  // Режим формы: обычный (туда + опц. обратно) или сложный маршрут
+  const [mode, setMode] = useState<"simple" | "multi">("simple");
+
+  // Простой маршрут
   const [originAirport, setOriginAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
   const [departDate, setDepartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+
+  // Пассажиры / класс
   const [cabin, setCabin] = useState<CabinClass>("economy");
   const [passengers, setPassengers] = useState<Passengers>({ adults: 1, children: 0, infants: 0 });
 
-  // Multi-city segments
+  // Сложный маршрут
   const [segments, setSegments] = useState<MultiSegment[]>([
     { id: 1, from: null, to: null, date: "" },
     { id: 2, from: null, to: null, date: "" },
   ]);
   const segIdRef = useRef(3);
 
-  // Date picker popup
+  // Календарь
   const [datepickerOpen, setDatepickerOpen] = useState(false);
   const [datepickerField, setDatepickerField] = useState<"depart" | "return">("depart");
   const datepickerRef = useRef<HTMLDivElement>(null);
 
-  // Passengers popup
-  const [paxOpen, setPaxOpen] = useState(false);
-  const paxRef = useRef<HTMLDivElement>(null);
-
-  // Validation errors
+  // Ошибки валидации
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Close date picker on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (datepickerRef.current && !datepickerRef.current.contains(e.target as Node)) {
         setDatepickerOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Close pax on outside click
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (paxRef.current && !paxRef.current.contains(e.target as Node)) {
-        setPaxOpen(false);
       }
     }
     document.addEventListener("mousedown", handler);
@@ -102,7 +69,7 @@ export default function Home() {
     setDestAirport(originAirport);
   }
 
-  // --- Multi-city handlers ---
+  // --- Сложный маршрут ---
   function updateSegment(id: number, patch: Partial<MultiSegment>) {
     setSegments((s) => s.map((seg) => (seg.id === id ? { ...seg, ...patch } : seg)));
     setErrors((p) => {
@@ -121,18 +88,9 @@ export default function Home() {
     setSegments((s) => (s.length <= 2 ? s : s.filter((seg) => seg.id !== id)));
   }
 
-  function changePax(key: keyof Passengers, delta: number) {
-    setPassengers((prev) => {
-      const next = { ...prev, [key]: Math.max(0, prev[key] + delta) };
-      if (next.adults < 1) next.adults = 1;
-      if (next.infants > next.adults) next.infants = next.adults;
-      return next;
-    });
-  }
-
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (tripType === "multi") {
+    if (mode === "multi") {
       segments.forEach((seg) => {
         if (!seg.from) e[`from${seg.id}`] = "Укажите город";
         if (!seg.to) e[`to${seg.id}`] = "Укажите город";
@@ -142,7 +100,7 @@ export default function Home() {
       if (!originAirport) e.origin = "Укажите город вылета";
       if (!destAirport) e.destination = "Укажите город прилёта";
       if (!departDate) e.departDate = "Укажите дату";
-      if (tripType === "round-trip" && !returnDate) e.returnDate = "Укажите дату";
+      // дата возврата — опциональна (нет = в одну сторону)
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -152,7 +110,7 @@ export default function Home() {
     e.preventDefault();
     if (!validate()) return;
 
-    if (tripType === "multi") {
+    if (mode === "multi") {
       const route = segments
         .map((s, i) => `${i + 1}. ${s.from!.iata} → ${s.to!.iata} · ${fmtDate(s.date)}`)
         .join("\n");
@@ -160,16 +118,13 @@ export default function Home() {
       return;
     }
 
+    const way = returnDate ? "туда-обратно" : "в одну сторону";
     alert(
-      `${originAirport!.iata} → ${destAirport!.iata}\n` +
+      `${originAirport!.iata} → ${destAirport!.iata} (${way})\n` +
         `${fmtDate(departDate)}${returnDate ? " — " + fmtDate(returnDate) : ""}\n` +
         passengersLabel(passengers, cabin)
     );
   }
-
-  // Field cell styles
-  const cellBase =
-    "flex-shrink-0 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[var(--color-bg-soft)] transition";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -189,6 +144,7 @@ export default function Home() {
             <a href="#" className="hover:text-[var(--color-primary)]">Помощь</a>
           </nav>
           <button className="rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]">
+          <ThemeToggle />
             Войти
           </button>
         </div>
@@ -197,147 +153,144 @@ export default function Home() {
       {/* Hero */}
       <section
         className="relative flex flex-col items-center justify-center px-4 py-20 text-white"
-        style={{
+        style={{ backgroundAttachment: "fixed", 
           background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
         }}
       >
-        <div className="mx-auto max-w-6xl w-full text-center">
+        <FlightMap />
+        <div className="mx-auto max-w-3xl w-full text-center">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight">
             Найдите дешёвые авиабилеты
           </h1>
           <p className="mt-4 text-lg md:text-xl text-white/80">
             Сравниваем сотни авиакомпаний и агентств за секунды
           </p>
+        </div>
 
-          {/* Search card */}
-          <form
-            onSubmit={handleSearch}
-            noValidate
-            className="mt-10 rounded-2xl bg-white shadow-2xl text-left overflow-visible"
-          >
-            {/* Trip type toggle */}
-            <div className="px-5 pt-4 flex flex-wrap items-center gap-1">
-              {TRIP_TABS.map(({ t, label }) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => {
-                    setTripType(t);
-                    if (t === "one-way") {
-                      setReturnDate("");
-                      setErrors((p) => ({ ...p, returnDate: "" }));
-                    }
-                  }}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${
-                    tripType === t
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg-soft)]"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+        {/* Search card */}
+        <form
+          onSubmit={handleSearch}
+          noValidate
+          className="mx-auto w-full max-w-[1280px] mt-10 rounded-2xl bg-white/80 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30"
+        >
+            {/* Верхняя строка: переключатель сложного маршрута */}
+            <div className="px-5 pt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setMode(mode === "multi" ? "simple" : "multi")}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                  mode === "multi"
+                    ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg-soft)]"
+                }`}
+                title="Перелёты с пересадками в нескольких городах"
+              >
+                <IconRoute size={16} />
+                {mode === "multi" ? "Обычный поиск" : "Сложный маршрут"}
+              </button>
             </div>
 
-            {/* --- Простой маршрут (туда / туда-обратно) --- */}
-            {tripType !== "multi" && (
-              <div className="flex flex-col md:flex-row items-stretch md:items-center gap-0 px-3 py-3">
-                {/* Откуда */}
-                <div className={`flex-1 min-w-0 ${cellBase} ${errors.origin ? "bg-red-50" : ""}`}>
-                  <AirportInput
-                    airport={originAirport}
-                    onChange={(a) => {
-                      setOriginAirport(a);
-                      setErrors((p) => ({ ...p, origin: "" }));
-                    }}
-                    label="Откуда"
-                    placeholder={errors.origin || "Город или аэропорт"}
-                    error={undefined}
-                    excludeIata={destAirport?.iata}
-                  />
+            {/* --- Обычный поиск (карточки-боксы, одна строка) --- */}
+            {mode === "simple" && (
+              <div className="px-4 pb-4 flex flex-col lg:flex-row gap-2">
+                {/* Маршрут: Откуда + Куда со свапом */}
+                <div className="relative flex flex-col sm:flex-row gap-2 lg:flex-[2] min-w-0">
+                  <div className={`flex-1 min-w-0 ${boxBase} ${errors.origin ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
+                    <IconPlane className="text-[var(--color-primary)] shrink-0" />
+                    <AirportInput
+                      airport={originAirport}
+                      onChange={(a) => {
+                        setOriginAirport(a);
+                        setErrors((p) => ({ ...p, origin: "" }));
+                      }}
+                      label=""
+                      placeholder={errors.origin || "Откуда"}
+                      excludeIata={destAirport?.iata}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={swap}
+                    title="Поменять местами"
+                    className="absolute z-10 top-1/2 -translate-y-1/2 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] bg-white text-[var(--color-primary)] shadow-sm hover:bg-[var(--color-primary-light)] hover:shadow-md transition"
+                  >
+                    <IconSwap size={15} className="rotate-90 sm:rotate-0 hover:rotate-180 transition-transform duration-300" />
+                  </button>
+
+                  <div className={`flex-1 min-w-0 ${boxBase} ${errors.destination ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
+                    <IconPin className="text-[var(--color-primary)] shrink-0" />
+                    <AirportInput
+                      airport={destAirport}
+                      onChange={(a) => {
+                        setDestAirport(a);
+                        setErrors((p) => ({ ...p, destination: "" }));
+                      }}
+                      label=""
+                      placeholder={errors.destination || "Куда"}
+                      excludeIata={originAirport?.iata}
+                    />
+                  </div>
                 </div>
 
-                {/* Swap */}
-                <button
-                  type="button"
-                  onClick={swap}
-                  title="Поменять местами"
-                  className="hidden md:flex self-center items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition flex-shrink-0"
-                >
-                  ⇄
-                </button>
-
-                <div className="hidden md:block w-px bg-[var(--color-border)] self-stretch mx-1" />
-
-                {/* Куда */}
-                <div className={`flex-1 min-w-0 ${cellBase} ${errors.destination ? "bg-red-50" : ""}`}>
-                  <AirportInput
-                    airport={destAirport}
-                    onChange={(a) => {
-                      setDestAirport(a);
-                      setErrors((p) => ({ ...p, destination: "" }));
-                    }}
-                    label="Куда"
-                    placeholder={errors.destination || "Город или аэропорт"}
-                    error={undefined}
-                    excludeIata={originAirport?.iata}
-                  />
-                </div>
-
-                <div className="hidden md:block w-px bg-[var(--color-border)] self-stretch mx-1" />
-
-                {/* Dates + calendar popup */}
-                <div ref={datepickerRef} className="relative flex items-center">
-                  {/* Дата вылета */}
+                {/* Даты */}
+                <div ref={datepickerRef} className="relative flex gap-2 lg:flex-[2] min-w-0">
+                  {/* Туда */}
                   <div
-                    className={`${cellBase} ${errors.departDate ? "bg-red-50" : ""}`}
+                    className={`flex-1 min-w-0 ${boxBase} cursor-pointer hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)] focus:outline-none ${errors.departDate ? "border-red-400" : "border-[var(--color-border)]"}`}
                     onClick={() => openDatePicker("depart")}
                   >
-                    <div className="text-xs font-semibold text-[var(--color-text-muted)] mb-1">
-                      {errors.departDate
-                        ? <span className="text-red-500">{errors.departDate}</span>
-                        : "Туда"}
-                    </div>
-                    <div className={`text-sm ${departDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
-                      {departDate ? fmtDate(departDate) : "Дата вылета"}
+                    <IconCalendar className="text-[var(--color-primary)] shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-[var(--color-text-muted)]">
+                        {errors.departDate ? <span className="text-red-500">{errors.departDate}</span> : "Туда"}
+                      </div>
+                      <div className={`text-[15px] ${departDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
+                        {departDate ? fmtDate(departDate) : "Дата вылета"}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Дата обратно */}
-                  {tripType === "round-trip" && (
-                    <>
-                      <div className="w-px bg-[var(--color-border)] self-stretch mx-1" />
-                      <div
-                        className={`${cellBase} ${errors.returnDate ? "bg-red-50" : ""}`}
-                        onClick={() => openDatePicker("return")}
-                      >
-                        <div className="text-xs font-semibold text-[var(--color-text-muted)] mb-1">
-                          {errors.returnDate
-                            ? <span className="text-red-500">{errors.returnDate}</span>
-                            : "Обратно"}
-                        </div>
-                        <div className={`text-sm ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
-                          {returnDate ? fmtDate(returnDate) : "Дата возврата"}
-                        </div>
+                  {/* Обратно */}
+                  <div
+                    className={`flex-1 min-w-0 ${boxBase} border-[var(--color-border)] cursor-pointer hover:border-[var(--color-primary)]`}
+                    onClick={() => openDatePicker("return")}
+                  >
+                    <IconCalendar className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-[var(--color-text-muted)]">Обратно</div>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-[15px] ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
+                          {returnDate ? fmtDate(returnDate) : "В одну сторону"}
+                        </span>
+                        {returnDate && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReturnDate("");
+                            }}
+                            title="Убрать обратный билет"
+                            className="ml-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xs leading-none"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
 
-                  {/* Calendar popup */}
                   {datepickerOpen && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50">
+                    <div className="absolute top-full left-0 mt-2 z-50">
                       <DateRangePicker
-                        tripType={tripType === "round-trip" ? "round-trip" : "one-way"}
+                        mode="range"
                         departDate={departDate}
                         returnDate={returnDate}
                         onDepartChange={(d) => {
                           setDepartDate(d);
                           setErrors((p) => ({ ...p, departDate: "" }));
                         }}
-                        onReturnChange={(d) => {
-                          setReturnDate(d);
-                          setErrors((p) => ({ ...p, returnDate: "" }));
-                        }}
+                        onReturnChange={(d) => setReturnDate(d)}
                         initialField={datepickerField}
                         onClose={() => setDatepickerOpen(false)}
                       />
@@ -345,77 +298,29 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="hidden md:block w-px bg-[var(--color-border)] self-stretch mx-1" />
-
                 {/* Пассажиры */}
-                <div ref={paxRef} className="relative flex-shrink-0">
-                  <div className={`${cellBase}`} onClick={() => setPaxOpen((v) => !v)}>
-                    <div className="text-xs font-semibold text-[var(--color-text-muted)] mb-1">Пассажиры</div>
-                    <div className="flex items-center gap-1 text-sm text-[var(--color-text)] whitespace-nowrap">
-                      {passengersLabel(passengers, cabin)}
-                      <span className="text-[var(--color-text-muted)] text-xs">{paxOpen ? "▴" : "▾"}</span>
-                    </div>
-                  </div>
-
-                  {paxOpen && (
-                    <div className="absolute top-full right-0 mt-2 z-50 bg-white border border-[var(--color-border)] rounded-xl shadow-2xl p-4 w-72">
-                      {([
-                        { key: "adults" as const, label: "Взрослые", sub: "от 12 лет" },
-                        { key: "children" as const, label: "Дети", sub: "2–11 лет" },
-                        { key: "infants" as const, label: "Младенцы", sub: "до 2 лет, без места" },
-                      ]).map(({ key, label, sub }) => (
-                        <div key={key} className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-0">
-                          <div>
-                            <div className="text-sm font-medium text-[var(--color-text)]">{label}</div>
-                            <div className="text-xs text-[var(--color-text-muted)]">{sub}</div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button type="button" onClick={() => changePax(key, -1)}
-                              disabled={key === "adults" ? passengers[key] <= 1 : passengers[key] <= 0}
-                              className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition text-xl leading-none">−</button>
-                            <span className="w-5 text-center font-semibold text-[var(--color-text)]">{passengers[key]}</span>
-                            <button type="button" onClick={() => changePax(key, 1)}
-                              className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] transition text-xl leading-none">+</button>
-                          </div>
-                        </div>
-                      ))}
-                      <div className="mt-4">
-                        <div className="text-xs text-[var(--color-text-muted)] mb-2">Класс</div>
-                        <div className="flex gap-2">
-                          {(["economy", "business", "first"] as CabinClass[]).map((c) => (
-                            <button key={c} type="button" onClick={() => setCabin(c)}
-                              className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
-                                cabin === c
-                                  ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                                  : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
-                              }`}>
-                              {CABIN_LABELS[c]}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => setPaxOpen(false)}
-                        className="mt-4 w-full rounded-lg bg-[var(--color-primary)] text-white py-2 text-sm font-medium hover:bg-[var(--color-primary-dark)] transition">
-                        Готово
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <PassengersPicker
+                  passengers={passengers}
+                  cabin={cabin}
+                  onPassengers={setPassengers}
+                  onCabin={setCabin}
+                  align="right"
+                  className="lg:flex-1"
+                />
 
                 {/* Submit */}
-                <div className="flex-shrink-0 px-2">
-                  <button
-                    type="submit"
-                    className="w-full md:w-auto rounded-xl bg-[var(--color-accent)] px-6 py-3 font-bold text-[var(--color-primary-dark)] hover:bg-[var(--color-accent-dark)] transition shadow-md whitespace-nowrap"
-                  >
-                    Найти билеты
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  className="w-full lg:w-auto flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-r from-green-400 to-green-600 px-8 font-bold text-white hover:from-green-600 hover:to-green-400 bg-[length:200%_100%] hover:bg-right transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-md whitespace-nowrap"
+                >
+                  <IconSearch size={18} />
+                  Найти билеты
+                </button>
               </div>
             )}
 
             {/* --- Сложный маршрут --- */}
-            {tripType === "multi" && (
+            {mode === "multi" && (
               <>
                 <MultiCitySegments
                   segments={segments}
@@ -425,75 +330,26 @@ export default function Home() {
                   onAdd={addSegment}
                   onRemove={removeSegment}
                 />
-                <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-3 px-5 pb-4">
-                  <div ref={paxRef} className="relative">
-                    <div
-                      className="px-3 py-2.5 rounded-xl cursor-pointer border border-[var(--color-border)] hover:border-[var(--color-primary)] transition"
-                      onClick={() => setPaxOpen((v) => !v)}
-                    >
-                      <div className="text-xs font-semibold text-[var(--color-text-muted)] mb-1">Пассажиры</div>
-                      <div className="flex items-center gap-1 text-sm text-[var(--color-text)] whitespace-nowrap">
-                        {passengersLabel(passengers, cabin)}
-                        <span className="text-[var(--color-text-muted)] text-xs">{paxOpen ? "▴" : "▾"}</span>
-                      </div>
-                    </div>
-
-                    {paxOpen && (
-                      <div className="absolute top-full left-0 mt-2 z-50 bg-white border border-[var(--color-border)] rounded-xl shadow-2xl p-4 w-72">
-                        {([
-                          { key: "adults" as const, label: "Взрослые", sub: "от 12 лет" },
-                          { key: "children" as const, label: "Дети", sub: "2–11 лет" },
-                          { key: "infants" as const, label: "Младенцы", sub: "до 2 лет, без места" },
-                        ]).map(({ key, label, sub }) => (
-                          <div key={key} className="flex items-center justify-between py-3 border-b border-[var(--color-border)] last:border-0">
-                            <div>
-                              <div className="text-sm font-medium text-[var(--color-text)]">{label}</div>
-                              <div className="text-xs text-[var(--color-text-muted)]">{sub}</div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <button type="button" onClick={() => changePax(key, -1)}
-                                disabled={key === "adults" ? passengers[key] <= 1 : passengers[key] <= 0}
-                                className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition text-xl leading-none">−</button>
-                              <span className="w-5 text-center font-semibold text-[var(--color-text)]">{passengers[key]}</span>
-                              <button type="button" onClick={() => changePax(key, 1)}
-                                className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] transition text-xl leading-none">+</button>
-                            </div>
-                          </div>
-                        ))}
-                        <div className="mt-4">
-                          <div className="text-xs text-[var(--color-text-muted)] mb-2">Класс</div>
-                          <div className="flex gap-2">
-                            {(["economy", "business", "first"] as CabinClass[]).map((c) => (
-                              <button key={c} type="button" onClick={() => setCabin(c)}
-                                className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
-                                  cabin === c
-                                    ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
-                                    : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]"
-                                }`}>
-                                {CABIN_LABELS[c]}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <button type="button" onClick={() => setPaxOpen(false)}
-                          className="mt-4 w-full rounded-lg bg-[var(--color-primary)] text-white py-2 text-sm font-medium hover:bg-[var(--color-primary-dark)] transition">
-                          Готово
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
+                <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-2 px-4 pb-4">
+                  <PassengersPicker
+                    passengers={passengers}
+                    cabin={cabin}
+                    onPassengers={setPassengers}
+                    onCabin={setCabin}
+                    align="left"
+                    className="md:w-64"
+                  />
                   <button
                     type="submit"
-                    className="rounded-xl bg-[var(--color-accent)] px-8 py-3 font-bold text-[var(--color-primary-dark)] hover:bg-[var(--color-accent-dark)] transition shadow-md whitespace-nowrap"
+                    className="flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-r from-green-400 to-green-600 px-8 font-bold text-white hover:from-green-600 hover:to-green-400 bg-[length:200%_100%] hover:bg-right transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-md whitespace-nowrap"
                   >
+                    <IconSearch size={18} />
                     Найти билеты
                   </button>
                 </div>
               </>
             )}
           </form>
-        </div>
       </section>
 
       {/* Advantages */}
@@ -505,6 +361,7 @@ export default function Home() {
             { icon: "🛡️", title: "Безопасно", text: "Защищённая оплата и проверенные партнёры" },
           ].map((a) => (
             <div key={a.title} className="text-center">
+
               <div className="text-5xl mb-3">{a.icon}</div>
               <h3 className="text-xl font-bold text-[var(--color-primary)]">{a.title}</h3>
               <p className="mt-2 text-[var(--color-text-muted)]">{a.text}</p>
