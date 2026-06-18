@@ -401,24 +401,6 @@ export default function Home() {
           </form>
       </section>
 
-      {/* Advantages */}
-      <section ref={advantagesRef as any} className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${advInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
-        <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: "💰", title: "Лучшая цена", text: "Сравниваем сотни источников за один поиск" },
-            { icon: "🕐", title: "Поддержка 24/7", text: "Поможем с бронированием в любое время" },
-            { icon: "🛡️", title: "Безопасно", text: "Защищённая оплата и проверенные партнёры" },
-          ].map((a) => (
-            <div key={a.title} className="text-center">
-
-              <div className="text-5xl mb-3">{a.icon}</div>
-              <h3 className="text-xl font-bold text-[var(--color-primary)]">{a.title}</h3>
-              <p className="mt-2 text-[var(--color-text-muted)]">{a.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Популярные направления — иммерсивные плитки с фото */}
       <section id="directions" ref={directionsRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${dirInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6">
