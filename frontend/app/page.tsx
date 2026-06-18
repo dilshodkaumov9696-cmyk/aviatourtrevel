@@ -68,6 +68,9 @@ export default function Home() {
   // Модалка авторизации
   const [authOpen, setAuthOpen] = useState(false);
 
+  // Sticky header на скролле
+  const [isScrolled, setIsScrolled] = useState(false);
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (datepickerRef.current && !datepickerRef.current.contains(e.target as Node)) {
@@ -76,6 +79,14 @@ export default function Home() {
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    function onScroll() {
+      setIsScrolled(window.scrollY > 10);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   function openDatePicker(field: "depart" | "return") {
@@ -148,8 +159,8 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
       {/* Header */}
-      <header className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className={`sticky top-0 z-40 bg-[var(--color-surface)] transition-all duration-200 ${isScrolled ? "border-b border-[var(--color-border)] shadow-md" : "border-b border-[var(--color-border)]"}`}>
+        <div className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-200 ${isScrolled ? "py-2" : "py-4"}`}>
           <a href="#search" className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white font-bold">
               A
