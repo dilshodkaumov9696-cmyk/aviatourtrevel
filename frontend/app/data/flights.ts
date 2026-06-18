@@ -1,76 +1,105 @@
-// Мок-данные рейсов для страницы результатов. Позже заменим на ответ API (affiliate).
-
 export type BadgeTone = "deal" | "time" | "morning" | "exclusive" | "cheap" | "muted";
+
+export interface Tariff {
+  handKg: number;
+  baggageKg: number | null;
+  refundable: boolean;
+  changeable: boolean;
+  changeFee: number | null; // ₽
+}
 
 export interface Flight {
   id: string;
   airlineCode: string;
   airlineName: string;
+  flightNumber: string;
+  aircraft: string;
   departTime: string;
   arriveTime: string;
-  arriveDayOffset: number; // +1 если прилёт на следующий день
+  arriveDayOffset: number;
   durationMin: number;
-  stops: number; // 0 = прямой
-  stopLabel?: string; // "Ташкент" / "Минск" / "Стамбул, Анкара"
+  stops: number;
+  stopLabel?: string;
+  stopCities?: string[];
   pricePerPax: number;
   hasBaggage: boolean;
   baggageLabel: string;
+  tariff: Tariff;
+  isNight: boolean;
   badges: { label: string; tone: BadgeTone }[];
 }
 
 const TEMPLATES: Omit<Flight, "id">[] = [
   {
-    airlineCode: "SZ", airlineName: "Somon Air",
+    airlineCode: "SZ", airlineName: "Somon Air", flightNumber: "SZ 43", aircraft: "Boeing 737-800",
     departTime: "08:30", arriveTime: "09:15", arriveDayOffset: 0, durationMin: 45,
-    stops: 0, pricePerPax: 3328, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    stops: 0, isNight: false,
+    pricePerPax: 3328, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    tariff: { handKg: 5, baggageKg: 20, refundable: true, changeable: true, changeFee: 1500 },
     badges: [{ label: "Выгодная цена", tone: "deal" }, { label: "Удобно по времени", tone: "time" }, { label: "Вылет утром", tone: "morning" }],
   },
   {
-    airlineCode: "DP", airlineName: "Pobeda",
+    airlineCode: "DP", airlineName: "Pobeda", flightNumber: "DP 407", aircraft: "Boeing 737-800",
     departTime: "22:10", arriveTime: "23:05", arriveDayOffset: 0, durationMin: 55,
-    stops: 0, pricePerPax: 3290, hasBaggage: false, baggageLabel: "Только ручная кладь",
+    stops: 0, isNight: true,
+    pricePerPax: 3290, hasBaggage: false, baggageLabel: "Только ручная кладь",
+    tariff: { handKg: 5, baggageKg: null, refundable: false, changeable: false, changeFee: null },
     badges: [{ label: "Дешевле всех", tone: "cheap" }],
   },
   {
-    airlineCode: "S7", airlineName: "S7 Airlines",
+    airlineCode: "S7", airlineName: "S7 Airlines", flightNumber: "S7 112", aircraft: "Airbus A320",
     departTime: "06:15", arriveTime: "07:10", arriveDayOffset: 0, durationMin: 55,
-    stops: 0, pricePerPax: 4100, hasBaggage: false, baggageLabel: "Только ручная кладь",
+    stops: 0, isNight: false,
+    pricePerPax: 4100, hasBaggage: false, baggageLabel: "Только ручная кладь",
+    tariff: { handKg: 10, baggageKg: null, refundable: false, changeable: true, changeFee: 2000 },
     badges: [{ label: "Вылет утром", tone: "morning" }],
   },
   {
-    airlineCode: "SZ", airlineName: "Somon Air",
+    airlineCode: "SZ", airlineName: "Somon Air", flightNumber: "SZ 41", aircraft: "Boeing 737-800",
     departTime: "18:00", arriveTime: "18:45", arriveDayOffset: 0, durationMin: 45,
-    stops: 0, pricePerPax: 3328, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    stops: 0, isNight: false,
+    pricePerPax: 3328, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    tariff: { handKg: 5, baggageKg: 20, refundable: true, changeable: true, changeFee: 1500 },
     badges: [{ label: "Вылет вечером", tone: "muted" }],
   },
   {
-    airlineCode: "S7", airlineName: "S7 Airlines",
+    airlineCode: "S7", airlineName: "S7 Airlines", flightNumber: "S7 118", aircraft: "Airbus A319",
     departTime: "15:20", arriveTime: "16:15", arriveDayOffset: 0, durationMin: 55,
-    stops: 0, pricePerPax: 4450, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    stops: 0, isNight: false,
+    pricePerPax: 4450, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    tariff: { handKg: 10, baggageKg: 20, refundable: true, changeable: true, changeFee: 2000 },
     badges: [{ label: "Удобно по времени", tone: "time" }],
   },
   {
-    airlineCode: "HY", airlineName: "Uzbekistan Airways",
+    airlineCode: "HY", airlineName: "Uzbekistan Airways", flightNumber: "HY 502", aircraft: "Boeing 787",
     departTime: "10:30", arriveTime: "14:30", arriveDayOffset: 0, durationMin: 240,
-    stops: 1, stopLabel: "Ташкент", pricePerPax: 6450, hasBaggage: true, baggageLabel: "Багаж 23 кг",
-    badges: [{ label: "Лазейка", tone: "exclusive" }],
+    stops: 1, stopLabel: "Ташкент", stopCities: ["TAS"], isNight: false,
+    pricePerPax: 6450, hasBaggage: true, baggageLabel: "Багаж 23 кг",
+    tariff: { handKg: 10, baggageKg: 23, refundable: true, changeable: true, changeFee: 3000 },
+    badges: [{ label: "Эксклюзив", tone: "exclusive" }],
   },
   {
-    airlineCode: "KC", airlineName: "Air Astana",
+    airlineCode: "KC", airlineName: "Air Astana", flightNumber: "KC 881", aircraft: "Airbus A321",
     departTime: "07:40", arriveTime: "12:20", arriveDayOffset: 0, durationMin: 280,
-    stops: 1, stopLabel: "Алматы", pricePerPax: 8200, hasBaggage: true, baggageLabel: "Багаж 23 кг",
+    stops: 1, stopLabel: "Алматы", stopCities: ["ALA"], isNight: false,
+    pricePerPax: 8200, hasBaggage: true, baggageLabel: "Багаж 23 кг",
+    tariff: { handKg: 8, baggageKg: 23, refundable: true, changeable: true, changeFee: 2500 },
     badges: [],
   },
   {
-    airlineCode: "B2", airlineName: "Belavia",
+    airlineCode: "B2", airlineName: "Belavia", flightNumber: "B2 774", aircraft: "Embraer E175",
     departTime: "13:00", arriveTime: "20:35", arriveDayOffset: 0, durationMin: 455,
-    stops: 1, stopLabel: "Минск", pricePerPax: 7300, hasBaggage: false, baggageLabel: "Только ручная кладь",
+    stops: 1, stopLabel: "Минск", stopCities: ["MSQ"], isNight: false,
+    pricePerPax: 7300, hasBaggage: false, baggageLabel: "Только ручная кладь",
+    tariff: { handKg: 8, baggageKg: null, refundable: false, changeable: false, changeFee: null },
     badges: [],
   },
   {
-    airlineCode: "TK", airlineName: "Turkish Airlines",
+    airlineCode: "TK", airlineName: "Turkish Airlines", flightNumber: "TK 415", aircraft: "Boeing 777",
     departTime: "09:00", arriveTime: "06:30", arriveDayOffset: 1, durationMin: 1290,
-    stops: 2, stopLabel: "Стамбул, Анкара", pricePerPax: 12500, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    stops: 2, stopLabel: "Стамбул, Анкара", stopCities: ["IST", "ESB"], isNight: false,
+    pricePerPax: 12500, hasBaggage: true, baggageLabel: "Багаж 20 кг",
+    tariff: { handKg: 8, baggageKg: 20, refundable: false, changeable: true, changeFee: 5000 },
     badges: [],
   },
 ];

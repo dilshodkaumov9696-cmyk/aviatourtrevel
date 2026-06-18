@@ -35,11 +35,18 @@ export default function SearchResults() {
 
   const flights = useMemo(() => getFlights(), []);
   const totalOf = (f: Flight) => f.pricePerPax * paxCount;
+
   const priceBounds = useMemo<[number, number]>(() => {
     const totals = flights.map(totalOf);
     return [Math.min(...totals), Math.max(...totals)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flights, paxCount]);
+
+  const minDuration = useMemo(() => Math.min(...flights.map((f) => f.durationMin)), [flights]);
+
+  // Списки аэропортов (в реальном сценарии — несколько для хабов)
+  const departAirportList = [{ iata: fromIata, name: fromCity }];
+  const arriveAirportList = [{ iata: toIata, name: toCity }];
 
   const [date, setDate] = useState(sp.get("date") || "2026-06-28");
   const [sort, setSort] = useState<Sort>("best");
@@ -48,13 +55,26 @@ export default function SearchResults() {
     stopsMax: null,
     priceMax: priceBounds[1],
     baggageOnly: false,
+    isNight: false,
+    fastestOnly: false,
     airlines: new Set(AIRLINES.map((a) => a.code)),
+    departAirports: new Set([fromIata]),
+    arriveAirports: new Set([toIata]),
   });
   const setF = (patch: Partial<FilterState>) => setFilters((s) => ({ ...s, ...patch }));
 
   function reset() {
     setSort("best");
-    setFilters({ stopsMax: null, priceMax: priceBounds[1], baggageOnly: false, airlines: new Set(AIRLINES.map((a) => a.code)) });
+    setFilters({
+      stopsMax: null,
+      priceMax: priceBounds[1],
+      baggageOnly: false,
+      isNight: false,
+      fastestOnly: false,
+      airlines: new Set(AIRLINES.map((a) => a.code)),
+      departAirports: new Set([fromIata]),
+      arriveAirports: new Set([toIata]),
+    });
   }
 
   useEffect(() => {
@@ -70,6 +90,8 @@ export default function SearchResults() {
       if (totalOf(f) > filters.priceMax) return false;
       if (filters.baggageOnly && !f.hasBaggage) return false;
       if (!filters.airlines.has(f.airlineCode)) return false;
+      if (filters.isNight && !f.isNight) return false;
+      if (filters.fastestOnly && f.durationMin !== minDuration) return false;
       return true;
     });
     list = [...list].sort((a, b) => {
@@ -80,14 +102,14 @@ export default function SearchResults() {
     });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flights, filters, sort, paxCount]);
+  }, [flights, filters, sort, paxCount, minDuration]);
 
   const dLabel = dateLabel(date);
   const dShort = `${Number(date.split("-")[2])} ${MONTHS_GEN[Number(date.split("-")[1]) - 1]}`;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-soft)]">
-      {/* Хедер с поиском */}
+      {/* Хедер */}
       <header
         className="sticky top-0 z-30 text-white"
         style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))" }}
@@ -99,7 +121,6 @@ export default function SearchResults() {
               <span className="hidden text-lg font-bold lg:block">Aviator</span>
             </a>
 
-            {/* Поисковая панель (пилюли). Клик — редактирование на главной. */}
             <a href="/" className="flex flex-1 flex-wrap items-center gap-2" title="Изменить поиск">
               <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]">
                 <IconPlane size={15} className="text-[var(--color-primary)]" />
@@ -133,9 +154,15 @@ export default function SearchResults() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-4">
-        <PriceCalendar selected={date} onSelect={setDate} selectedPrice={priceBounds[0]} />
+        <PriceCalendar
+          selected={date}
+          onSelect={setDate}
+          selectedPrice={priceBounds[0]}
+          origin={fromIata}
+          destination={toIata}
+        />
 
-        {/* Чипсы */}
+        {/* Чипсы быстрых фильтров */}
         <div className="my-4 flex flex-wrap items-center gap-2">
           <Chip onClick={() => setSort(SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length])}>
             {SORT_LABEL[sort]} <span className="text-xs">▾</span>
@@ -145,6 +172,9 @@ export default function SearchResults() {
           </Chip>
           <Chip active={filters.baggageOnly} onClick={() => setF({ baggageOnly: !filters.baggageOnly })}>
             С багажом
+          </Chip>
+          <Chip active={filters.isNight} onClick={() => setF({ isNight: !filters.isNight })}>
+            Ночной
           </Chip>
           <button
             type="button"
@@ -166,7 +196,14 @@ export default function SearchResults() {
           {/* Сайдбар (десктоп) */}
           <aside className="hidden w-64 shrink-0 lg:block">
             <div className="sticky top-20 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-1">
-              <FiltersPanel state={filters} set={setF} priceBounds={priceBounds} airlineList={AIRLINES} />
+              <FiltersPanel
+                state={filters}
+                set={setF}
+                priceBounds={priceBounds}
+                airlineList={AIRLINES}
+                departAirportList={departAirportList}
+                arriveAirportList={arriveAirportList}
+              />
             </div>
           </aside>
 
@@ -178,14 +215,26 @@ export default function SearchResults() {
             {results.length > 0 ? (
               <div className="space-y-3">
                 {results.map((f) => (
-                  <FlightCard key={f.id} flight={f} fromCity={fromCity} fromIata={fromIata} toCity={toCity} toIata={toIata} dateLabel={dLabel} paxCount={paxCount} />
+                  <FlightCard
+                    key={f.id}
+                    flight={f}
+                    fromCity={fromCity}
+                    fromIata={fromIata}
+                    toCity={toCity}
+                    toIata={toIata}
+                    dateLabel={dLabel}
+                    paxCount={paxCount}
+                  />
                 ))}
               </div>
             ) : (
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] py-16 text-center">
                 <div className="text-lg font-semibold text-[var(--color-text)]">Ничего не нашлось</div>
                 <div className="mt-1 text-sm text-[var(--color-text-muted)]">Попробуйте смягчить фильтры</div>
-                <button onClick={reset} className="mt-4 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">
+                <button
+                  onClick={reset}
+                  className="mt-4 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+                >
                   Сбросить фильтры
                 </button>
               </div>
@@ -194,7 +243,7 @@ export default function SearchResults() {
         </div>
       </div>
 
-      {/* Мобильная шторка фильтров */}
+      {/* Мобильная шторка */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
@@ -204,7 +253,14 @@ export default function SearchResults() {
               <button onClick={() => setDrawerOpen(false)} aria-label="Закрыть" className="text-2xl leading-none text-[var(--color-text-muted)]">×</button>
             </div>
             <div className="flex-1 overflow-y-auto px-5">
-              <FiltersPanel state={filters} set={setF} priceBounds={priceBounds} airlineList={AIRLINES} />
+              <FiltersPanel
+                state={filters}
+                set={setF}
+                priceBounds={priceBounds}
+                airlineList={AIRLINES}
+                departAirportList={departAirportList}
+                arriveAirportList={arriveAirportList}
+              />
             </div>
             <div className="border-t border-[var(--color-border)] p-4">
               <button
@@ -238,8 +294,7 @@ function Chip({ children, active, onClick }: { children: React.ReactNode; active
 }
 
 function plural(n: number): string {
-  const a = n % 10;
-  const b = n % 100;
+  const a = n % 10, b = n % 100;
   if (a === 1 && b !== 11) return "рейс";
   if (a >= 2 && a <= 4 && (b < 10 || b >= 20)) return "рейса";
   return "рейсов";

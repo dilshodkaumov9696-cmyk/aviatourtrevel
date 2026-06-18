@@ -1,10 +1,14 @@
 "use client";
 
 export interface FilterState {
-  stopsMax: number | null; // null = любое
+  stopsMax: number | null;
   priceMax: number;
   baggageOnly: boolean;
-  airlines: Set<string>; // выбранные коды
+  isNight: boolean;
+  fastestOnly: boolean;
+  airlines: Set<string>;
+  departAirports: Set<string>;
+  arriveAirports: Set<string>;
 }
 
 interface Props {
@@ -12,6 +16,8 @@ interface Props {
   set: (patch: Partial<FilterState>) => void;
   priceBounds: [number, number];
   airlineList: { code: string; name: string }[];
+  departAirportList: { iata: string; name: string }[];
+  arriveAirportList: { iata: string; name: string }[];
 }
 
 const STOPS_OPTS: { v: number | null; label: string }[] = [
@@ -21,18 +27,62 @@ const STOPS_OPTS: { v: number | null; label: string }[] = [
   { v: 2, label: "До 2 пересадок" },
 ];
 
-export default function FiltersPanel({ state, set, priceBounds, airlineList }: Props) {
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between py-1.5">
+      <span className="text-sm text-[var(--color-text-muted)]">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative h-5 w-9 rounded-full transition-colors ${checked ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-4" : "translate-x-0.5"}`}
+        />
+      </button>
+    </label>
+  );
+}
+
+export default function FiltersPanel({ state, set, priceBounds, airlineList, departAirportList = [], arriveAirportList = [] }: Props) {
   const [min, max] = priceBounds;
 
   function toggleAirline(code: string) {
     const next = new Set(state.airlines);
-    if (next.has(code)) next.delete(code);
-    else next.add(code);
+    if (next.has(code)) next.delete(code); else next.add(code);
     set({ airlines: next });
+  }
+
+  function toggleAirport(iata: string, which: "depart" | "arrive") {
+    const key = which === "depart" ? "departAirports" : "arriveAirports";
+    const next = new Set(state[key]);
+    if (next.has(iata)) next.delete(iata); else next.add(iata);
+    set({ [key]: next } as Partial<FilterState>);
   }
 
   return (
     <div className="text-sm">
+      {/* Быстрые тогглы */}
+      <FGroup title="Параметры рейса">
+        <Toggle checked={state.isNight} onChange={(v) => set({ isNight: v })} label="Ночной рейс" />
+        <Toggle checked={state.fastestOnly} onChange={(v) => set({ fastestOnly: v })} label="Самый быстрый" />
+        <label className="flex cursor-pointer items-center justify-between py-1.5">
+          <span className="text-sm text-[var(--color-text-muted)]">Только с багажом</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={state.baggageOnly}
+            onClick={() => set({ baggageOnly: !state.baggageOnly })}
+            className={`relative h-5 w-9 rounded-full transition-colors ${state.baggageOnly ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`}
+          >
+            <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${state.baggageOnly ? "translate-x-4" : "translate-x-0.5"}`} />
+          </button>
+        </label>
+      </FGroup>
+
+      {/* Пересадки */}
       <FGroup title="Пересадки">
         {STOPS_OPTS.map((o) => (
           <label key={String(o.v)} className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
@@ -48,6 +98,7 @@ export default function FiltersPanel({ state, set, priceBounds, airlineList }: P
         ))}
       </FGroup>
 
+      {/* Цена */}
       <FGroup title="Цена">
         <input
           type="range"
@@ -64,18 +115,43 @@ export default function FiltersPanel({ state, set, priceBounds, airlineList }: P
         </div>
       </FGroup>
 
-      <FGroup title="Багаж">
-        <label className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
-          <input
-            type="checkbox"
-            checked={state.baggageOnly}
-            onChange={(e) => set({ baggageOnly: e.target.checked })}
-            className="accent-[var(--color-primary)]"
-          />
-          Только с багажом
-        </label>
-      </FGroup>
+      {/* Аэропорты вылета */}
+      {departAirportList.length > 1 && (
+        <FGroup title="Аэропорт вылета">
+          {departAirportList.map((a) => (
+            <label key={a.iata} className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
+              <input
+                type="checkbox"
+                checked={state.departAirports.has(a.iata)}
+                onChange={() => toggleAirport(a.iata, "depart")}
+                className="accent-[var(--color-primary)]"
+              />
+              <span>{a.name}</span>
+              <span className="ml-auto text-[11px]">{a.iata}</span>
+            </label>
+          ))}
+        </FGroup>
+      )}
 
+      {/* Аэропорты прилёта */}
+      {arriveAirportList.length > 1 && (
+        <FGroup title="Аэропорт прилёта">
+          {arriveAirportList.map((a) => (
+            <label key={a.iata} className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
+              <input
+                type="checkbox"
+                checked={state.arriveAirports.has(a.iata)}
+                onChange={() => toggleAirport(a.iata, "arrive")}
+                className="accent-[var(--color-primary)]"
+              />
+              <span>{a.name}</span>
+              <span className="ml-auto text-[11px]">{a.iata}</span>
+            </label>
+          ))}
+        </FGroup>
+      )}
+
+      {/* Авиакомпании */}
       <FGroup title="Авиакомпании" last>
         {airlineList.map((a) => (
           <label key={a.code} className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
