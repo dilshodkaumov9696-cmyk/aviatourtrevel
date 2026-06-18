@@ -94,8 +94,17 @@ body {
 .animate-fade-in-down { animation: fade-in-down 0.22s ease-out; }
 .animate-scale-in { animation: scale-in 0.2s ease-out; }
 .animate-slide-in-right { animation: slide-in-right 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
-.animate-marquee { animation: marquee 28s linear infinite; }
+.animate-marquee { animation: marquee 70s linear infinite; will-change: transform; }
 .animate-marquee:hover { animation-play-state: paused; }
+
+/* Бейджи на карточках рейсов — адаптируются к тёмной теме */
+.badge-deal { background: #FEF3C7; color: #92400E; }
+.dark .badge-deal { background: #3A2E14; color: #FBBF24; }
+.badge-info { background: #DBEAFE; color: #1E40AF; }
+.dark .badge-info { background: #16304A; color: #93C5FD; }
+.badge-success { background: #DCFCE7; color: #166534; }
+.dark .badge-success { background: #14362A; color: #6EE7A8; }
+.badge-muted { background: var(--color-bg-soft); color: var(--color-text-muted); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

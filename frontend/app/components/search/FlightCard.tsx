@@ -1,0 +1,113 @@
+"use client";
+
+import { Flight, formatDuration, stopsLabel, BadgeTone } from "../../data/flights";
+import { IconPlane } from "../icons";
+
+const TONE_CLASS: Record<BadgeTone, string> = {
+  deal: "badge-deal",
+  time: "badge-info",
+  morning: "badge-info",
+  exclusive: "badge-success",
+  cheap: "badge-success",
+  muted: "badge-muted",
+};
+
+interface Props {
+  flight: Flight;
+  fromCity: string;
+  fromIata: string;
+  toCity: string;
+  toIata: string;
+  dateLabel: string;
+  paxCount: number;
+}
+
+export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIata, dateLabel, paxCount }: Props) {
+  const total = f.pricePerPax * paxCount;
+  const direct = f.stops === 0;
+
+  return (
+    <article className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-5 transition hover:shadow-md flex flex-col sm:flex-row gap-4">
+      {/* Левая часть: бейджи + время + аэропорты */}
+      <div className="flex-1 min-w-0">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <img
+            src={`https://images.kiwi.com/airlines/64/${f.airlineCode}.png`}
+            alt={f.airlineName}
+            width={22}
+            height={22}
+            className="h-[22px] w-[22px] shrink-0 rounded object-contain"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+          />
+          <span className="mr-1 text-[13px] text-[var(--color-text-muted)]">{f.airlineName}</span>
+          {f.badges.map((b) => (
+            <span key={b.label} className={`rounded-md px-2 py-0.5 text-[11px] ${TONE_CLASS[b.tone]}`}>
+              {b.label}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="text-center">
+            <div className="text-xl font-bold text-[var(--color-text)]">{f.departTime}</div>
+            <div className="text-xs text-[var(--color-text-muted)]">{fromIata}</div>
+          </div>
+
+          <div className="flex-1 min-w-0 text-center">
+            <div className="mb-1 text-[11px] text-[var(--color-text-muted)]">{formatDuration(f.durationMin)}</div>
+            <div className="flex items-center gap-1">
+              <div className="h-0.5 flex-1 rounded bg-[var(--color-border)]" />
+              {direct ? (
+                <IconPlane size={14} className="rotate-90 text-[var(--color-primary)]" />
+              ) : (
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: f.stops }).map((_, i) => (
+                    <span key={i} className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  ))}
+                </div>
+              )}
+              <div className="h-0.5 flex-1 rounded bg-[var(--color-border)]" />
+            </div>
+            <div className={`mt-1 text-[11px] ${direct ? "text-green-600" : "text-amber-600"}`}>
+              {stopsLabel(f.stops)}{f.stopLabel ? ` · ${f.stopLabel}` : ""}
+            </div>
+          </div>
+
+          <div className="text-center">
+            <div className="text-xl font-bold text-[var(--color-text)]">
+              {f.arriveTime}
+              {f.arriveDayOffset > 0 && <sup className="ml-0.5 text-[11px] font-medium text-amber-600">+{f.arriveDayOffset}</sup>}
+            </div>
+            <div className="text-xs text-[var(--color-text-muted)]">{toIata}</div>
+          </div>
+        </div>
+
+        <div className="mt-3 text-xs text-[var(--color-text-muted)]">
+          {dateLabel} · {fromCity} ({fromIata}) → {toCity} ({toIata})
+        </div>
+      </div>
+
+      {/* Правая часть: цена + кнопка */}
+      <div className="flex items-end justify-between gap-3 border-t border-[var(--color-border)] pt-3 sm:block sm:w-44 sm:shrink-0 sm:border-l sm:border-t-0 sm:pt-0 sm:pl-4 sm:text-right">
+        <div>
+          <div className="text-xl font-bold text-[var(--color-text)]">{total.toLocaleString("ru-RU")} ₽</div>
+          <div className="text-[11px] text-[var(--color-text-muted)]">за всех пассажиров</div>
+          <div className={`mt-1.5 text-xs ${f.hasBaggage ? "text-green-600" : "text-[var(--color-text-muted)]"}`}>
+            {f.hasBaggage ? "✓ " : ""}{f.baggageLabel}
+          </div>
+        </div>
+        <div className="sm:mt-3">
+          <button
+            type="button"
+            className="rounded-xl bg-green-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 sm:w-full"
+          >
+            Выбрать
+          </button>
+          <a href="#" className="mt-2 hidden text-xs text-[var(--color-primary)] hover:underline sm:block">
+            Ссылка на билет
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+}

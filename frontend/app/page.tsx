@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
@@ -15,9 +16,11 @@ import CurrencySwitcher from "./components/CurrencySwitcher";
 import MobileMenu from "./components/MobileMenu";
 import Footer from "./components/Footer";
 import Counters from "./components/Counters";
+import WhyUs from "./components/WhyUs";
 import DirectionsCarousel from "./components/DirectionsCarousel";
 import AirlinesMarquee from "./components/AirlinesMarquee";
 import Reviews from "./components/Reviews";
+import Subscribe from "./components/Subscribe";
 import { Airport } from "./data/airports";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
@@ -42,6 +45,7 @@ function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) 
 }
 
 export default function Home() {
+  const router = useRouter();
   // Режим формы: обычный (туда + опц. обратно) или сложный маршрут
   const [mode, setMode] = useState<"simple" | "multi">("simple");
 
@@ -159,12 +163,19 @@ export default function Home() {
       return;
     }
 
-    const way = returnDate ? "туда-обратно" : "в одну сторону";
-    alert(
-      `${originAirport!.iata} → ${destAirport!.iata} (${way})\n` +
-        `${fmtDate(departDate)}${returnDate ? " — " + fmtDate(returnDate) : ""}\n` +
-        passengersLabel(passengers, cabin)
-    );
+    const params = new URLSearchParams({
+      fromCity: originAirport!.city,
+      fromIata: originAirport!.iata,
+      toCity: destAirport!.city,
+      toIata: destAirport!.iata,
+      date: departDate,
+      adults: String(passengers.adults),
+      children: String(passengers.children),
+      infants: String(passengers.infants),
+      cabin,
+    });
+    if (returnDate) params.set("returnDate", returnDate);
+    router.push(`/search?${params.toString()}`);
   }
 
   return (
@@ -245,9 +256,9 @@ export default function Home() {
 
             {/* --- Обычный поиск (карточки-боксы, одна строка) --- */}
             {mode === "simple" && (
-              <div className="px-4 pb-4 flex flex-col lg:flex-row gap-2">
+              <div className="px-4 pb-4 flex flex-col xl:flex-row gap-2">
                 {/* Маршрут: Откуда + Куда со свапом */}
-                <div className="relative flex flex-col sm:flex-row gap-2 lg:flex-[2] min-w-0">
+                <div className="relative flex flex-col sm:flex-row gap-2 xl:flex-[2] min-w-0">
                   <div className={`flex-1 min-w-0 ${boxBase} ${errors.origin ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
                     <IconPlane className="text-[var(--color-primary)] shrink-0" />
                     <AirportInput
@@ -287,7 +298,7 @@ export default function Home() {
                 </div>
 
                 {/* Даты */}
-                <div ref={datepickerRef} className="relative flex gap-2 lg:flex-[2] min-w-0">
+                <div ref={datepickerRef} className="relative flex gap-2 xl:flex-[2] min-w-0">
                   {/* Туда */}
                   <div
                     className={`flex-1 min-w-0 ${boxBase} cursor-pointer hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)] focus:outline-none ${errors.departDate ? "border-red-400" : "border-[var(--color-border)]"}`}
@@ -298,7 +309,7 @@ export default function Home() {
                       <div className="text-xs font-semibold text-[var(--color-text-muted)]">
                         {errors.departDate ? <span className="text-red-500">{errors.departDate}</span> : "Туда"}
                       </div>
-                      <div className={`text-[15px] ${departDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
+                      <div className={`text-[15px] whitespace-nowrap ${departDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
                         {departDate ? fmtDate(departDate) : "Дата вылета"}
                       </div>
                     </div>
@@ -313,7 +324,7 @@ export default function Home() {
                     <div className="min-w-0">
                       <div className="text-xs font-semibold text-[var(--color-text-muted)]">Обратно</div>
                       <div className="flex items-center gap-1">
-                        <span className={`text-[15px] ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
+                        <span className={`text-[15px] whitespace-nowrap ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
                           {returnDate ? fmtDate(returnDate) : "В одну сторону"}
                         </span>
                         {returnDate && (
@@ -358,13 +369,13 @@ export default function Home() {
                   onPassengers={setPassengers}
                   onCabin={setCabin}
                   align="right"
-                  className="lg:flex-1"
+                  className="xl:flex-1"
                 />
 
                 {/* Submit */}
                 <button
                   type="submit"
-                  className="w-full lg:w-auto flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-r from-green-400 to-green-600 px-8 font-bold text-white hover:from-green-600 hover:to-green-400 bg-[length:200%_100%] hover:bg-right transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-md whitespace-nowrap"
+                  className="w-full xl:w-auto flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-r from-green-400 to-green-600 px-8 font-bold text-white hover:from-green-600 hover:to-green-400 bg-[length:200%_100%] hover:bg-right transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-md whitespace-nowrap"
                 >
                   <IconSearch size={18} />
                   Найти билеты
@@ -408,8 +419,8 @@ export default function Home() {
       {/* Counters — статистика */}
       <Counters />
 
-      {/* Бегущая строка партнёров */}
-      <AirlinesMarquee />
+      {/* Почему выбирают нас */}
+      <WhyUs />
 
       {/* Карусель направлений */}
       <DirectionsCarousel />
@@ -564,6 +575,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Подписка на рассылку + приложение */}
+      <Subscribe />
+
+      {/* Бегущая строка партнёров — перед футером */}
+      <AirlinesMarquee />
 
       <Footer />
 
