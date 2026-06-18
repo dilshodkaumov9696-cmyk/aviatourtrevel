@@ -16,6 +16,8 @@ import MobileMenu from "./components/MobileMenu";
 import Footer from "./components/Footer";
 import Counters from "./components/Counters";
 import DirectionsCarousel from "./components/DirectionsCarousel";
+import AirlinesMarquee from "./components/AirlinesMarquee";
+import Reviews from "./components/Reviews";
 import { Airport } from "./data/airports";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
@@ -406,6 +408,9 @@ export default function Home() {
       {/* Counters — статистика */}
       <Counters />
 
+      {/* Бегущая строка партнёров */}
+      <AirlinesMarquee />
+
       {/* Карусель направлений */}
       <DirectionsCarousel />
 
@@ -512,6 +517,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Отзывы клиентов */}
+      <Reviews />
 
       {/* Помощь */}
       <section id="help" ref={helpRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${helpInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
