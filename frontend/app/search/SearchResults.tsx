@@ -223,6 +223,7 @@ export default function SearchResults() {
                     toCity={toCity}
                     toIata={toIata}
                     dateLabel={dLabel}
+                    dateISO={date}
                     paxCount={paxCount}
                   />
                 ))}
