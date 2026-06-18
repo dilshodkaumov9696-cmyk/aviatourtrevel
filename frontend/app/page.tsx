@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
@@ -70,6 +71,12 @@ export default function Home() {
 
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Анимации при скролле для основных секций
+  const { ref: advantagesRef, isInView: advInView } = useInViewAnimation();
+  const { ref: directionsRef, isInView: dirInView } = useInViewAnimation();
+  const { ref: dealsRef, isInView: dealsInView } = useInViewAnimation();
+  const { ref: helpRef, isInView: helpInView } = useInViewAnimation();
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -395,7 +402,7 @@ export default function Home() {
       </section>
 
       {/* Advantages */}
-      <section className="bg-[var(--color-bg)] py-16">
+      <section ref={advantagesRef as any} className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${advInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { icon: "💰", title: "Лучшая цена", text: "Сравниваем сотни источников за один поиск" },
@@ -413,7 +420,7 @@ export default function Home() {
       </section>
 
       {/* Популярные направления — иммерсивные плитки с фото */}
-      <section id="directions" className="bg-[var(--color-bg-soft)] py-16">
+      <section id="directions" ref={directionsRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${dirInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-[var(--color-text)]">Популярные направления</h2>
@@ -462,7 +469,7 @@ export default function Home() {
       </section>
 
       {/* Горящие предложения — карточки рейсов со скидками */}
-      <section id="deals" className="bg-[var(--color-bg)] py-16">
+      <section id="deals" ref={dealsRef as any} className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${dealsInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-8 flex items-end justify-between">
             <div>
@@ -517,7 +524,7 @@ export default function Home() {
       </section>
 
       {/* Помощь */}
-      <section id="help" className="bg-[var(--color-bg-soft)] py-16">
+      <section id="help" ref={helpRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${helpInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-3xl px-6">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-[var(--color-text)]">Помощь и поддержка</h2>
