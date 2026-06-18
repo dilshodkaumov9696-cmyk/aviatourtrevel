@@ -14,6 +14,8 @@ import LanguageSwitcher from "./components/LanguageSwitcher";
 import CurrencySwitcher from "./components/CurrencySwitcher";
 import MobileMenu from "./components/MobileMenu";
 import Footer from "./components/Footer";
+import Counters from "./components/Counters";
+import DirectionsCarousel from "./components/DirectionsCarousel";
 import { Airport } from "./data/airports";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
@@ -400,6 +402,12 @@ export default function Home() {
             )}
           </form>
       </section>
+
+      {/* Counters — статистика */}
+      <Counters />
+
+      {/* Карусель направлений */}
+      <DirectionsCarousel />
 
       {/* Популярные направления — иммерсивные плитки с фото */}
       <section id="directions" ref={directionsRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${dirInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
