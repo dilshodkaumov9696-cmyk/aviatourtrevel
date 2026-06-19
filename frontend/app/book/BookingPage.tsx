@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { formatDuration } from "../data/flights";
 import { useSettings } from "../context/settings";
+import PaymentStep from "../components/booking/PaymentStep";
 
 const GENDERS = [
   { v: "male", label: "Мужской" },
@@ -293,7 +294,7 @@ export default function BookingPage() {
   );
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [step, setStep] = useState<"form" | "payment" | "success">("form");
   const [errors, setErrors] = useState<string[]>([]);
   const [tariff, setTariff] = useState<TariffCode>("standard");
   const [selectedSeat, setSelectedSeat] = useState("");
@@ -325,10 +326,22 @@ export default function BookingPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (validate()) setSubmitted(true);
+    if (validate()) setStep("payment");
   }
 
-  if (submitted) {
+  if (step === "payment") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--color-bg-soft)] px-4 py-10">
+        <PaymentStep
+          total={grandTotal}
+          onBack={() => setStep("form")}
+          onSuccess={() => setStep("success")}
+        />
+      </div>
+    );
+  }
+
+  if (step === "success") {
     const bookingNumber = `AV-${new Date().getFullYear()}-${String(Math.floor(grandTotal + paxCount * 97)).slice(-6)}`;
 
     return (
