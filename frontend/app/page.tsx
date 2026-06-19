@@ -290,7 +290,7 @@ export default function Home() {
         <form
           onSubmit={handleSearch}
           noValidate
-          className="mx-auto w-full max-w-[1280px] mt-10 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30 dark:border-white/10"
+          className="mx-auto w-full max-w-[1440px] mt-10 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30 dark:border-white/10"
         >
             {/* Верхняя строка: переключатель сложного маршрута */}
             <div className="px-5 pt-4 flex justify-end">
