@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getFlights, AIRLINES, Flight } from "../data/flights";
 import FlightCard from "../components/search/FlightCard";
+import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
 import PriceCalendar from "../components/search/PriceCalendar";
 import FiltersPanel, { FilterState, TimePeriod } from "../components/search/FiltersPanel";
 import { IconPlane, IconPin, IconCalendar, IconUser, IconSwap } from "../components/icons";
@@ -79,6 +80,7 @@ export default function SearchResults() {
   const [date, setDate] = useState(sp.get("date") || "2026-06-28");
   const [sort, setSort] = useState<Sort>("best");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [priceAlertEmail, setPriceAlertEmail] = useState("");
   const [priceTarget, setPriceTarget] = useState("5000");
   const [priceAlertSaved, setPriceAlertSaved] = useState(false);
@@ -111,6 +113,12 @@ export default function SearchResults() {
       arriveAirports: new Set(arriveAirportList.map((a) => a.iata)),
     });
   }
+
+  // Имитация загрузки — показываем скелетоны 1.2 сек
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -302,10 +310,18 @@ export default function SearchResults() {
 
           {/* Результаты */}
           <div className="min-w-0 flex-1">
-            <div className="mb-3 text-sm text-[var(--color-text-muted)]">
-              {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)}
-            </div>
-            {results.length > 0 ? (
+            {!isLoading && (
+              <div className="mb-3 text-sm text-[var(--color-text-muted)]">
+                {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)}
+              </div>
+            )}
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <FlightCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : results.length > 0 ? (
               <div className="space-y-3">
                 {results.map((f) => (
                   <FlightCard
