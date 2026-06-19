@@ -165,7 +165,7 @@ export default function AirlinesMarquee() {
           }}
         >
           {doubled.map((item, i) => (
-            <Chip key={`${item.kind}-${item.name}-${i}`} item={item} />
+            <Chip key={`${item.name}-${i}`} item={item} />
           ))}
         </div>
       </div>

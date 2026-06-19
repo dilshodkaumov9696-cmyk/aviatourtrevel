@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Flight, formatDuration, stopsLabel, BadgeTone } from "../../data/flights";
 import { IconPlane } from "../icons";
 import FlightDetailModal from "./FlightDetailModal";
+import { useSettings } from "../../context/settings";
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   deal: "badge-deal",
@@ -27,8 +28,12 @@ interface Props {
 
 export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount }: Props) {
   const [showDetail, setShowDetail] = useState(false);
+  const { format, t, lang } = useSettings();
   const total = f.pricePerPax * paxCount;
   const direct = f.stops === 0;
+  const stopsText = direct
+    ? t("card.direct")
+    : lang === "ru" ? stopsLabel(f.stops) : `${f.stops} ${t("card.stops_word")}`;
 
   const bookParams = new URLSearchParams({
     flightId: f.id,
@@ -88,7 +93,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
                 <div className="h-0.5 flex-1 rounded bg-[var(--color-border)]" />
               </div>
               <div className={`mt-1 text-[11px] ${direct ? "text-green-600" : "text-amber-600"}`}>
-                {stopsLabel(f.stops)}{f.stopLabel ? ` · ${f.stopLabel}` : ""}
+                {stopsText}{f.stopLabel ? ` · ${f.stopLabel}` : ""}
               </div>
             </div>
 
@@ -103,15 +108,15 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
 
           <div className="mt-3 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
             <span>{dateLabel} · {fromCity} ({fromIata}) → {toCity} ({toIata})</span>
-            <span className="text-[var(--color-primary)]">· Детали ▾</span>
+            <span className="text-[var(--color-primary)]">· {t("card.details")} ▾</span>
           </div>
         </div>
 
         {/* Правая часть */}
         <div className="flex items-end justify-between gap-3 border-t border-[var(--color-border)] pt-3 sm:block sm:w-44 sm:shrink-0 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 sm:text-right">
           <div>
-            <div className="text-xl font-bold text-[var(--color-text)]">{total.toLocaleString("ru-RU")} ₽</div>
-            <div className="text-[11px] text-[var(--color-text-muted)]">за всех пассажиров</div>
+            <div className="text-xl font-bold text-[var(--color-text)]">{format(total)}</div>
+            <div className="text-[11px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
             <div className={`mt-1.5 text-xs ${f.hasBaggage ? "text-green-600" : "text-[var(--color-text-muted)]"}`}>
               {f.hasBaggage ? "✓ " : ""}{f.baggageLabel}
             </div>
@@ -121,7 +126,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
               href={`/book?${bookParams.toString()}`}
               className="block rounded-xl bg-green-600 px-6 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:w-full"
             >
-              Выбрать
+              {t("card.select")}
             </a>
           </div>
         </div>

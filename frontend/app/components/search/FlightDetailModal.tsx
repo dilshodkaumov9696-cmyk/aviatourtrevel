@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Flight, Route, buildItinerary, formatDuration, dateShort, stopsLabel } from "../../data/flights";
+import { useSettings } from "../../context/settings";
 
 interface Props {
   flight: Flight;
@@ -28,10 +29,12 @@ function IconLanding({ className = "" }: { className?: string }) {
 }
 
 export default function FlightDetailModal({ flight: f, route, dateISO, paxCount, onClose }: Props) {
+  const { format, t, lang } = useSettings();
   const { segments, layovers } = buildItinerary(f, route);
   const total = f.pricePerPax * paxCount;
   const first = segments[0];
   const last = segments[segments.length - 1];
+  const stopsText = lang === "ru" ? stopsLabel(f.stops) : `${f.stops} ${t("card.stops_word")}`;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -55,7 +58,7 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
     paxCount: String(paxCount), total: String(total), baggageLabel: f.baggageLabel,
   });
 
-  const baggageText = f.tariff.baggageKg ? `Багаж: ${f.tariff.baggageKg} кг` : "Без багажа";
+  const baggageText = f.tariff.baggageKg ? `${t("modal.baggage")}: ${f.tariff.baggageKg} кг` : t("modal.no_baggage");
 
   return (
     <div
@@ -73,8 +76,8 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
               {route.fromCity} <span className="text-[var(--color-text-muted)]">→</span> {route.toCity}
             </h2>
             <p className="mt-0.5 text-[13px] text-[var(--color-text-muted)]">
-              {first.departTime} {dateShort(dateISO, first.departDayOffset)} — {last.arriveTime} {dateShort(dateISO, last.arriveDayOffset)} · в пути {formatDuration(f.durationMin)}
-              {f.stops > 0 && ` · ${stopsLabel(f.stops)}`}
+              {first.departTime} {dateShort(dateISO, first.departDayOffset)} — {last.arriveTime} {dateShort(dateISO, last.arriveDayOffset)} · {formatDuration(f.durationMin)}
+              {f.stops > 0 && ` · ${stopsText}`}
             </p>
           </div>
           <button
@@ -106,9 +109,9 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
                   </div>
                 </div>
                 <div className="text-[12px] leading-relaxed text-[var(--color-text-muted)] sm:text-right">
-                  <div>Эконом ({f.fareClass})</div>
-                  <div>{f.seatsLeft} мест</div>
-                  <div>Ручная кладь: {f.tariff.handKg} кг</div>
+                  <div>{t("common.economy")} ({f.fareClass})</div>
+                  <div>{f.seatsLeft} {t("modal.seats")}</div>
+                  <div>{t("modal.hand")}: {f.tariff.handKg} кг</div>
                   <div>{baggageText}</div>
                 </div>
               </div>
@@ -133,7 +136,7 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
                   </div>
 
                   <div className="my-3 pl-[3.75rem] text-[12px] font-medium text-[var(--color-primary)]">
-                    в пути {formatDuration(seg.durationMin)}
+                    {formatDuration(seg.durationMin)}
                   </div>
 
                   <div className="flex items-baseline gap-3">
@@ -158,8 +161,8 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
                   </svg>
                   <div className="text-[13px] text-amber-800 dark:text-amber-300">
                     <span className="font-semibold">{formatDuration(layovers[i].durationMin)}</span>
-                    {" · Пересадка в городе "}{layovers[i].city}
-                    {layovers[i].smart && <span className="ml-1 font-medium">· смарт-пересадка</span>}
+                    {` · ${t("modal.transfer_in")} `}{layovers[i].city}
+                    {layovers[i].smart && <span className="ml-1 font-medium">· {t("modal.smart")}</span>}
                   </div>
                 </div>
               )}
@@ -168,21 +171,21 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
 
           {/* Местное время */}
           <div className="mt-4 rounded-xl bg-[var(--color-bg-soft)] px-4 py-2.5 text-[12px] text-[var(--color-text-muted)]">
-            В билете указано местное время отправления и прибытия
+            {t("modal.local_time")}
           </div>
 
           {/* Возврат / Обмен */}
           <div className="mt-4 flex justify-end gap-6 text-[13px]">
             <div>
-              <span className="text-[var(--color-text-muted)]">Возврат: </span>
+              <span className="text-[var(--color-text-muted)]">{t("modal.refund")}: </span>
               <span className={`font-medium ${f.tariff.refundable ? "text-green-600" : "text-red-500"}`}>
-                {f.tariff.refundable ? (f.tariff.changeFee ? "Да (со штрафом)" : "Да") : "Нет"}
+                {f.tariff.refundable ? (f.tariff.changeFee ? t("modal.yes_fee") : t("modal.yes")) : t("modal.no")}
               </span>
             </div>
             <div>
-              <span className="text-[var(--color-text-muted)]">Обмен: </span>
+              <span className="text-[var(--color-text-muted)]">{t("modal.exchange")}: </span>
               <span className={`font-medium ${f.tariff.changeable ? "text-green-600" : "text-red-500"}`}>
-                {f.tariff.changeable ? "Да" : "Нет"}
+                {f.tariff.changeable ? t("modal.yes") : t("modal.no")}
               </span>
             </div>
           </div>
@@ -191,14 +194,14 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
         {/* Футер с ценой */}
         <div className="flex items-center justify-between gap-4 border-t border-[var(--color-border)] px-5 py-4 sm:px-6">
           <div>
-            <div className="text-xl font-bold text-[var(--color-text)] sm:text-2xl">{total.toLocaleString("ru-RU")} ₽</div>
-            <div className="text-[12px] text-[var(--color-text-muted)]">за всех пассажиров</div>
+            <div className="text-xl font-bold text-[var(--color-text)] sm:text-2xl">{format(total)}</div>
+            <div className="text-[12px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
           </div>
           <a
             href={`/book?${bookParams.toString()}`}
             className="rounded-xl bg-green-600 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:px-10 sm:text-base"
           >
-            Выбрать за {total.toLocaleString("ru-RU")} ₽
+            {t("card.select")} · {format(total)}
           </a>
         </div>
       </div>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import LanguageSwitcher from "./LanguageSwitcher";
-import CurrencySwitcher from "./CurrencySwitcher";
+import SettingsSwitcher from "./SettingsSwitcher";
 
 const NAV = [
   { href: "#search", label: "Авиабилеты" },
@@ -103,8 +102,7 @@ export default function MobileMenu({ onLogin }: { onLogin: () => void }) {
                 Язык и валюта
               </p>
               <div className="flex flex-col items-start gap-1">
-                <LanguageSwitcher align="left" />
-                <CurrencySwitcher align="left" />
+                <SettingsSwitcher align="left" />
               </div>
             </div>
 

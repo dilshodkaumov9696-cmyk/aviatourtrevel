@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSettings } from "../../context/settings";
 
 const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
 const WEEKDAYS = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
@@ -39,6 +40,7 @@ interface Props {
 }
 
 export default function PriceCalendar({ selected, onSelect, selectedPrice, origin, destination }: Props) {
+  const { format } = useSettings();
   const [anchor, setAnchor] = useState(selected);
   const [apiPrices, setApiPrices] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
@@ -101,7 +103,7 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
             >
               <div className="text-[11px] text-[var(--color-text-muted)]">{dayLabel(d)}</div>
               <div className={`text-[13px] font-semibold ${cheap ? "text-green-600" : "text-red-500"}`}>
-                {price.toLocaleString("ru-RU")} ₽
+                {format(price)}
               </div>
               {!isReal && (
                 <div className="text-[9px] text-[var(--color-text-muted)] opacity-60">~</div>

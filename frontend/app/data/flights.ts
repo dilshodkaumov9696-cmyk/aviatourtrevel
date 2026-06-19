@@ -19,6 +19,8 @@ export interface Flight {
   departTime: string;
   arriveTime: string;
   arriveDayOffset: number;
+  departAirportIata?: string;
+  arriveAirportIata?: string;
   durationMin: number;
   stops: number;
   stopLabel?: string;
@@ -151,7 +153,14 @@ const TEMPLATES: Omit<Flight, "id">[] = [
 ];
 
 export function getFlights(): Flight[] {
-  return TEMPLATES.map((t, i) => ({ ...t, id: `f${i}` }));
+  const departAirports = ["SVO", "DME", "VKO"];
+  const arriveAirports = ["IST", "SAW"];
+  return TEMPLATES.map((t, i) => ({
+    ...t,
+    id: `f${i}`,
+    departAirportIata: t.departAirportIata ?? departAirports[i % departAirports.length],
+    arriveAirportIata: t.arriveAirportIata ?? arriveAirports[i % arriveAirports.length],
+  }));
 }
 
 export const AIRLINES = Array.from(
@@ -170,6 +179,8 @@ export const AIRPORT_NAMES: Record<string, string> = {
   MOW: "Москва",
   SVO: "Шереметьево",
   DME: "Домодедово",
+  VKO: "Внуково",
+  SAW: "Сабиха Гёкчен",
   GYD: "Гейдар Алиев",
   OVB: "Толмачёво",
 };

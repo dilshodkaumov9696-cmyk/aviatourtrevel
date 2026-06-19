@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import AirportInput from "./components/AirportInput";
@@ -11,8 +12,7 @@ import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } fro
 import FlightMap from "./components/FlightMap";
 import ThemeToggle from "./components/ThemeToggle";
 import AuthModal from "./components/AuthModal";
-import LanguageSwitcher from "./components/LanguageSwitcher";
-import CurrencySwitcher from "./components/CurrencySwitcher";
+import SettingsSwitcher from "./components/SettingsSwitcher";
 import MobileMenu from "./components/MobileMenu";
 import Footer from "./components/Footer";
 import Counters from "./components/Counters";
@@ -43,6 +43,60 @@ function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) 
   img.onerror = null;
   img.src = `https://picsum.photos/seed/${seed}/640/480`;
 }
+
+function searchHref(
+  toCity: string,
+  toIata: string,
+  date = "2026-06-28",
+  fromCity = "Москва",
+  fromIata = "MOW",
+): string {
+  const params = new URLSearchParams({
+    fromCity,
+    fromIata,
+    toCity,
+    toIata,
+    date,
+    adults: "1",
+    children: "0",
+    infants: "0",
+    cabin: "economy",
+  });
+  return `/search?${params.toString()}`;
+}
+
+const ORIGIN_DEALS = {
+  MOW: {
+    city: "Москва",
+    iata: "MOW",
+    items: [
+      { city: "Стамбул", country: "Турция", iata: "IST", price: "4 500", x: "58%", y: "44%" },
+      { city: "Дубай", country: "ОАЭ", iata: "DXB", price: "9 900", x: "68%", y: "58%" },
+      { city: "Анталья", country: "Турция", iata: "AYT", price: "6 200", x: "56%", y: "51%" },
+      { city: "Алматы", country: "Казахстан", iata: "ALA", price: "7 300", x: "78%", y: "48%" },
+    ],
+  },
+  DYU: {
+    city: "Душанбе",
+    iata: "DYU",
+    items: [
+      { city: "Москва", country: "Россия", iata: "MOW", price: "8 900", x: "48%", y: "34%" },
+      { city: "Стамбул", country: "Турция", iata: "IST", price: "12 400", x: "55%", y: "45%" },
+      { city: "Дубай", country: "ОАЭ", iata: "DXB", price: "10 700", x: "66%", y: "59%" },
+      { city: "Алматы", country: "Казахстан", iata: "ALA", price: "5 600", x: "76%", y: "47%" },
+    ],
+  },
+  TAS: {
+    city: "Ташкент",
+    iata: "TAS",
+    items: [
+      { city: "Москва", country: "Россия", iata: "MOW", price: "7 800", x: "48%", y: "34%" },
+      { city: "Дубай", country: "ОАЭ", iata: "DXB", price: "11 900", x: "66%", y: "59%" },
+      { city: "Стамбул", country: "Турция", iata: "IST", price: "13 200", x: "55%", y: "45%" },
+      { city: "Бангкок", country: "Таиланд", iata: "BKK", price: "25 400", x: "86%", y: "66%" },
+    ],
+  },
+} as const;
 
 export default function Home() {
   const router = useRouter();
@@ -76,6 +130,7 @@ export default function Home() {
 
   // Модалка авторизации
   const [authOpen, setAuthOpen] = useState(false);
+  const [localOrigin, setLocalOrigin] = useState<keyof typeof ORIGIN_DEALS>("MOW");
 
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
@@ -85,6 +140,7 @@ export default function Home() {
   const { ref: directionsRef, isInView: dirInView } = useInViewAnimation();
   const { ref: dealsRef, isInView: dealsInView } = useInViewAnimation();
   const { ref: helpRef, isInView: helpInView } = useInViewAnimation();
+  const localDeals = ORIGIN_DEALS[localOrigin];
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -198,8 +254,7 @@ export default function Home() {
           <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             <div className="hidden items-center lg:flex">
-              <LanguageSwitcher />
-              <CurrencySwitcher />
+              <SettingsSwitcher />
             </div>
             <button
               type="button"
@@ -425,6 +480,75 @@ export default function Home() {
       {/* Карусель направлений */}
       <DirectionsCarousel />
 
+      {/* Карта направлений */}
+      <section className="bg-[var(--color-bg)] py-16">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <h2 className="text-3xl font-bold text-[var(--color-text)]">Карта направлений</h2>
+              <p className="mt-2 text-[var(--color-text-muted)]">Выберите город вылета и смотрите, куда выгодно лететь сейчас</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.values(ORIGIN_DEALS).map((origin) => (
+                <button
+                  key={origin.iata}
+                  type="button"
+                  onClick={() => setLocalOrigin(origin.iata as keyof typeof ORIGIN_DEALS)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                    localOrigin === origin.iata
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-primary)]"
+                  }`}
+                >
+                  {origin.city}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="relative min-h-[360px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-soft)]">
+              <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "url('/world-map.svg')", backgroundSize: "cover", backgroundPosition: "center" }} />
+              <div className="absolute left-[42%] top-[42%] z-10 rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+                {localDeals.city}
+              </div>
+              {localDeals.items.map((deal) => (
+                <Link
+                  key={deal.iata}
+                  href={searchHref(deal.city, deal.iata, "2026-06-28", localDeals.city, localDeals.iata)}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/50 bg-white/90 px-3 py-2 text-xs font-bold text-[#1A2B3A] shadow-lg transition hover:-translate-y-[55%] hover:bg-[var(--color-accent)]"
+                  style={{ left: deal.x, top: deal.y }}
+                >
+                  {deal.city}
+                  <span className="ml-2 text-[var(--color-primary)]">от {deal.price} ₽</span>
+                </Link>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+              <h3 className="mb-4 text-lg font-bold text-[var(--color-text)]">Популярно из города {localDeals.city}</h3>
+              <div className="space-y-3">
+                {localDeals.items.map((deal) => (
+                  <Link
+                    key={deal.iata}
+                    href={searchHref(deal.city, deal.iata, "2026-06-28", localDeals.city, localDeals.iata)}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 transition hover:border-[var(--color-primary)]"
+                  >
+                    <span>
+                      <span className="block text-sm font-bold text-[var(--color-text)]">{localDeals.city} → {deal.city}</span>
+                      <span className="text-xs text-[var(--color-text-muted)]">{deal.country} · {deal.iata}</span>
+                    </span>
+                    <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-sm font-bold text-[#3A2E00]">
+                      от {deal.price} ₽
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Популярные направления — иммерсивные плитки с фото */}
       <section id="directions" ref={directionsRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${dirInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6">
@@ -443,9 +567,9 @@ export default function Home() {
               { city: "Алматы", country: "Казахстан", iata: "ALA", price: "7 300", kw: "almaty,mountains", lock: 17 },
               { city: "Сочи", country: "Россия", iata: "AER", price: "3 200", kw: "sochi,sea", lock: 18 },
             ].map((d) => (
-              <a
+              <Link
                 key={d.city}
-                href="#search"
+                href={searchHref(d.city, d.iata)}
                 className="group relative block h-72 overflow-hidden rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
               >
                 <img
@@ -468,7 +592,7 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -488,9 +612,9 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {[
-              { route: "Москва — Стамбул", disc: "−45%", time: "09:50 — 14:15", dur: "5ч 25м", stops: "прямой", days: "Пн · Ср · Сб", price: "4 500", kw: "istanbul,city", lock: 21 },
-              { route: "Москва — Дубай", disc: "−30%", time: "22:30 — 04:05", dur: "5ч 35м", stops: "прямой", days: "Ежедневно", price: "9 900", kw: "dubai,skyline", lock: 22 },
-              { route: "Москва — Анталья", disc: "−52%", time: "08:15 — 12:40", dur: "4ч 25м", stops: "прямой", days: "Вт · Чт · Сб", price: "6 200", kw: "antalya,beach", lock: 23 },
+              { route: "Москва — Стамбул", city: "Стамбул", iata: "IST", disc: "−45%", time: "09:50 — 14:15", dur: "5ч 25м", stops: "прямой", days: "Пн · Ср · Сб", price: "4 500", kw: "istanbul,city", lock: 21 },
+              { route: "Москва — Дубай", city: "Дубай", iata: "DXB", disc: "−30%", time: "22:30 — 04:05", dur: "5ч 35м", stops: "прямой", days: "Ежедневно", price: "9 900", kw: "dubai,skyline", lock: 22 },
+              { route: "Москва — Анталья", city: "Анталья", iata: "AYT", disc: "−52%", time: "08:15 — 12:40", dur: "4ч 25м", stops: "прямой", days: "Вт · Чт · Сб", price: "6 200", kw: "antalya,beach", lock: 23 },
             ].map((d) => (
               <div key={d.route} className="overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-md transition hover:shadow-xl">
                 <div className="relative h-36 overflow-hidden">
@@ -515,12 +639,12 @@ export default function Home() {
                   </div>
                   <div className="mt-1 text-xs text-[var(--color-text-muted)]">{d.days}</div>
                   <div className="mt-4 flex gap-2">
-                    <button type="button" className="flex-1 rounded-lg border border-[var(--color-border)] py-2 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)]">
+                    <Link href={searchHref(d.city, d.iata)} className="flex-1 rounded-lg border border-[var(--color-border)] py-2 text-center text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)]">
                       О городе
-                    </button>
-                    <button type="button" className="flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">
+                    </Link>
+                    <Link href={searchHref(d.city, d.iata)} className="flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-center text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">
                       Выбрать
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>

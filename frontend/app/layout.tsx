@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SettingsProvider } from "./context/settings";
 
 export const metadata: Metadata = {
   title: "Aviator — дешёвые авиабилеты онлайн",
@@ -20,7 +21,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SettingsProvider>{children}</SettingsProvider>
+      </body>
     </html>
   );
 }
