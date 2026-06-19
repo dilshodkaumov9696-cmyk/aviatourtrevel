@@ -10,6 +10,7 @@ import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments"
 import PassengersPicker, { Passengers, CabinClass, passengersLabel } from "./components/PassengersPicker";
 import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHotel, IconTour, IconSim, IconShield, IconTrain, IconCar } from "./components/icons";
 import FlightMap from "./components/FlightMap";
+import PriceMap from "./components/PriceMap";
 import ThemeToggle from "./components/ThemeToggle";
 import AuthModal from "./components/AuthModal";
 import SettingsSwitcher from "./components/SettingsSwitcher";
@@ -138,6 +139,9 @@ export default function Home() {
 
   // Анимация взлёта кнопки «Найти» перед переходом к результатам
   const [searching, setSearching] = useState(false);
+
+  // Интерактивная карта цен
+  const [mapOpen, setMapOpen] = useState(false);
 
   // Hero-фон под выбранный/набираемый город назначения
   const [typedDest, setTypedDest] = useState("");
@@ -577,7 +581,19 @@ export default function Home() {
               </>
             )}
           </form>
+
+          {/* Кнопка «Цены на карте» */}
+          <button
+            type="button"
+            onClick={() => setMapOpen(true)}
+            className="relative z-10 mt-5 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 hover:-translate-y-0.5"
+          >
+            <IconPin size={16} />
+            Цены на карте
+          </button>
       </section>
+
+      <PriceMap open={mapOpen} onClose={() => setMapOpen(false)} />
 
       {/* Counters — статистика */}
       <Counters />
