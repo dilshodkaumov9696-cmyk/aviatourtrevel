@@ -293,6 +293,16 @@ export default function Home() {
             <a href="#help" className="transition-colors hover:text-[var(--color-primary)]">Помощь</a>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
+              className="hidden items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] py-2 pl-3 pr-2 text-sm text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] md:flex"
+              title="Быстрый поиск города"
+            >
+              <IconSearch size={15} />
+              <span className="hidden lg:inline">Поиск города</span>
+              <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-0.5 text-[11px] font-semibold">⌘K</kbd>
+            </button>
             <ThemeToggle />
             <div className="hidden items-center lg:flex">
               <SettingsSwitcher />

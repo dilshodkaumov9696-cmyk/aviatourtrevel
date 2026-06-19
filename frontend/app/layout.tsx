@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SettingsProvider } from "./context/settings";
 import ChatWidget from "./components/ChatWidget";
+import CommandPalette from "./components/CommandPalette";
 
 export const metadata: Metadata = {
   title: "Aviator — дешёвые авиабилеты онлайн",
@@ -26,6 +27,7 @@ export default function RootLayout({
         <SettingsProvider>
           {children}
           <ChatWidget />
+          <CommandPalette />
         </SettingsProvider>
       </body>
     </html>
