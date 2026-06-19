@@ -113,6 +113,17 @@ body {
 .loader-dot:nth-child(2) { animation-delay: 0.16s; }
 .loader-dot:nth-child(3) { animation-delay: 0.32s; }
 
+/* Взлёт самолёта с кнопки «Найти» */
+@keyframes plane-takeoff {
+  0%   { transform: translate(0,0) rotate(45deg); opacity: 1; }
+  55%  { transform: translate(8px,-8px) rotate(45deg); opacity: 1; }
+  100% { transform: translate(46px,-46px) rotate(45deg); opacity: 0; }
+}
+.plane-takeoff { animation: plane-takeoff 0.62s cubic-bezier(0.4, 0, 1, 1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .plane-takeoff { animation: none; }
+}
+
 /* Бейджи на карточках рейсов — адаптируются к тёмной теме */
 .badge-deal { background: #FEF3C7; color: #92400E; }
 .dark .badge-deal { background: #3A2E14; color: #FBBF24; }

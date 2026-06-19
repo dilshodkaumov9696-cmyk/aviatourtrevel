@@ -136,6 +136,9 @@ export default function Home() {
   const [departDate, setDepartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
 
+  // Анимация взлёта кнопки «Найти» перед переходом к результатам
+  const [searching, setSearching] = useState(false);
+
   // Hero-фон под выбранный/набираемый город назначения
   const [typedDest, setTypedDest] = useState("");
   const heroCity: Airport | null =
@@ -268,7 +271,8 @@ export default function Home() {
       cabin,
     });
     if (returnDate) params.set("returnDate", returnDate);
-    router.push(`/search?${params.toString()}`);
+    setSearching(true);
+    setTimeout(() => router.push(`/search?${params.toString()}`), 620);
   }
 
   return (
@@ -514,10 +518,20 @@ export default function Home() {
                 {/* Submit */}
                 <button
                   type="submit"
-                  className="w-full xl:w-auto flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-r from-green-400 to-green-600 px-8 font-bold text-white hover:from-green-600 hover:to-green-400 bg-[length:200%_100%] hover:bg-right transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-md whitespace-nowrap"
+                  disabled={searching}
+                  className="relative w-full xl:w-auto flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-r from-green-400 to-green-600 px-8 font-bold text-white hover:from-green-600 hover:to-green-400 bg-[length:200%_100%] hover:bg-right transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-md whitespace-nowrap disabled:cursor-default"
                 >
-                  <IconSearch size={18} />
-                  Найти билеты
+                  {searching ? (
+                    <>
+                      <IconPlane size={18} className="plane-takeoff" />
+                      Взлетаем…
+                    </>
+                  ) : (
+                    <>
+                      <IconSearch size={18} />
+                      Найти билеты
+                    </>
+                  )}
                 </button>
               </div>
             )}

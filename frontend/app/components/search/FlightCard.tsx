@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Flight, formatDuration, stopsLabel, BadgeTone } from "../../data/flights";
 import { IconPlane } from "../icons";
 import FlightDetailModal from "./FlightDetailModal";
+import AnimatedNumber from "../AnimatedNumber";
 import { useSettings } from "../../context/settings";
 
 const TONE_CLASS: Record<BadgeTone, string> = {
@@ -121,7 +122,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
         {/* Правая часть */}
         <div className="flex items-end justify-between gap-3 border-t border-[var(--color-border)] pt-3 sm:block sm:w-44 sm:shrink-0 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 sm:text-right">
           <div>
-            <div className="text-xl font-bold text-[var(--color-text)]">{format(total)}</div>
+            <AnimatedNumber value={total} format={format} className="text-xl font-bold text-[var(--color-text)]" />
             <div className="text-[11px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
             <div className={`mt-1.5 text-xs ${f.hasBaggage ? "text-green-600" : "text-[var(--color-text-muted)]"}`}>
               {f.hasBaggage ? "✓ " : ""}{f.baggageLabel}
