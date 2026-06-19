@@ -17,10 +17,22 @@ export const CABIN_LABELS: Record<CabinClass, string> = {
   first: "Первый",
 };
 
+export const CABIN_FULL_LABELS: Record<CabinClass, string> = {
+  economy: "Эконом-класс",
+  business: "Бизнес-класс",
+  first: "Первый класс",
+};
+
 export function passengersLabel(p: Passengers, cabin: CabinClass): string {
   const total = p.adults + p.children + p.infants;
   const word = total === 1 ? "пассажир" : total < 5 ? "пассажира" : "пассажиров";
   return `${total} ${word}, ${CABIN_LABELS[cabin]}`;
+}
+
+export function passengersCountLabel(p: Passengers): string {
+  const total = p.adults + p.children + p.infants;
+  const word = total === 1 ? "пассажир" : total < 5 ? "пассажира" : "пассажиров";
+  return `${total} ${word}`;
 }
 
 const PAX_ROWS: { key: keyof Passengers; label: string; sub: string }[] = [
@@ -67,12 +79,11 @@ export default function PassengersPicker({
         onClick={() => setOpen((v) => !v)}
       >
         <IconUser className="text-[var(--color-primary)] shrink-0" />
-        <div className="min-w-0 overflow-hidden">
-          <div className="flex items-center gap-1 text-[15px] font-medium text-[var(--color-text)] whitespace-nowrap">
-            {passengersLabel(passengers, cabin)}
-            <span className="text-[var(--color-text-muted)] text-xs">{open ? "▴" : "▾"}</span>
-          </div>
+        <div className="min-w-0 flex-1 overflow-hidden leading-tight">
+          <div className="truncate text-[11px] text-[var(--color-text-muted)]">{CABIN_FULL_LABELS[cabin]}</div>
+          <div className="truncate text-[14px] font-semibold text-[var(--color-text)]">{passengersCountLabel(passengers)}</div>
         </div>
+        <span className="shrink-0 text-[var(--color-text-muted)] text-xs">{open ? "▴" : "▾"}</span>
       </div>
 
       {open && (

@@ -8,7 +8,7 @@ import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
 import PassengersPicker, { Passengers, CabinClass, passengersLabel } from "./components/PassengersPicker";
-import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHotel, IconTour, IconSim, IconShield, IconTrain, IconCar } from "./components/icons";
 import FlightMap from "./components/FlightMap";
 import ThemeToggle from "./components/ThemeToggle";
 import AuthModal from "./components/AuthModal";
@@ -33,6 +33,17 @@ function fmtDate(d: string): string {
 
 const boxBase =
   "flex items-center gap-2.5 min-h-[52px] rounded-xl border bg-[var(--color-bg-soft)] px-3.5 py-1.5 transition-all duration-200 cursor-pointer hover:border-[var(--color-primary)]";
+
+// Категории услуг над формой поиска (как на Aviasales). Активна — «Авиабилеты».
+const CATEGORIES = [
+  { label: "Авиабилеты", icon: IconPlane, active: true },
+  { label: "Отели", icon: IconHotel, active: false },
+  { label: "Туры", icon: IconTour, active: false },
+  { label: "E-SIM", icon: IconSim, active: false },
+  { label: "Страхование", icon: IconShield, active: false },
+  { label: "Билеты на поезд", icon: IconTrain, active: false },
+  { label: "Трансферы", icon: IconCar, active: false },
+];
 
 // Фото города по ключевому слову (временно — позже заменим на свои/лицензионные)
 const cityPhoto = (kw: string, lock: number) =>
@@ -286,11 +297,32 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Категории услуг */}
+        <div className="mx-auto w-full max-w-[1440px] mt-9 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {CATEGORIES.map((c) => {
+            const Icon = c.icon;
+            return (
+              <button
+                key={c.label}
+                type="button"
+                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-bold uppercase tracking-wide transition ${
+                  c.active
+                    ? "bg-[#0e2330] text-white shadow-lg"
+                    : "bg-white/90 text-[var(--color-text)] shadow-sm hover:-translate-y-0.5 hover:bg-white"
+                }`}
+              >
+                <Icon size={17} className={c.active ? "text-white" : "text-[var(--color-primary)]"} />
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Search card */}
         <form
           onSubmit={handleSearch}
           noValidate
-          className="mx-auto w-full max-w-[1440px] mt-10 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30 dark:border-white/10"
+          className="mx-auto w-full max-w-[1440px] mt-4 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30 dark:border-white/10"
         >
             {/* Верхняя строка: переключатель сложного маршрута */}
             <div className="px-5 pt-4 flex justify-end">
@@ -313,7 +345,7 @@ export default function Home() {
             {mode === "simple" && (
               <div className="px-4 pb-4 flex flex-col xl:flex-row gap-2">
                 {/* Маршрут: Откуда + Куда со свапом */}
-                <div className="relative flex flex-col sm:flex-row gap-2 xl:flex-[5] min-w-0">
+                <div className="relative flex flex-col sm:flex-row gap-2 xl:flex-[3] min-w-0">
                   <div className={`relative flex-1 min-w-0 ${boxBase} ${errors.origin ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
                     <IconPlane className="text-[var(--color-primary)] shrink-0" />
                     <AirportInput
@@ -359,12 +391,12 @@ export default function Home() {
                     className={`flex-1 min-w-0 ${boxBase} cursor-pointer hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary-light)] focus:outline-none ${errors.departDate ? "border-red-400" : "border-[var(--color-border)]"}`}
                     onClick={() => openDatePicker("depart")}
                   >
-                    <IconCalendar className="text-[var(--color-primary)] shrink-0" />
-                    <div className="min-w-0">
-                      <div className={`text-[15px] whitespace-nowrap ${departDate ? "text-[var(--color-text)] font-medium" : errors.departDate ? "text-red-500 font-medium" : "text-[var(--color-text-muted)]"}`}>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className={`text-[15px] truncate ${departDate ? "text-[var(--color-text)] font-medium" : errors.departDate ? "text-red-500 font-medium" : "text-[var(--color-text-muted)]"}`}>
                         {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : "Дата вылета"}
                       </div>
                     </div>
+                    <IconCalendar className="text-[var(--color-primary)] shrink-0" />
                   </div>
 
                   {/* Обратно */}
@@ -372,10 +404,9 @@ export default function Home() {
                     className={`flex-1 min-w-0 ${boxBase} border-[var(--color-border)] cursor-pointer hover:border-[var(--color-primary)]`}
                     onClick={() => openDatePicker("return")}
                   >
-                    <IconCalendar className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1 overflow-hidden">
                       <div className="flex items-center gap-1">
-                        <span className={`text-[15px] whitespace-nowrap ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
+                        <span className={`text-[15px] truncate ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
                           {returnDate ? fmtDate(returnDate) : "Обратно"}
                         </span>
                         {returnDate && (
@@ -386,13 +417,14 @@ export default function Home() {
                               setReturnDate("");
                             }}
                             title="Убрать обратный билет"
-                            className="ml-1 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xs leading-none"
+                            className="ml-1 shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-xs leading-none"
                           >
                             ✕
                           </button>
                         )}
                       </div>
                     </div>
+                    <IconCalendar className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
                   </div>
 
                   {datepickerOpen && (
