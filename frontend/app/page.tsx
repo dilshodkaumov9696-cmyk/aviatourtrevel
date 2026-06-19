@@ -313,8 +313,8 @@ export default function Home() {
             {mode === "simple" && (
               <div className="px-4 pb-4 flex flex-col xl:flex-row gap-2">
                 {/* Маршрут: Откуда + Куда со свапом */}
-                <div className="relative flex flex-col sm:flex-row gap-2 xl:flex-[2] min-w-0">
-                  <div className={`flex-1 min-w-0 ${boxBase} ${errors.origin ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
+                <div className="relative flex flex-col sm:flex-row gap-2 xl:flex-[5] min-w-0">
+                  <div className={`relative flex-1 min-w-0 ${boxBase} ${errors.origin ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
                     <IconPlane className="text-[var(--color-primary)] shrink-0" />
                     <AirportInput
                       airport={originAirport}
@@ -337,7 +337,7 @@ export default function Home() {
                     <IconSwap size={15} className="rotate-90 sm:rotate-0 hover:rotate-180 transition-transform duration-300" />
                   </button>
 
-                  <div className={`flex-1 min-w-0 ${boxBase} ${errors.destination ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
+                  <div className={`relative flex-1 min-w-0 ${boxBase} ${errors.destination ? "border-red-400" : "border-[var(--color-border)]"} focus-within:border-[var(--color-primary)]`}>
                     <IconPin className="text-[var(--color-primary)] shrink-0" />
                     <AirportInput
                       airport={destAirport}
@@ -361,11 +361,8 @@ export default function Home() {
                   >
                     <IconCalendar className="text-[var(--color-primary)] shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-xs font-semibold text-[var(--color-text-muted)]">
-                        {errors.departDate ? <span className="text-red-500">{errors.departDate}</span> : "Туда"}
-                      </div>
-                      <div className={`text-[15px] whitespace-nowrap ${departDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
-                        {departDate ? fmtDate(departDate) : "Дата вылета"}
+                      <div className={`text-[15px] whitespace-nowrap ${departDate ? "text-[var(--color-text)] font-medium" : errors.departDate ? "text-red-500 font-medium" : "text-[var(--color-text-muted)]"}`}>
+                        {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : "Дата вылета"}
                       </div>
                     </div>
                   </div>
@@ -377,10 +374,9 @@ export default function Home() {
                   >
                     <IconCalendar className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
                     <div className="min-w-0">
-                      <div className="text-xs font-semibold text-[var(--color-text-muted)]">Обратно</div>
                       <div className="flex items-center gap-1">
                         <span className={`text-[15px] whitespace-nowrap ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
-                          {returnDate ? fmtDate(returnDate) : "В одну сторону"}
+                          {returnDate ? fmtDate(returnDate) : "Обратно"}
                         </span>
                         {returnDate && (
                           <button

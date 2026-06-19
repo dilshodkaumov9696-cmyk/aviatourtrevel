@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Airport, loadAirports, rankAirports } from "../data/airports";
+import { Airport, loadAirports, rankAirports, getPopularAirports } from "../data/airports";
+import { IconPin, IconPlane } from "./icons";
 
 interface Props {
   airport: Airport | null;
@@ -29,10 +30,21 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
     setQuery(airport?.city ?? "");
   }, [airport]);
 
+  // Показываем популярные направления, когда поле в фокусе, но ещё ничего не введено
+  // (или введён ровно тот город, что уже выбран — т.е. пользователь просто кликнул по полю).
+  const showingPopular = focused && query.trim().length < 1;
+
   useEffect(() => {
-    if (!focused || query.length < 1) {
+    if (!focused) {
       setResults([]);
       setOpen(false);
+      return;
+    }
+    if (query.trim().length < 1) {
+      const popular = getPopularAirports(8, excludeIata);
+      setResults(popular);
+      setOpen(popular.length > 0);
+      setHighlighted(-1);
       return;
     }
     const filtered = rankAirports(all, query, 7, excludeIata);
@@ -88,7 +100,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
   }
 
   return (
-    <div ref={ref} className="relative min-w-0 flex-1">
+    <div ref={ref} className="min-w-0 flex-1">
       <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-0.5">
         {label}
       </label>
@@ -126,28 +138,52 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
       </div>
 
       {open && (
-        <ul className="absolute top-full left-0 mt-2 z-50 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-2xl py-1 min-w-[280px] max-h-[340px] overflow-auto">
-          {results.map((a, i) => (
-            <li
-              key={a.iata}
-              onMouseDown={() => select(a)}
-              onMouseEnter={() => setHighlighted(i)}
-              className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition ${
-                i === highlighted ? "bg-[var(--color-primary-light)]" : "hover:bg-[var(--color-bg-soft)]"
-              }`}
-            >
-              <span className="w-9 flex-shrink-0 text-sm font-bold text-[var(--color-primary)]">
-                {a.iata}
-              </span>
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-[var(--color-text)] truncate">{a.city}</div>
-                <div className="text-xs text-[var(--color-text-muted)] truncate">
-                  {a.name} · {a.country}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="absolute left-0 top-full z-50 mt-2 min-w-full w-max max-w-[420px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+          {showingPopular && (
+            <div className="px-4 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
+              Популярные направления
+            </div>
+          )}
+          <ul className="max-h-[380px] overflow-auto p-1.5">
+            {results.map((a, i) => {
+              const isCity = showingPopular || a.name === a.city || a.name === "Все аэропорты";
+              const active = i === highlighted;
+              return (
+                <li
+                  key={a.iata}
+                  onMouseDown={() => select(a)}
+                  onMouseEnter={() => setHighlighted(i)}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition ${
+                    active ? "bg-[var(--color-primary-light)]" : "hover:bg-[var(--color-bg-soft)]"
+                  }`}
+                >
+                  {isCity ? (
+                    <IconPin size={18} className="shrink-0 text-[var(--color-primary)]" />
+                  ) : (
+                    <IconPlane size={16} className="shrink-0 rotate-45 text-[var(--color-text-muted)]" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[15px] font-semibold text-[var(--color-text)]">
+                      {isCity && !showingPopular ? `${a.city} — все аэропорты` : a.city}
+                    </div>
+                    <div className="truncate text-[13px] text-[var(--color-text-muted)]">
+                      {showingPopular ? a.country : isCity ? a.country : `${a.name} · ${a.country}`}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold tracking-wide ${
+                      isCity
+                        ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+                        : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
+                    }`}
+                  >
+                    {a.iata}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );
