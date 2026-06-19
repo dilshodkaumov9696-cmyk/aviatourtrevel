@@ -1,0 +1,28 @@
+{
+  "name": "Aviator — дешёвые авиабилеты",
+  "short_name": "Aviator",
+  "description": "Поиск и бронирование авиабилетов по лучшим ценам.",
+  "lang": "ru",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1E5C80",
+  "theme_color": "#1E5C80",
+  "categories": ["travel", "shopping"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Поиск билетов",
+      "short_name": "Поиск",
+      "url": "/?utm_source=pwa_shortcut#search"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Нет соединения — Aviator</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #1E5C80, #15425C); color: #fff; text-align: center; padding: 24px; }
+    .card { max-width: 380px; }
+    .logo { width: 64px; height: 64px; border-radius: 16px; background: #fff; color: #1E5C80;
+      font-size: 34px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    h1 { font-size: 22px; margin: 0 0 10px; }
+    p { opacity: .8; line-height: 1.5; margin: 0 0 20px; }
+    button { background: #fff; color: #1E5C80; border: 0; border-radius: 12px; padding: 12px 24px;
+      font-size: 15px; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">A</div>
+    <h1>Нет подключения к интернету</h1>
+    <p>Проверьте соединение — и мы снова найдём для вас лучшие билеты.</p>
+    <button onclick="location.reload()">Повторить</button>
+  </div>
+</body>
+</html>

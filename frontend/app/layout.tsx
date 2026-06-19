@@ -1,12 +1,27 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SettingsProvider } from "./context/settings";
 import ChatWidget from "./components/ChatWidget";
 import CommandPalette from "./components/CommandPalette";
+import PWARegister from "./components/PWARegister";
 
 export const metadata: Metadata = {
   title: "Aviator — дешёвые авиабилеты онлайн",
   description: "Поиск и бронирование авиабилетов по лучшим ценам. Сравните предложения сотен авиакомпаний.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Aviator",
+  },
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1E5C80",
 };
 
 export default function RootLayout({
@@ -28,6 +43,7 @@ export default function RootLayout({
           {children}
           <ChatWidget />
           <CommandPalette />
+          <PWARegister />
         </SettingsProvider>
       </body>
     </html>
