@@ -298,20 +298,20 @@ export default function Home() {
         </div>
 
         {/* Категории услуг */}
-        <div className="mx-auto w-full max-w-[1440px] mt-9 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="w-full max-w-[1440px] mt-7 flex flex-wrap justify-center gap-2 px-4">
           {CATEGORIES.map((c) => {
             const Icon = c.icon;
             return (
               <button
                 key={c.label}
                 type="button"
-                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-bold uppercase tracking-wide transition ${
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold uppercase tracking-wider transition-all duration-200 ${
                   c.active
-                    ? "bg-[#0e2330] text-white shadow-lg"
-                    : "bg-white/90 text-[var(--color-text)] shadow-sm hover:-translate-y-0.5 hover:bg-white"
+                    ? "bg-white text-[var(--color-primary-dark)] shadow-md"
+                    : "bg-white/15 text-white backdrop-blur-sm hover:bg-white/25 hover:-translate-y-0.5"
                 }`}
               >
-                <Icon size={17} className={c.active ? "text-white" : "text-[var(--color-primary)]"} />
+                <Icon size={14} className="shrink-0" />
                 {c.label}
               </button>
             );
