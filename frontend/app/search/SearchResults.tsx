@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { getFlights, AIRLINES, Flight } from "../data/flights";
 import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
+import FlightLoader from "../components/search/FlightLoader";
 import PriceCalendar from "../components/search/PriceCalendar";
 import FiltersPanel, { FilterState, TimePeriod } from "../components/search/FiltersPanel";
 import { IconPlane, IconPin, IconCalendar, IconUser, IconSwap } from "../components/icons";
@@ -126,7 +127,7 @@ export default function SearchResults() {
   }
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
+    const timer = setTimeout(() => setIsLoading(false), 1600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -500,7 +501,13 @@ export default function SearchResults() {
             )}
             {isLoading ? (
               <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
+                <FlightLoader
+                  fromCity={phase === "return" ? toCity : fromCity}
+                  fromIata={phase === "return" ? toIata : fromIata}
+                  toCity={phase === "return" ? fromCity : toCity}
+                  toIata={phase === "return" ? fromIata : toIata}
+                />
+                {Array.from({ length: 3 }).map((_, i) => (
                   <FlightCardSkeleton key={i} />
                 ))}
               </div>
