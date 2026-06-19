@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Flight, formatDuration, stopsLabel, BadgeTone } from "../../data/flights";
 import { IconPlane } from "../icons";
 import FlightDetailModal from "./FlightDetailModal";
@@ -32,6 +33,26 @@ interface Props {
 export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount, onSelect, isSelected }: Props) {
   const [showDetail, setShowDetail] = useState(false);
   const { format, t, lang } = useSettings();
+  const router = useRouter();
+  const priceRef = useRef<HTMLSpanElement>(null);
+
+  // Переход к бронированию с View Transition: цена «перетекает» на новую страницу.
+  function bookWithTransition(e: React.MouseEvent) {
+    e.preventDefault();
+    const href = `/book?${bookParams.toString()}`;
+    const startVT = (document as Document & { startViewTransition?: (cb: () => Promise<void> | void) => { finished: Promise<void> } }).startViewTransition;
+    if (!startVT) { router.push(href); return; }
+    if (priceRef.current) priceRef.current.style.viewTransitionName = "flight-price";
+    const transition = startVT.call(document, () =>
+      new Promise<void>((resolve) => {
+        router.push(href);
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+    );
+    transition.finished.finally(() => {
+      if (priceRef.current) priceRef.current.style.viewTransitionName = "";
+    });
+  }
   const total = f.pricePerPax * paxCount;
   const direct = f.stops === 0;
   const stopsText = direct
@@ -122,7 +143,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
         {/* Правая часть */}
         <div className="flex items-end justify-between gap-3 border-t border-[var(--color-border)] pt-3 sm:block sm:w-44 sm:shrink-0 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0 sm:text-right">
           <div>
-            <AnimatedNumber value={total} format={format} className="text-xl font-bold text-[var(--color-text)]" />
+            <span ref={priceRef} className="inline-block">
+              <AnimatedNumber value={total} format={format} className="text-xl font-bold text-[var(--color-text)]" />
+            </span>
             <div className="text-[11px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
             <div className={`mt-1.5 text-xs ${f.hasBaggage ? "text-green-600" : "text-[var(--color-text-muted)]"}`}>
               {f.hasBaggage ? "✓ " : ""}{f.baggageLabel}
@@ -142,6 +165,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
             ) : (
               <a
                 href={`/book?${bookParams.toString()}`}
+                onClick={bookWithTransition}
                 className="block rounded-xl bg-green-600 px-6 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:w-full"
               >
                 {t("card.select")}

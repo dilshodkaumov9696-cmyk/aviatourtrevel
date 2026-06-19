@@ -113,6 +113,19 @@ body {
 .loader-dot:nth-child(2) { animation-delay: 0.16s; }
 .loader-dot:nth-child(3) { animation-delay: 0.32s; }
 
+/* View Transitions: карточка рейса → страница бронирования.
+   Цена с view-transition-name:flight-price «перетекает» на новое место. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(flight-price) {
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.35s;
+  }
+}
+
 /* Взлёт самолёта с кнопки «Найти» */
 @keyframes plane-takeoff {
   0%   { transform: translate(0,0) rotate(45deg); opacity: 1; }

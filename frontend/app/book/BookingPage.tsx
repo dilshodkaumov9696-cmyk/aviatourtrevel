@@ -725,7 +725,7 @@ export default function BookingPage() {
                   </div>
                   <div className="flex justify-between border-t border-[var(--color-border)] pt-2 text-base font-bold text-[var(--color-text)]">
                     <span>Итого</span>
-                    <span>{format(grandTotal)}</span>
+                    <span style={{ viewTransitionName: "flight-price" }}>{format(grandTotal)}</span>
                   </div>
                 </div>
 
