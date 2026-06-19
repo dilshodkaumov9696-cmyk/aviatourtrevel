@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { getFlights, AIRLINES, Flight } from "../data/flights";
 import FlightCard from "../components/search/FlightCard";
@@ -51,8 +52,9 @@ function getTimePeriod(time: string): TimePeriod {
 }
 
 export default function SearchResults() {
-  const { t } = useSettings();
+  const { t, format } = useSettings();
   const sp = useSearchParams();
+  const router = useRouter();
   const fromCity = sp.get("fromCity") || "Москва";
   const fromIata = sp.get("fromIata") || "MOW";
   const toCity = sp.get("toCity") || "Стамбул";
@@ -60,6 +62,15 @@ export default function SearchResults() {
   const adults = Number(sp.get("adults") || 1);
   const children = Number(sp.get("children") || 0);
   const paxCount = Math.max(1, adults + children);
+  const urlReturnDate = sp.get("returnDate") || "";
+
+  const isRoundTrip = Boolean(urlReturnDate);
+
+  /* Туда-обратно: фаза и выбранные рейсы */
+  const [phase, setPhase] = useState<"outbound" | "return">("outbound");
+  const [outboundFlight, setOutboundFlight] = useState<Flight | null>(null);
+  const [returnFlight, setReturnFlight] = useState<Flight | null>(null);
+  const returnBarRef = useRef<HTMLDivElement>(null);
 
   const flights = useMemo(() => getFlights(), []);
   const totalOf = (f: Flight) => f.pricePerPax * paxCount;
@@ -73,11 +84,11 @@ export default function SearchResults() {
   const minDuration = useMemo(() => Math.min(...flights.map((f) => f.durationMin)), [flights]);
   const maxDuration = useMemo(() => Math.max(...flights.map((f) => f.durationMin)), [flights]);
 
-  // Списки аэропортов (в реальном сценарии — несколько для хабов)
   const departAirportList = HUB_AIRPORTS[fromIata] ?? [{ iata: fromIata, name: fromCity }];
   const arriveAirportList = HUB_AIRPORTS[toIata] ?? [{ iata: toIata, name: toCity }];
 
   const [date, setDate] = useState(sp.get("date") || "2026-06-28");
+  const [returnDate, setReturnDate] = useState(urlReturnDate || "2026-07-05");
   const [sort, setSort] = useState<Sort>("best");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,7 +125,6 @@ export default function SearchResults() {
     });
   }
 
-  // Имитация загрузки — показываем скелетоны 1.2 сек
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1200);
     return () => clearTimeout(timer);
@@ -153,8 +163,55 @@ export default function SearchResults() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flights, filters, sort, paxCount, minDuration]);
 
+  /* Обработчики выбора рейсов в режиме туда-обратно */
+  const handleSelectOutbound = (f: Flight) => {
+    setOutboundFlight(f);
+    setPhase("return");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSelectReturn = (f: Flight) => {
+    setReturnFlight(f);
+    setTimeout(() => returnBarRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+  };
+
+  const handleBookBoth = () => {
+    if (!outboundFlight || !returnFlight) return;
+    const params = new URLSearchParams({
+      flightId: outboundFlight.id,
+      airlineCode: outboundFlight.airlineCode,
+      airlineName: outboundFlight.airlineName,
+      flightNumber: outboundFlight.flightNumber,
+      aircraft: outboundFlight.aircraft,
+      fromCity, fromIata, toCity, toIata,
+      departTime: outboundFlight.departTime,
+      arriveTime: outboundFlight.arriveTime,
+      durationMin: String(outboundFlight.durationMin),
+      stops: String(outboundFlight.stops),
+      dateLabel: dateLabel(date),
+      pricePerPax: String(outboundFlight.pricePerPax),
+      paxCount: String(paxCount),
+      total: String((outboundFlight.pricePerPax + returnFlight.pricePerPax) * paxCount),
+      baggageLabel: outboundFlight.baggageLabel,
+      returnFlightId: returnFlight.id,
+      returnDepartTime: returnFlight.departTime,
+      returnArriveTime: returnFlight.arriveTime,
+      returnDateLabel: dateLabel(returnDate),
+    });
+    router.push(`/book?${params.toString()}`);
+  };
+
+  /* Текущая дата/маршрут в зависимости от фазы */
+  const activeDate = phase === "return" ? returnDate : date;
+  const activeFromIata = phase === "return" ? toIata : fromIata;
+  const activeToIata = phase === "return" ? fromIata : toIata;
+
   const dLabel = dateLabel(date);
   const dShort = `${Number(date.split("-")[2])} ${MONTHS_GEN[Number(date.split("-")[1]) - 1]}`;
+  const rShort = urlReturnDate ? `${Number(returnDate.split("-")[2])} ${MONTHS_GEN[Number(returnDate.split("-")[1]) - 1]}` : "";
+  const combinedTotal = outboundFlight && returnFlight
+    ? (outboundFlight.pricePerPax + returnFlight.pricePerPax) * paxCount
+    : 0;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-soft)]">
@@ -184,7 +241,7 @@ export default function SearchResults() {
               </span>
               <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]">
                 <IconCalendar size={15} className="text-[var(--color-primary)]" />
-                {dShort}
+                {dShort}{rShort ? ` — ${rShort}` : ""}
               </span>
               <span className="hidden items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A] sm:flex">
                 <IconUser size={15} className="text-[var(--color-primary)]" />
@@ -207,12 +264,124 @@ export default function SearchResults() {
       </header>
 
       <div className="mx-auto max-w-7xl px-4 py-4">
+        {/* Баннер туда-обратно */}
+        {isRoundTrip && (
+          <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+            {/* Шаги */}
+            <div className="grid grid-cols-2 divide-x divide-[var(--color-border)]">
+              {/* Туда */}
+              <button
+                type="button"
+                onClick={() => { setPhase("outbound"); setReturnFlight(null); }}
+                className={`flex flex-col items-start p-4 text-left transition ${
+                  phase === "outbound"
+                    ? "bg-[var(--color-primary-light)]"
+                    : outboundFlight
+                    ? "bg-green-50 dark:bg-green-950/20"
+                    : ""
+                }`}
+              >
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white ${
+                      outboundFlight ? "bg-green-600" : phase === "outbound" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"
+                    }`}>
+                      {outboundFlight ? "✓" : "1"}
+                    </span>
+                    <span className={`text-sm font-semibold ${phase === "outbound" ? "text-[var(--color-primary)]" : outboundFlight ? "text-green-700 dark:text-green-400" : "text-[var(--color-text-muted)]"}`}>
+                      Туда
+                    </span>
+                  </div>
+                  {outboundFlight && (
+                    <span className="text-[11px] text-green-600 dark:text-green-400">Изменить</span>
+                  )}
+                </div>
+                <div className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  {fromCity} → {toCity} · {dShort}
+                </div>
+                {outboundFlight && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <img
+                      src={`https://images.kiwi.com/airlines/64/${outboundFlight.airlineCode}.png`}
+                      width={16} height={16}
+                      className="h-4 w-4 rounded object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                      alt=""
+                    />
+                    <span className="text-xs font-medium text-[var(--color-text)]">
+                      {outboundFlight.departTime}–{outboundFlight.arriveTime} · {format(totalOf(outboundFlight))}
+                    </span>
+                  </div>
+                )}
+              </button>
+
+              {/* Обратно */}
+              <div className={`flex flex-col items-start p-4 ${
+                phase === "return"
+                  ? "bg-[var(--color-primary-light)]"
+                  : returnFlight
+                  ? "bg-green-50 dark:bg-green-950/20"
+                  : "opacity-60"
+              }`}>
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold text-white ${
+                      returnFlight ? "bg-green-600" : phase === "return" ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"
+                    }`}>
+                      {returnFlight ? "✓" : "2"}
+                    </span>
+                    <span className={`text-sm font-semibold ${phase === "return" ? "text-[var(--color-primary)]" : returnFlight ? "text-green-700 dark:text-green-400" : "text-[var(--color-text-muted)]"}`}>
+                      Обратно
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  {toCity} → {fromCity} · {rShort}
+                </div>
+                {returnFlight && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <img
+                      src={`https://images.kiwi.com/airlines/64/${returnFlight.airlineCode}.png`}
+                      width={16} height={16}
+                      className="h-4 w-4 rounded object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                      alt=""
+                    />
+                    <span className="text-xs font-medium text-[var(--color-text)]">
+                      {returnFlight.departTime}–{returnFlight.arriveTime} · {format(totalOf(returnFlight))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Подсказка текущей фазы */}
+            <div className="border-t border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-2">
+              <div className="flex items-center gap-2 text-sm">
+                {phase === "outbound" ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
+                    <span className="font-medium text-[var(--color-primary)]">Выберите рейс туда</span>
+                    <span className="text-[var(--color-text-muted)]">— {fromCity} → {toCity}, {dShort}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-green-600" />
+                    <span className="font-medium text-green-700 dark:text-green-400">Выберите рейс обратно</span>
+                    <span className="text-[var(--color-text-muted)]">— {toCity} → {fromCity}, {rShort}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <PriceCalendar
-          selected={date}
-          onSelect={setDate}
+          selected={activeDate}
+          onSelect={phase === "return" ? setReturnDate : setDate}
           selectedPrice={priceBounds[0]}
-          origin={fromIata}
-          destination={toIata}
+          origin={activeFromIata}
+          destination={activeToIata}
         />
 
         <div className="mt-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
@@ -310,6 +479,20 @@ export default function SearchResults() {
 
           {/* Результаты */}
           <div className="min-w-0 flex-1">
+            {/* Заголовок с маршрутом (туда-обратно) */}
+            {isRoundTrip && (
+              <div className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+                <IconPlane size={15} className={phase === "return" ? "rotate-180 text-green-600" : "text-[var(--color-primary)]"} />
+                <span className="text-sm font-semibold text-[var(--color-text)]">
+                  {phase === "outbound" ? `${fromCity} → ${toCity}` : `${toCity} → ${fromCity}`}
+                </span>
+                <span className="text-[var(--color-text-muted)]">·</span>
+                <span className="text-sm text-[var(--color-text-muted)]">
+                  {phase === "outbound" ? dateLabel(date) : dateLabel(returnDate)}
+                </span>
+              </div>
+            )}
+
             {!isLoading && (
               <div className="mb-3 text-sm text-[var(--color-text-muted)]">
                 {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)}
@@ -323,19 +506,29 @@ export default function SearchResults() {
               </div>
             ) : results.length > 0 ? (
               <div className="space-y-3">
-                {results.map((f) => (
-                  <FlightCard
-                    key={f.id}
-                    flight={f}
-                    fromCity={fromCity}
-                    fromIata={fromIata}
-                    toCity={toCity}
-                    toIata={toIata}
-                    dateLabel={dLabel}
-                    dateISO={date}
-                    paxCount={paxCount}
-                  />
-                ))}
+                {results.map((f) => {
+                  const isOut = f.id === outboundFlight?.id;
+                  const isRet = f.id === returnFlight?.id;
+                  return (
+                    <FlightCard
+                      key={f.id}
+                      flight={f}
+                      fromCity={phase === "return" ? toCity : fromCity}
+                      fromIata={phase === "return" ? toIata : fromIata}
+                      toCity={phase === "return" ? fromCity : toCity}
+                      toIata={phase === "return" ? fromIata : toIata}
+                      dateLabel={phase === "return" ? dateLabel(returnDate) : dLabel}
+                      dateISO={phase === "return" ? returnDate : date}
+                      paxCount={paxCount}
+                      onSelect={isRoundTrip ? (
+                        phase === "outbound"
+                          ? () => handleSelectOutbound(f)
+                          : () => handleSelectReturn(f)
+                      ) : undefined}
+                      isSelected={isRoundTrip && (phase === "outbound" ? isOut : isRet)}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] py-16 text-center">
@@ -380,6 +573,48 @@ export default function SearchResults() {
               >
                 {t("search.show")} {results.length} {plural(results.length)}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Нижняя полоса: итого за оба рейса */}
+      {isRoundTrip && outboundFlight && returnFlight && (
+        <div
+          ref={returnBarRef}
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl"
+        >
+          <div className="mx-auto max-w-3xl px-4 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <div className="text-xs text-[var(--color-text-muted)]">Итого за оба рейса, {paxCount} пасс.</div>
+                <div className="text-2xl font-bold text-[var(--color-text)]">{format(combinedTotal)}</div>
+                <div className="flex gap-3 text-[11px] text-[var(--color-text-muted)]">
+                  <span>
+                    ↗ {outboundFlight.airlineName} {outboundFlight.departTime}–{outboundFlight.arriveTime} · {format(totalOf(outboundFlight))}
+                  </span>
+                  <span>·</span>
+                  <span>
+                    ↙ {returnFlight.airlineName} {returnFlight.departTime}–{returnFlight.arriveTime} · {format(totalOf(returnFlight))}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setReturnFlight(null); }}
+                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 text-sm font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-border)]"
+                >
+                  Изменить обратный
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBookBoth}
+                  className="flex-1 rounded-xl bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700 sm:flex-initial"
+                >
+                  Оформить оба рейса →
+                </button>
+              </div>
             </div>
           </div>
         </div>

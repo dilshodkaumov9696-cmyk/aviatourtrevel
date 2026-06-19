@@ -68,7 +68,6 @@ export default function PassengersPicker({
       >
         <IconUser className="text-[var(--color-primary)] shrink-0" />
         <div className="min-w-0">
-          <div className="text-xs font-semibold text-[var(--color-text-muted)]">Пассажиры</div>
           <div className="flex items-center gap-1 text-[15px] font-medium text-[var(--color-text)] whitespace-nowrap">
             {passengersLabel(passengers, cabin)}
             <span className="text-[var(--color-text-muted)] text-xs">{open ? "▴" : "▾"}</span>

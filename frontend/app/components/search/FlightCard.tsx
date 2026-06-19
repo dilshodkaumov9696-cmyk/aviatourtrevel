@@ -24,9 +24,11 @@ interface Props {
   dateLabel: string;
   dateISO: string;
   paxCount: number;
+  onSelect?: () => void;
+  isSelected?: boolean;
 }
 
-export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount }: Props) {
+export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount, onSelect, isSelected }: Props) {
   const [showDetail, setShowDetail] = useState(false);
   const { format, t, lang } = useSettings();
   const total = f.pricePerPax * paxCount;
@@ -49,7 +51,11 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
   return (
     <>
       <article
-        className="flex cursor-pointer flex-col gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition hover:border-[var(--color-primary)] hover:shadow-md sm:flex-row sm:p-5"
+        className={`flex cursor-pointer flex-col gap-4 rounded-2xl border p-4 transition hover:shadow-md sm:flex-row sm:p-5 ${
+          isSelected
+            ? "border-green-500 bg-green-50/60 dark:bg-green-950/20"
+            : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]"
+        }`}
         onClick={() => setShowDetail(true)}
       >
         {/* Левая часть */}
@@ -122,12 +128,24 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
             </div>
           </div>
           <div className="sm:mt-3" onClick={(e) => e.stopPropagation()}>
-            <a
-              href={`/book?${bookParams.toString()}`}
-              className="block rounded-xl bg-green-600 px-6 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:w-full"
-            >
-              {t("card.select")}
-            </a>
+            {onSelect ? (
+              <button
+                type="button"
+                onClick={onSelect}
+                className={`block w-full rounded-xl px-6 py-2.5 text-center text-sm font-semibold text-white transition sm:w-full ${
+                  isSelected ? "bg-green-700 hover:bg-green-800" : "bg-green-600 hover:bg-green-700"
+                }`}
+              >
+                {isSelected ? "✓ Выбран" : t("card.select")}
+              </button>
+            ) : (
+              <a
+                href={`/book?${bookParams.toString()}`}
+                className="block rounded-xl bg-green-600 px-6 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:w-full"
+              >
+                {t("card.select")}
+              </a>
+            )}
           </div>
         </div>
       </article>

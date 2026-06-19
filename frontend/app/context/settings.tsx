@@ -9,18 +9,18 @@ export type Lang = "ru" | "tj" | "uz" | "ky" | "en";
 const RATES: Record<Currency, number> = { RUB: 1, TJS: 0.115, USD: 0.0108 };
 const SYMBOL: Record<Currency, string> = { RUB: "₽", TJS: "смн", USD: "$" };
 
-export const CURRENCIES: { code: Currency; label: string }[] = [
-  { code: "RUB", label: "₽ RUB" },
-  { code: "TJS", label: "смн TJS" },
-  { code: "USD", label: "$ USD" },
+export const CURRENCIES: { code: Currency; label: string; flag: string; symbol: string; name: string }[] = [
+  { code: "RUB", label: "₽ RUB", flag: "🇷🇺", symbol: "₽", name: "Российский рубль" },
+  { code: "TJS", label: "смн TJS", flag: "🇹🇯", symbol: "смн", name: "Таджикский сомони" },
+  { code: "USD", label: "$ USD", flag: "🇺🇸", symbol: "$", name: "Доллар США" },
 ];
 
-export const LANGS: { code: Lang; label: string; short: string }[] = [
-  { code: "ru", label: "Русский", short: "RU" },
-  { code: "tj", label: "Тоҷикӣ", short: "TJ" },
-  { code: "uz", label: "O‘zbekcha", short: "UZ" },
-  { code: "ky", label: "Кыргызча", short: "KY" },
-  { code: "en", label: "English", short: "EN" },
+export const LANGS: { code: Lang; label: string; short: string; flag: string }[] = [
+  { code: "ru", label: "Русский", short: "RU", flag: "🇷🇺" },
+  { code: "tj", label: "Тоҷикӣ", short: "TJ", flag: "🇹🇯" },
+  { code: "uz", label: "O‘zbekcha", short: "UZ", flag: "🇺🇿" },
+  { code: "ky", label: "Кыргызча", short: "KY", flag: "🇰🇬" },
+  { code: "en", label: "English", short: "EN", flag: "🇬🇧" },
 ];
 
 interface Ctx {

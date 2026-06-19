@@ -10,14 +10,23 @@ export interface Airport {
 let cache: Airport[] | null = null;
 let inflight: Promise<Airport[]> | null = null;
 
+// Метро-коды городов («все аэропорты»), которых нет в базе по отдельности,
+// но которые использует приложение (поиск по умолчанию, хабы). Добавляем в начало,
+// чтобы они находились при вводе «Москва» / «MOW».
+const METRO_AIRPORTS: Airport[] = [
+  { iata: "MOW", city: "Москва", name: "Все аэропорты", country: "Россия" },
+];
+
 export function loadAirports(): Promise<Airport[]> {
   if (cache) return Promise.resolve(cache);
   if (!inflight) {
     inflight = fetch("/airports.json")
       .then((r) => r.json())
       .then((data: Airport[]) => {
-        cache = data;
-        return data;
+        const have = new Set(data.map((a) => a.iata));
+        const metro = METRO_AIRPORTS.filter((a) => !have.has(a.iata));
+        cache = [...metro, ...data];
+        return cache;
       })
       .catch((e) => {
         inflight = null;
@@ -25,6 +34,24 @@ export function loadAirports(): Promise<Airport[]> {
       });
   }
   return inflight;
+}
+
+// Популярные направления — показываются при клике на поле, до ввода текста.
+// Курируемый список (а не выборка из базы), чтобы метро-коды городов (напр. MOW —
+// все аэропорты Москвы) отображались так же, как их понимает остальное приложение.
+export const POPULAR_AIRPORTS: Airport[] = [
+  { iata: "DYU", city: "Душанбе", name: "Душанбе", country: "Таджикистан" },
+  { iata: "MOW", city: "Москва", name: "Все аэропорты", country: "Россия" },
+  { iata: "IST", city: "Стамбул", name: "Аэропорт Стамбул", country: "Турция" },
+  { iata: "DXB", city: "Дубай", name: "Дубай", country: "ОАЭ" },
+  { iata: "TAS", city: "Ташкент", name: "Ташкент", country: "Узбекистан" },
+  { iata: "LBD", city: "Худжанд", name: "Худжанд", country: "Таджикистан" },
+  { iata: "ALA", city: "Алматы", name: "Алматы", country: "Казахстан" },
+  { iata: "SKD", city: "Самарканд", name: "Самарканд", country: "Узбекистан" },
+];
+
+export function getPopularAirports(limit = 8, excludeIata?: string): Airport[] {
+  return POPULAR_AIRPORTS.filter((a) => a.iata !== excludeIata).slice(0, limit);
 }
 
 // Ранжирование: точный IATA → начало города → начало названия → вхождение.

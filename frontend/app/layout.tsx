@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SettingsProvider } from "./context/settings";
+import ChatWidget from "./components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Aviator — дешёвые авиабилеты онлайн",
@@ -22,7 +23,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <SettingsProvider>{children}</SettingsProvider>
+        <SettingsProvider>
+          {children}
+          <ChatWidget />
+        </SettingsProvider>
       </body>
     </html>
   );

@@ -331,7 +331,7 @@ export default function BookingPage() {
 
   if (step === "payment") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--color-bg-soft)] px-4 py-10">
+      <div className="flex min-h-screen flex-col items-center bg-[var(--color-bg-soft)] px-4 py-10">
         <PaymentStep
           total={grandTotal}
           onBack={() => setStep("form")}
