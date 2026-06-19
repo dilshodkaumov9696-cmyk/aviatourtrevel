@@ -21,7 +21,7 @@ import DirectionsCarousel from "./components/DirectionsCarousel";
 import AirlinesMarquee from "./components/AirlinesMarquee";
 import Reviews from "./components/Reviews";
 import Subscribe from "./components/Subscribe";
-import { Airport } from "./data/airports";
+import { Airport, POPULAR_AIRPORTS } from "./data/airports";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
 
@@ -48,6 +48,22 @@ const CATEGORIES = [
 // Фото города по ключевому слову (временно — позже заменим на свои/лицензионные)
 const cityPhoto = (kw: string, lock: number) =>
   `https://loremflickr.com/640/480/${kw}?lock=${lock}`;
+
+// Английские ключевые слова для фото-стоков (русские названия города/IATA → keyword).
+const CITY_KEYWORDS: Record<string, string> = {
+  DYU: "dushanbe", LBD: "khujand", IST: "istanbul,city", DXB: "dubai,skyline",
+  TAS: "tashkent", ALA: "almaty", SKD: "samarkand", MOW: "moscow,kremlin",
+  SVO: "moscow", DME: "moscow", VKO: "moscow", GYD: "baku", OVB: "novosibirsk",
+  MSQ: "minsk", ESB: "ankara", SAW: "istanbul", BKK: "bangkok", AYT: "antalya",
+  NHA: "nhatrang,beach", PEK: "beijing", DEL: "delhi", DPS: "bali",
+};
+// Большое фото города для hero-фона (по выбранному назначению).
+const cityHeroPhoto = (iata: string, city: string) => {
+  const kw = CITY_KEYWORDS[iata] ?? `${city},city`;
+  return `https://loremflickr.com/1600/900/${encodeURIComponent(kw)}?lock=${
+    iata.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
+  }`;
+};
 // Если loremflickr не ответит — подменяем на гарантированное фото
 function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) {
   const img = e.currentTarget;
@@ -119,6 +135,16 @@ export default function Home() {
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
   const [departDate, setDepartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+
+  // Hero-фон под выбранный/набираемый город назначения
+  const [typedDest, setTypedDest] = useState("");
+  const heroCity: Airport | null =
+    destAirport ??
+    (typedDest.trim().length >= 3
+      ? POPULAR_AIRPORTS.find((a) =>
+          a.city.toLowerCase().startsWith(typedDest.trim().toLowerCase()),
+        ) ?? null
+      : null);
 
   // Пассажиры / класс
   const [cabin, setCabin] = useState<CabinClass>("economy");
@@ -287,18 +313,46 @@ export default function Home() {
           background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
         }}
       >
-        <FlightMap />
-        <div className="mx-auto max-w-3xl w-full text-center">
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-            Найдите дешёвые авиабилеты
+        {/* Фон под выбранный город */}
+        <div aria-hidden className="absolute inset-0 z-0 overflow-hidden">
+          {heroCity && (
+            <img
+              key={heroCity.iata}
+              src={cityHeroPhoto(heroCity.iata, heroCity.city)}
+              alt=""
+              onError={(e) => photoFallback(e, heroCity.iata)}
+              className="hero-fade absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+          {/* Затемнение для читаемости текста */}
+          <div
+            className="absolute inset-0 transition-opacity duration-700"
+            style={{
+              opacity: heroCity ? 1 : 0,
+              background:
+                "linear-gradient(135deg, rgba(15,40,55,0.80) 0%, rgba(10,26,36,0.88) 100%)",
+            }}
+          />
+        </div>
+        {!heroCity && <FlightMap />}
+
+        <div className="relative z-10 mx-auto max-w-3xl w-full text-center">
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight drop-shadow-sm">
+            {heroCity ? (
+              <>Летим в {heroCity.city}<span className="text-[var(--color-accent)]">?</span></>
+            ) : (
+              <>Найдите дешёвые авиабилеты</>
+            )}
           </h1>
           <p className="mt-4 text-lg md:text-xl text-white/80">
-            Сравниваем сотни авиакомпаний и агентств за секунды
+            {heroCity
+              ? "Лучшие цены на этот маршрут — сравниваем за секунды"
+              : "Сравниваем сотни авиакомпаний и агентств за секунды"}
           </p>
         </div>
 
         {/* Категории услуг */}
-        <div className="w-full max-w-[1440px] mt-7 flex flex-wrap justify-center gap-2 px-4">
+        <div className="relative z-10 w-full max-w-[1440px] mt-7 flex flex-wrap justify-center gap-2 px-4">
           {CATEGORIES.map((c) => {
             const Icon = c.icon;
             return (
@@ -322,7 +376,7 @@ export default function Home() {
         <form
           onSubmit={handleSearch}
           noValidate
-          className="mx-auto w-full max-w-[1440px] mt-4 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30 dark:border-white/10"
+          className="relative z-10 mx-auto w-full max-w-[1440px] mt-4 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-xl shadow-2xl text-left overflow-visible border border-white/30 dark:border-white/10"
         >
             {/* Верхняя строка: переключатель сложного маршрута */}
             <div className="px-5 pt-4 flex justify-end">
@@ -375,8 +429,10 @@ export default function Home() {
                       airport={destAirport}
                       onChange={(a) => {
                         setDestAirport(a);
+                        if (a) setTypedDest("");
                         setErrors((p) => ({ ...p, destination: "" }));
                       }}
+                      onQueryChange={setTypedDest}
                       label=""
                       placeholder={errors.destination || "Куда"}
                       excludeIata={originAirport?.iata}

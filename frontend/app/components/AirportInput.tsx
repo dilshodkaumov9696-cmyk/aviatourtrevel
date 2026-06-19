@@ -10,9 +10,10 @@ interface Props {
   label: string;
   placeholder: string;
   excludeIata?: string;
+  onQueryChange?: (query: string) => void;
 }
 
-export default function AirportInput({ airport, onChange, label, placeholder, excludeIata }: Props) {
+export default function AirportInput({ airport, onChange, label, placeholder, excludeIata, onQueryChange }: Props) {
   const [query, setQuery] = useState(airport?.city ?? "");
   const [all, setAll] = useState<Airport[]>([]);
   const [results, setResults] = useState<Airport[]>([]);
@@ -112,6 +113,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
           onChange={(e) => {
             setFocused(true);
             setQuery(e.target.value);
+            onQueryChange?.(e.target.value);
             if (!e.target.value) onChange(null);
           }}
           onKeyDown={handleKey}
