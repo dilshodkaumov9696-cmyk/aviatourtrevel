@@ -420,7 +420,7 @@ export default function Home() {
                   onPassengers={setPassengers}
                   onCabin={setCabin}
                   align="right"
-                  className="xl:flex-1"
+                  className="xl:flex-1 min-w-0"
                 />
 
                 {/* Submit */}

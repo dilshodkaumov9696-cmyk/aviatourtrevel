@@ -67,7 +67,7 @@ export default function PassengersPicker({
         onClick={() => setOpen((v) => !v)}
       >
         <IconUser className="text-[var(--color-primary)] shrink-0" />
-        <div className="min-w-0">
+        <div className="min-w-0 overflow-hidden">
           <div className="flex items-center gap-1 text-[15px] font-medium text-[var(--color-text)] whitespace-nowrap">
             {passengersLabel(passengers, cabin)}
             <span className="text-[var(--color-text-muted)] text-xs">{open ? "▴" : "▾"}</span>
