@@ -134,6 +134,7 @@ export default function Home() {
   // Простой маршрут
   const [originAirport, setOriginAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
+  const [heroBackgroundImage, setHeroBackgroundImage] = useState("");
   const [departDate, setDepartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
 
@@ -213,6 +214,14 @@ export default function Home() {
     setOriginAirport(destAirport);
     setDestAirport(originAirport);
   }
+
+  // Смена фона hero при выборе города назначения
+  useEffect(() => {
+    if (destAirport) {
+      const bgUrl = cityHeroPhoto(destAirport.iata, destAirport.city);
+      setHeroBackgroundImage(bgUrl);
+    }
+  }, [destAirport]);
 
   // --- Сложный маршрут ---
   function updateSegment(id: number, patch: Partial<MultiSegment>) {
@@ -326,9 +335,15 @@ export default function Home() {
       {/* Hero */}
       <section
         id="search"
-        className="relative flex flex-col items-center justify-center px-4 py-20 text-white"
-        style={{ backgroundAttachment: "fixed", 
-          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
+        className="relative flex flex-col items-center justify-center px-4 py-20 text-white transition-all duration-1000"
+        style={{
+          backgroundAttachment: "fixed",
+          background: heroBackgroundImage
+            ? `linear-gradient(135deg, rgba(30, 92, 128, 0.7) 0%, rgba(21, 66, 92, 0.7) 100%), url('${heroBackgroundImage}')`
+            : "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       >
         {/* Фон под выбранный город */}
