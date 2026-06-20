@@ -73,7 +73,11 @@ export default function SearchResults() {
   const [returnFlight, setReturnFlight] = useState<Flight | null>(null);
   const returnBarRef = useRef<HTMLDivElement>(null);
 
-  const flights = useMemo(() => getFlights(), []);
+  const flights = useMemo(() => {
+    const dep = HUB_AIRPORTS[fromIata]?.map((a) => a.iata) ?? [fromIata];
+    const arr = HUB_AIRPORTS[toIata]?.map((a) => a.iata) ?? [toIata];
+    return getFlights(dep, arr);
+  }, [fromIata, toIata]);
   const totalOf = (f: Flight) => f.pricePerPax * paxCount;
 
   const priceBounds = useMemo<[number, number]>(() => {

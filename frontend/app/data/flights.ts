@@ -152,9 +152,12 @@ const TEMPLATES: Omit<Flight, "id">[] = [
   },
 ];
 
-export function getFlights(): Flight[] {
-  const departAirports = ["SVO", "DME", "VKO"];
-  const arriveAirports = ["IST", "SAW"];
+// Аэропорты вылета/прилёта раздаются по реальному маршруту поиска, чтобы
+// рейсы совпадали с фильтром хабов (иначе при поиске в Москву рейсы с
+// прилётом в Стамбул вырезались бы и выдавало «0 рейсов»).
+export function getFlights(departIatas?: string[], arriveIatas?: string[]): Flight[] {
+  const departAirports = departIatas?.length ? departIatas : ["SVO", "DME", "VKO"];
+  const arriveAirports = arriveIatas?.length ? arriveIatas : ["IST", "SAW"];
   return TEMPLATES.map((t, i) => ({
     ...t,
     id: `f${i}`,
