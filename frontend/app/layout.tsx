@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SettingsProvider } from "./context/settings";
 import ChatWidget from "./components/ChatWidget";
-import CommandPalette from "./components/CommandPalette";
 import PWARegister from "./components/PWARegister";
 
 export const metadata: Metadata = {
@@ -42,7 +41,6 @@ export default function RootLayout({
         <SettingsProvider>
           {children}
           <ChatWidget />
-          <CommandPalette />
           <PWARegister />
         </SettingsProvider>
       </body>

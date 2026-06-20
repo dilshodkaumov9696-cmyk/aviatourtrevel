@@ -10,7 +10,6 @@ import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments"
 import PassengersPicker, { Passengers, CabinClass, passengersLabel } from "./components/PassengersPicker";
 import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHotel, IconTour, IconSim, IconShield, IconTrain, IconCar } from "./components/icons";
 import FlightMap from "./components/FlightMap";
-import PriceMap from "./components/PriceMap";
 import ThemeToggle from "./components/ThemeToggle";
 import AuthModal from "./components/AuthModal";
 import SettingsSwitcher from "./components/SettingsSwitcher";
@@ -142,7 +141,6 @@ export default function Home() {
   const [searching, setSearching] = useState(false);
 
   // Интерактивная карта цен
-  const [mapOpen, setMapOpen] = useState(false);
 
   // Hero-фон под выбранный/набираемый город назначения
   const [typedDest, setTypedDest] = useState("");
@@ -306,16 +304,6 @@ export default function Home() {
             <a href="#help" className="transition-colors hover:text-[var(--color-primary)]">Помощь</a>
           </nav>
           <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new Event("open-command-palette"))}
-              className="hidden items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)] py-2 pl-3 pr-2 text-sm text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] md:flex"
-              title="Быстрый поиск города"
-            >
-              <IconSearch size={15} />
-              <span className="hidden lg:inline">Поиск города</span>
-              <kbd className="rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-1.5 py-0.5 text-[11px] font-semibold">⌘K</kbd>
-            </button>
             <ThemeToggle />
             <div className="hidden items-center lg:flex">
               <SettingsSwitcher />
@@ -596,19 +584,7 @@ export default function Home() {
               </>
             )}
           </form>
-
-          {/* Кнопка «Цены на карте» */}
-          <button
-            type="button"
-            onClick={() => setMapOpen(true)}
-            className="relative z-10 mt-5 inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/15 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 hover:-translate-y-0.5"
-          >
-            <IconPin size={16} />
-            Цены на карте
-          </button>
       </section>
-
-      <PriceMap open={mapOpen} onClose={() => setMapOpen(false)} />
 
       {/* Counters — статистика */}
       <Counters />
