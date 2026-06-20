@@ -32,14 +32,6 @@ const DESTS: Dest[] = [
   { city: "Бангкок", iata: "BKK", country: "Таиланд", lat: 13.75, lon: 100.5, price: 31200, dx: 16, dy: 22 },
 ];
 
-// Калибровка под World_map_-_low_resolution.svg (950×620). Линейная проекция
-// lon/lat → %, коэффициенты подобраны по сетке меридианов/параллелей.
-const LON_A = 0.34, LON_B = 46.5;
-const LAT_A = -0.52, LAT_B = 59;
-function project(lat: number, lon: number) {
-  return { x: LON_A * lon + LON_B, y: LAT_A * lat + LAT_B };
-}
-
 function defaultDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + 7);
@@ -64,7 +56,6 @@ export default function PriceMap({ open, onClose }: { open: boolean; onClose: ()
   if (!open) return null;
 
   const cheapest = Math.min(...DESTS.map((d) => d.price));
-  const origin = project(ORIGIN.lat, ORIGIN.lon);
 
   function go(d: Dest) {
     const params = new URLSearchParams({
@@ -98,87 +89,31 @@ export default function PriceMap({ open, onClose }: { open: boolean; onClose: ()
           </button>
         </div>
 
-        {/* Карта */}
-        <div className="overflow-auto bg-[var(--color-primary-light)]/40 p-3 sm:p-6">
-          <div
-            className="relative mx-auto w-full"
-            style={{ aspectRatio: "950 / 620", maxWidth: 980 }}
-          >
-            {/* Подложка-карта */}
-            <div
-              className="absolute inset-0 opacity-60 dark:opacity-30"
-              style={{
-                backgroundImage: "url(/world-map.svg)",
-                backgroundSize: "contain",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }}
-            />
-
-            {/* Дуги от Москвы к городам */}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full overflow-visible">
-              {DESTS.map((d) => {
-                const p = project(d.lat, d.lon);
-                const mx = (origin.x + p.x) / 2;
-                const my = Math.min(origin.y, p.y) - 6;
-                return (
-                  <path
-                    key={d.iata}
-                    d={`M ${origin.x} ${origin.y} Q ${mx} ${my} ${p.x} ${p.y}`}
-                    fill="none"
-                    stroke="var(--color-primary)"
-                    strokeWidth="1.2"
-                    strokeDasharray="4 4"
-                    opacity="0.35"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Точка-отправление Москва */}
-            <div
-              className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${origin.x}%`, top: `${origin.y}%` }}
-            >
-              <span className="relative flex h-4 w-4">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-primary)] opacity-60" />
-                <span className="relative inline-flex h-4 w-4 rounded-full border-2 border-white bg-[var(--color-primary)] shadow" />
-              </span>
-              <span className="absolute left-1/2 top-5 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--color-primary)] px-2 py-0.5 text-[11px] font-bold text-white shadow">
-                Москва
-              </span>
-            </div>
-
-            {/* Города-пузыри с ценами (точка ровно на координате, подпись со смещением) */}
-            {DESTS.map((d) => {
-              const p = project(d.lat, d.lon);
+        {/* Направления с ценами — сетка карточек */}
+        <div className="overflow-auto p-4 sm:p-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {[...DESTS].sort((a, b) => a.price - b.price).map((d) => {
               const isCheap = d.price === cheapest;
               return (
                 <button
                   key={d.iata}
                   onClick={() => go(d)}
-                  className="group absolute z-30 hover:z-40"
-                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
                   title={`${d.city} · ${d.country}`}
+                  className={`group flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md ${
+                    isCheap
+                      ? "border-green-600 bg-green-50 dark:bg-green-950/20"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]"
+                  }`}
                 >
-                  {/* Точка — точно на координате города */}
-                  <span
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow transition group-hover:scale-125 ${
-                      isCheap ? "h-3.5 w-3.5 bg-green-600" : "h-3 w-3 bg-[var(--color-primary)]"
-                    }`}
-                  />
-                  {/* Подпись со смещением, чтобы не перекрывать соседей */}
-                  <span
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-bold shadow-md transition group-hover:scale-105 ${
-                      isCheap
-                        ? "border-green-600 bg-green-600 text-white"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] group-hover:border-[var(--color-primary)]"
-                    }`}
-                    style={{ left: d.dx, top: d.dy }}
-                  >
-                    {d.city} <span className={isCheap ? "text-white" : "text-[var(--color-primary)]"}>{format(d.price)}</span>
+                  <div className="flex w-full items-center justify-between">
+                    <span className="font-bold text-[var(--color-text)]">{d.city}</span>
+                    <span className="text-[11px] font-semibold text-[var(--color-text-muted)]">{d.iata}</span>
+                  </div>
+                  <span className="text-xs text-[var(--color-text-muted)]">{d.country}</span>
+                  <span className={`mt-1 text-lg font-bold ${isCheap ? "text-green-600" : "text-[var(--color-primary)]"}`}>
+                    {format(d.price)}
                   </span>
+                  {isCheap && <span className="text-[11px] font-semibold text-green-600">самый дешёвый</span>}
                 </button>
               );
             })}
