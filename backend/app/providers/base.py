@@ -21,6 +21,7 @@ class FlightSearchQuery:
     children: int = 0
     infants: int = 0
     cabin: str = "economy"
+    currency: str = "rub"
 
 
 @dataclass(slots=True)
@@ -45,3 +46,7 @@ class BookingProvider(ABC):
     @abstractmethod
     async def search(self, query: FlightSearchQuery) -> list[FlightOffer]:
         """Поиск рейсов по запросу."""
+
+
+class ProviderError(Exception):
+    """Провайдер недоступен или вернул ошибку (после ретраев)."""
