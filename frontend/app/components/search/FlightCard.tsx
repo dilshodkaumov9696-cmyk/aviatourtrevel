@@ -162,6 +162,15 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
               >
                 {isSelected ? "✓ Выбран" : t("card.select")}
               </button>
+            ) : f.bookingUrl ? (
+              <a
+                href={f.bookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-xl bg-green-600 px-6 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:w-full"
+              >
+                {t("card.select")}
+              </a>
             ) : (
               <a
                 href={`/book?${bookParams.toString()}`}

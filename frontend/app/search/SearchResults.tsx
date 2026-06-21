@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
-import { getFlights, AIRLINES, Flight } from "../data/flights";
+import { Flight } from "../data/flights";
+import { searchFlights } from "../lib/api";
 import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
 import FlightLoader from "../components/search/FlightLoader";
@@ -73,21 +74,19 @@ export default function SearchResults() {
   const [returnFlight, setReturnFlight] = useState<Flight | null>(null);
   const returnBarRef = useRef<HTMLDivElement>(null);
 
-  const flights = useMemo(() => {
-    const dep = HUB_AIRPORTS[fromIata]?.map((a) => a.iata) ?? [fromIata];
-    const arr = HUB_AIRPORTS[toIata]?.map((a) => a.iata) ?? [toIata];
-    return getFlights(dep, arr);
-  }, [fromIata, toIata]);
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
   const totalOf = (f: Flight) => f.pricePerPax * paxCount;
 
   const priceBounds = useMemo<[number, number]>(() => {
+    if (flights.length === 0) return [0, 100000];
     const totals = flights.map(totalOf);
     return [Math.min(...totals), Math.max(...totals)];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flights, paxCount]);
 
-  const minDuration = useMemo(() => Math.min(...flights.map((f) => f.durationMin)), [flights]);
-  const maxDuration = useMemo(() => Math.max(...flights.map((f) => f.durationMin)), [flights]);
+  const minDuration = useMemo(() => flights.length ? Math.min(...flights.map((f) => f.durationMin)) : 0, [flights]);
+  const maxDuration = useMemo(() => flights.length ? Math.max(...flights.map((f) => f.durationMin)) : 1440, [flights]);
 
   const departAirportList = HUB_AIRPORTS[fromIata] ?? [{ iata: fromIata, name: fromCity }];
   const arriveAirportList = HUB_AIRPORTS[toIata] ?? [{ iata: toIata, name: toCity }];
@@ -102,38 +101,69 @@ export default function SearchResults() {
   const [priceAlertSaved, setPriceAlertSaved] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     stopsMax: null,
-    priceMin: priceBounds[0],
-    priceMax: priceBounds[1],
-    durationMax: maxDuration,
+    priceMin: 0,
+    priceMax: 100000,
+    durationMax: 1440,
     baggageMode: "all",
     timePeriods: new Set(),
     fastestOnly: false,
-    airlines: new Set(AIRLINES.map((a) => a.code)),
+    airlines: new Set(),
     departAirports: new Set(departAirportList.map((a) => a.iata)),
     arriveAirports: new Set(arriveAirportList.map((a) => a.iata)),
   });
   const setF = (patch: Partial<FilterState>) => setFilters((s) => ({ ...s, ...patch }));
 
-  function reset() {
+  const airlineList = useMemo(
+    () => Array.from(new Map(flights.map((f) => [f.airlineCode, f.airlineName])).entries())
+      .map(([code, name]) => ({ code, name })),
+    [flights],
+  );
+
+  function reset() { resetFilters(flights); }
+
+  function resetFilters(newFlights: Flight[]) {
+    const totals = newFlights.map((f) => f.pricePerPax * paxCount);
+    const newMin = newFlights.length ? Math.min(...totals) : 0;
+    const newMax = newFlights.length ? Math.max(...totals) : 100000;
+    const newDurMax = newFlights.length ? Math.max(...newFlights.map((f) => f.durationMin)) : 1440;
     setSort("best");
     setFilters({
       stopsMax: null,
-      priceMin: priceBounds[0],
-      priceMax: priceBounds[1],
-      durationMax: maxDuration,
+      priceMin: newMin,
+      priceMax: newMax,
+      durationMax: newDurMax,
       baggageMode: "all",
       timePeriods: new Set(),
       fastestOnly: false,
-      airlines: new Set(AIRLINES.map((a) => a.code)),
+      airlines: new Set(newFlights.map((f) => f.airlineCode)),
       departAirports: new Set(departAirportList.map((a) => a.iata)),
       arriveAirports: new Set(arriveAirportList.map((a) => a.iata)),
     });
   }
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1600);
-    return () => clearTimeout(timer);
-  }, []);
+    let cancelled = false;
+    setIsLoading(true);
+    setApiError(null);
+    searchFlights({
+      origin: fromIata,
+      destination: toIata,
+      departDate: date,
+      returnDate: isRoundTrip ? returnDate : undefined,
+      adults,
+    }).then((result) => {
+      if (cancelled) return;
+      setFlights(result);
+      resetFilters(result);
+      setIsLoading(false);
+    }).catch((err) => {
+      if (cancelled) return;
+      setApiError(String(err));
+      setIsLoading(false);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromIata, toIata, date, returnDate, adults]);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -475,7 +505,7 @@ export default function SearchResults() {
                 set={setF}
                 priceBounds={priceBounds}
                 durationBounds={[minDuration, maxDuration]}
-                airlineList={AIRLINES}
+                airlineList={airlineList}
                 departAirportList={departAirportList}
                 arriveAirportList={arriveAirportList}
               />
@@ -501,6 +531,11 @@ export default function SearchResults() {
             {!isLoading && (
               <div className="mb-3 text-sm text-[var(--color-text-muted)]">
                 {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)}
+              </div>
+            )}
+            {apiError && !isLoading && (
+              <div className="mb-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+                Не удалось получить рейсы: {apiError}
               </div>
             )}
             {isLoading ? (
@@ -572,7 +607,7 @@ export default function SearchResults() {
                 set={setF}
                 priceBounds={priceBounds}
                 durationBounds={[minDuration, maxDuration]}
-                airlineList={AIRLINES}
+                airlineList={airlineList}
                 departAirportList={departAirportList}
                 arriveAirportList={arriveAirportList}
               />

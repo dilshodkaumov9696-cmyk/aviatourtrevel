@@ -31,6 +31,7 @@ export interface Flight {
   tariff: Tariff;
   isNight: boolean;
   badges: { label: string; tone: BadgeTone }[];
+  bookingUrl?: string;
 }
 
 export interface Route {
