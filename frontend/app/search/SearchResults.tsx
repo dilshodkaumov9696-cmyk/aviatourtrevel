@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { Flight } from "../data/flights";
-import { searchFlights } from "../lib/api";
+import { searchFlights, buildAviasalesUrl } from "../lib/api";
 import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
 import FlightLoader from "../components/search/FlightLoader";
@@ -528,9 +528,29 @@ export default function SearchResults() {
               </div>
             )}
 
+            {/* CTA — полный поиск на Aviasales */}
+            <a
+              href={buildAviasalesUrl({
+                origin: phase === "return" ? toIata : fromIata,
+                destination: phase === "return" ? fromIata : toIata,
+                departDate: phase === "return" ? returnDate : date,
+                returnDate: (!isRoundTrip || phase === "return") ? undefined : returnDate,
+                adults,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-[#FF6D00] px-5 py-3.5 text-white shadow-md transition hover:bg-[#e65c00] hover:shadow-lg"
+            >
+              <div>
+                <div className="text-[13px] font-semibold opacity-90">Показываем лучшие цены из кэша</div>
+                <div className="text-[15px] font-bold">Смотреть все рейсы на Aviasales →</div>
+              </div>
+              <img src="https://pics.avs.io/180/30/aviasales_logo_white.svg" alt="Aviasales" className="h-5 shrink-0 opacity-90" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+            </a>
+
             {!isLoading && (
               <div className="mb-3 text-sm text-[var(--color-text-muted)]">
-                {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)}
+                {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)} · <span className="opacity-70">кэш Aviasales</span>
               </div>
             )}
             {apiError && !isLoading && (

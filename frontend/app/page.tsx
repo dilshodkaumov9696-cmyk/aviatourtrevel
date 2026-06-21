@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { buildAviasalesUrl } from "./lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useInViewAnimation } from "./hooks/useInViewAnimation";
@@ -282,6 +283,17 @@ export default function Home() {
       cabin,
     });
     if (returnDate) params.set("returnDate", returnDate);
+
+    // Открываем полный поиск Aviasales с маркером
+    const aviasalesUrl = buildAviasalesUrl({
+      origin: originAirport!.iata,
+      destination: destAirport!.iata,
+      departDate,
+      returnDate: returnDate || undefined,
+      adults: passengers.adults,
+    });
+    window.open(aviasalesUrl, "_blank", "noopener,noreferrer");
+
     setSearching(true);
     setTimeout(() => router.push(`/search?${params.toString()}`), 620);
   }

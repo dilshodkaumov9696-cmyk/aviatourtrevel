@@ -1,5 +1,24 @@
 import type { Flight } from "../data/flights";
 
+const MARKER = "488971";
+
+export function buildAviasalesUrl(params: {
+  origin: string;
+  destination: string;
+  departDate: string;     // YYYY-MM-DD
+  returnDate?: string;    // YYYY-MM-DD
+  adults?: number;
+}): string {
+  const [, dm, dd] = params.departDate.split("-");
+  let route = `${params.origin}${dd}${dm}${params.destination}`;
+  if (params.returnDate) {
+    const [, rm, rd] = params.returnDate.split("-");
+    route += `${rd}${rm}`;
+  }
+  route += String(params.adults ?? 1);
+  return `https://www.aviasales.ru/search/${route}?marker=${MARKER}`;
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const AIRLINE_NAMES: Record<string, string> = {
