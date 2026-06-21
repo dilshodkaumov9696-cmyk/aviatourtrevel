@@ -212,28 +212,14 @@ export default function SearchResults() {
 
   const handleBookBoth = () => {
     if (!outboundFlight || !returnFlight) return;
-    const params = new URLSearchParams({
-      flightId: outboundFlight.id,
-      airlineCode: outboundFlight.airlineCode,
-      airlineName: outboundFlight.airlineName,
-      flightNumber: outboundFlight.flightNumber,
-      aircraft: outboundFlight.aircraft,
-      fromCity, fromIata, toCity, toIata,
-      departTime: outboundFlight.departTime,
-      arriveTime: outboundFlight.arriveTime,
-      durationMin: String(outboundFlight.durationMin),
-      stops: String(outboundFlight.stops),
-      dateLabel: dateLabel(date),
-      pricePerPax: String(outboundFlight.pricePerPax),
-      paxCount: String(paxCount),
-      total: String((outboundFlight.pricePerPax + returnFlight.pricePerPax) * paxCount),
-      baggageLabel: outboundFlight.baggageLabel,
-      returnFlightId: returnFlight.id,
-      returnDepartTime: returnFlight.departTime,
-      returnArriveTime: returnFlight.arriveTime,
-      returnDateLabel: dateLabel(returnDate),
+    const url = outboundFlight.bookingUrl || buildAviasalesUrl({
+      origin: fromIata,
+      destination: toIata,
+      departDate: date,
+      returnDate,
+      adults,
     });
-    router.push(`/book?${params.toString()}`);
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   /* Текущая дата/маршрут в зависимости от фазы */

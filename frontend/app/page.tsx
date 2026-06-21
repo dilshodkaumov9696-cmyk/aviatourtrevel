@@ -264,10 +264,17 @@ export default function Home() {
     if (!validate()) return;
 
     if (mode === "multi") {
-      const route = segments
-        .map((s, i) => `${i + 1}. ${s.from!.iata} → ${s.to!.iata} · ${fmtDate(s.date)}`)
-        .join("\n");
-      alert(route + "\n" + passengersLabel(passengers, cabin));
+      // Сложный маршрут → открываем первый сегмент на Aviasales
+      const first = segments[0];
+      if (first?.from && first?.to && first?.date) {
+        const url = buildAviasalesUrl({
+          origin: first.from.iata,
+          destination: first.to.iata,
+          departDate: first.date,
+          adults: passengers.adults,
+        });
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
       return;
     }
 
@@ -385,7 +392,7 @@ export default function Home() {
         </div>
 
         {/* Категории услуг */}
-        <div className="relative z-10 w-full max-w-[1440px] mt-7 flex flex-wrap justify-center gap-2 px-4">
+        <div className="relative z-10 w-full max-w-[1440px] mt-7 flex flex-nowrap justify-start overflow-x-auto scrollbar-hide gap-2 px-4 sm:flex-wrap sm:justify-center">
           {CATEGORIES.map((c) => {
             const Icon = c.icon;
             return (

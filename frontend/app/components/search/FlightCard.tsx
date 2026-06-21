@@ -66,8 +66,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
     fromCity, fromIata, toCity, toIata,
     departTime: f.departTime, arriveTime: f.arriveTime,
     durationMin: String(f.durationMin), stops: String(f.stops),
-    dateLabel, pricePerPax: String(f.pricePerPax),
+    dateLabel, dateISO, pricePerPax: String(f.pricePerPax),
     paxCount: String(paxCount), total: String(total), baggageLabel: f.baggageLabel,
+    ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
 
   return (

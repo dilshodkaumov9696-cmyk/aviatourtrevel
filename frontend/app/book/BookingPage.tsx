@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { formatDuration } from "../data/flights";
 import { useSettings } from "../context/settings";
 import PaymentStep from "../components/booking/PaymentStep";
+import { buildAviasalesUrl } from "../lib/api";
 
 const GENDERS = [
   { v: "male", label: "Мужской" },
@@ -284,10 +285,16 @@ export default function BookingPage() {
   const durationMin = Number(sp.get("durationMin") || 0);
   const stops = Number(sp.get("stops") || 0);
   const dateLabel = sp.get("dateLabel") || "";
+  const dateISO = sp.get("dateISO") || "";
   const paxCount = Number(sp.get("paxCount") || 1);
   const total = Number(sp.get("total") || 0);
   const baggageLabel = sp.get("baggageLabel") || "";
   const airlineCode = sp.get("airlineCode") || "";
+  const externalBookingUrl = sp.get("bookingUrl") || (
+    fromIata && toIata && dateISO
+      ? buildAviasalesUrl({ origin: fromIata, destination: toIata, departDate: dateISO, adults: paxCount })
+      : null
+  );
 
   const [passengers, setPassengers] = useState<Passenger[]>(
     Array.from({ length: paxCount }, () => ({ ...EMPTY_PAX }))
@@ -622,12 +629,23 @@ export default function BookingPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 lg:hidden"
-            >
-              Оплатить · {format(grandTotal)}
-            </button>
+            {externalBookingUrl ? (
+              <a
+                href={externalBookingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full rounded-xl bg-[#FF6D00] py-3.5 text-center text-base font-bold text-white transition hover:bg-[#e65c00] lg:hidden"
+              >
+                Купить на Aviasales · {format(grandTotal)} →
+              </a>
+            ) : (
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 lg:hidden"
+              >
+                Оплатить · {format(grandTotal)}
+              </button>
+            )}
           </div>
 
           {/* Правая колонка: итог */}
@@ -729,14 +747,25 @@ export default function BookingPage() {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="mt-4 hidden w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 lg:block"
-                >
-                  Оплатить
-                </button>
+                {externalBookingUrl ? (
+                  <a
+                    href={externalBookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 hidden w-full rounded-xl bg-[#FF6D00] py-3.5 text-center text-base font-bold text-white transition hover:bg-[#e65c00] lg:block"
+                  >
+                    Купить на Aviasales →
+                  </a>
+                ) : (
+                  <button
+                    type="submit"
+                    className="mt-4 hidden w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 lg:block"
+                  >
+                    Оплатить
+                  </button>
+                )}
                 <p className="mt-3 text-center text-[11px] text-[var(--color-text-muted)]">
-                  Нажимая кнопку, вы соглашаетесь с условиями использования
+                  {externalBookingUrl ? "Вы перейдёте на Aviasales для завершения покупки" : "Нажимая кнопку, вы соглашаетесь с условиями использования"}
                 </p>
               </div>
             </div>

@@ -54,9 +54,11 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
     toCity: route.toCity, toIata: route.toIata,
     departTime: f.departTime, arriveTime: f.arriveTime,
     durationMin: String(f.durationMin), stops: String(f.stops),
-    dateLabel: dateShort(dateISO), pricePerPax: String(f.pricePerPax),
+    dateLabel: dateShort(dateISO), dateISO, pricePerPax: String(f.pricePerPax),
     paxCount: String(paxCount), total: String(total), baggageLabel: f.baggageLabel,
+    ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
+  const targetUrl = f.bookingUrl || `/book?${bookParams.toString()}`;
 
   const baggageText = f.tariff.baggageKg ? `${t("modal.baggage")}: ${f.tariff.baggageKg} кг` : t("modal.no_baggage");
 
@@ -198,10 +200,12 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
             <div className="text-[12px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
           </div>
           <a
-            href={`/book?${bookParams.toString()}`}
-            className="rounded-xl bg-green-600 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:px-10 sm:text-base"
+            href={targetUrl}
+            target={f.bookingUrl ? "_blank" : undefined}
+            rel={f.bookingUrl ? "noopener noreferrer" : undefined}
+            className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${f.bookingUrl ? "bg-[#FF6D00] hover:bg-[#e65c00]" : "bg-green-600 hover:bg-green-700"}`}
           >
-            {t("card.select")} · {format(total)}
+            {f.bookingUrl ? "Купить на Aviasales →" : `${t("card.select")} · ${format(total)}`}
           </a>
         </div>
       </div>
