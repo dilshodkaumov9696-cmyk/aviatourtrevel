@@ -33,7 +33,7 @@ export default function AccountPage() {
                 icon="🎫"
                 title="Заказов пока нет"
                 description="Здесь появятся ваши билеты после бронирования. Начните поиск прямо сейчас."
-                action={<Link href="/" className="inline-block rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">Найти рейс</Link>}
+                action={<Link href="/#search" className="inline-block rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">Найти рейс</Link>}
               />
             </Panel>
 

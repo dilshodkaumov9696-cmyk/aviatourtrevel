@@ -91,8 +91,12 @@ export default function SearchResults() {
   const departAirportList = HUB_AIRPORTS[fromIata] ?? [{ iata: fromIata, name: fromCity }];
   const arriveAirportList = HUB_AIRPORTS[toIata] ?? [{ iata: toIata, name: toCity }];
 
-  const [date, setDate] = useState(sp.get("date") || "2026-06-28");
-  const [returnDate, setReturnDate] = useState(urlReturnDate || "2026-07-05");
+  function futureDateISO(days: number) {
+    const d = new Date(); d.setDate(d.getDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+  const [date, setDate] = useState(sp.get("date") || futureDateISO(14));
+  const [returnDate, setReturnDate] = useState(urlReturnDate || futureDateISO(21));
   const [sort, setSort] = useState<Sort>("best");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

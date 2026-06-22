@@ -72,10 +72,16 @@ function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) 
   img.src = `https://picsum.photos/seed/${seed}/640/480`;
 }
 
+function futureDateISO(daysAhead: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  return d.toISOString().slice(0, 10);
+}
+
 function searchHref(
   toCity: string,
   toIata: string,
-  date = "2026-06-28",
+  date = futureDateISO(14),
   fromCity = "Москва",
   fromIata = "MOW",
 ): string {
@@ -649,7 +655,7 @@ export default function Home() {
               {localDeals.items.map((deal) => (
                 <Link
                   key={deal.iata}
-                  href={searchHref(deal.city, deal.iata, "2026-06-28", localDeals.city, localDeals.iata)}
+                  href={searchHref(deal.city, deal.iata, futureDateISO(14), localDeals.city, localDeals.iata)}
                   className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/50 bg-white/90 px-3 py-2 text-xs font-bold text-[#1A2B3A] shadow-lg transition hover:-translate-y-[55%] hover:bg-[var(--color-accent)]"
                   style={{ left: deal.x, top: deal.y }}
                 >
@@ -665,7 +671,7 @@ export default function Home() {
                 {localDeals.items.map((deal) => (
                   <Link
                     key={deal.iata}
-                    href={searchHref(deal.city, deal.iata, "2026-06-28", localDeals.city, localDeals.iata)}
+                    href={searchHref(deal.city, deal.iata, futureDateISO(14), localDeals.city, localDeals.iata)}
                     className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 transition hover:border-[var(--color-primary)]"
                   >
                     <span>
@@ -826,6 +832,7 @@ export default function Home() {
             </div>
             <button
               type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
               className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-[var(--color-primary)] transition hover:bg-white/90"
             >
               Написать в поддержку

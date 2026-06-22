@@ -44,7 +44,10 @@ function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: st
   }, [inView, target]);
 
   function format(num: number): string {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000000) {
+      const v = num / 1000000;
+      return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + "M";
+    }
     if (num >= 1000) return (num / 1000).toFixed(0) + "k";
     return num.toString();
   }

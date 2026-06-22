@@ -22,31 +22,62 @@ export function buildAviasalesUrl(params: {
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const AIRLINE_NAMES: Record<string, string> = {
-  SZ: "Somon Air",
-  DP: "Победа",
+  // СНГ и Россия
   SU: "Аэрофлот",
+  DP: "Победа",
   S7: "S7 Airlines",
   FV: "Россия",
   U6: "Уральские авиалинии",
   UT: "ЮТэйр",
-  TK: "Turkish Airlines",
-  HY: "Uzbekistan Airways",
-  KC: "Air Astana",
-  B2: "Belavia",
-  QR: "Qatar Airways",
-  EK: "Emirates",
-  FZ: "flydubai",
   WZ: "Red Wings",
   N4: "Nordwind",
   "5N": "Smartavia",
   IV: "Wind Rose",
-  AH: "Air Algérie",
+  // Центральная Азия
+  SZ: "Somon Air",
+  HY: "Uzbekistan Airways",
+  KC: "Air Astana",
+  DV: "SCAT Airlines",
+  QH: "Air Koryo",
+  // Ближний Восток
+  EK: "Emirates",
+  FZ: "flydubai",
+  QR: "Qatar Airways",
+  WY: "Oman Air",
+  GF: "Gulf Air",
+  EY: "Etihad Airways",
+  SV: "Saudi Arabian Airlines",
+  ME: "Middle East Airlines",
+  RB: "Syrian Arab Airlines",
+  // Турция и Южная Европа
+  TK: "Turkish Airlines",
   PC: "Pegasus",
   XQ: "SunExpress",
+  // СНГ: Беларусь, Армения, Грузия, Азербайджан
+  B2: "Belavia",
+  J2: "Azerbaijan Airlines",
+  MH: "Georgian Airways",
+  QN: "Armenian Airlines",
+  // Европа
   LH: "Lufthansa",
   AF: "Air France",
   KL: "KLM",
   BA: "British Airways",
+  LX: "Swiss",
+  OS: "Austrian Airlines",
+  SK: "SAS",
+  AY: "Finnair",
+  VY: "Vueling",
+  FR: "Ryanair",
+  U2: "easyJet",
+  // Азия
+  CX: "Cathay Pacific",
+  TG: "Thai Airways",
+  MH2: "Malaysia Airlines",
+  SQ: "Singapore Airlines",
+  // Африка
+  AH: "Air Algérie",
+  ET: "Ethiopian Airlines",
 };
 
 interface RawOffer {

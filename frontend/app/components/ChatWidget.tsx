@@ -51,6 +51,12 @@ export default function ChatWidget() {
     }
   }, [open, messages, typing]);
 
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener("open-chat", handler);
+    return () => window.removeEventListener("open-chat", handler);
+  }, []);
+
   function reply(question: string) {
     const answer =
       AUTO_REPLIES[question] ??

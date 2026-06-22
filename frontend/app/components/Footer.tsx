@@ -33,8 +33,8 @@ const SECTIONS = [
 const SOCIALS = [
   { icon: "telegram", label: "Telegram", href: "https://t.me" },
   { icon: "instagram", label: "Instagram", href: "https://instagram.com" },
+  { icon: "vk", label: "VKontakte", href: "https://vk.com" },
   { icon: "facebook", label: "Facebook", href: "https://facebook.com" },
-  { icon: "twitter", label: "Twitter", href: "https://twitter.com" },
 ];
 
 function TelegramIcon() {
@@ -63,10 +63,10 @@ function FacebookIcon() {
   );
 }
 
-function TwitterIcon() {
+function VKIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M23.953 4.57a10 10 0 102-14.974 10 10 0 0012.974 14.974zM8.618 17.898h2.357V9.017H8.618v8.88zm-1.178-10.1a1.368 1.368 0 11.002-2.736 1.368 1.368 0 01-.002 2.736zm11.559 4.175c0-2.652-1.39-4.643-3.681-4.643-1.679 0-2.707.984-3.156 1.888h-.046v-1.618H11.41V17.9h2.357v-4.35c0-1.147.436-1.914 1.388-1.914 1.002 0 1.57.755 1.57 1.914v4.35h2.357v-4.67z" />
+      <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.862-.523-2.049-1.727-1.033-1-1.49-1.135-1.744-1.135-.356 0-.458.102-.458.593v1.575c0 .424-.135.678-1.253.678-1.846 0-3.896-1.118-5.335-3.202C4.624 10.857 4.03 8.57 4.03 8.096c0-.254.102-.491.593-.491h1.744c.44 0 .61.203.779.678.863 2.49 2.303 4.675 2.896 4.675.22 0 .322-.102.322-.66V9.721c-.068-1.186-.695-1.287-.695-1.71 0-.203.17-.407.44-.407h2.744c.373 0 .508.203.508.643v3.473c0 .372.17.508.271.508.22 0 .407-.136.813-.542 1.253-1.406 2.151-3.574 2.151-3.574.119-.254.322-.491.763-.491h1.744c.525 0 .643.27.525.643-.22 1.017-2.354 4.031-2.354 4.031-.186.305-.254.44 0 .78.186.254.796.78 1.203 1.253.745.847 1.32 1.558 1.473 2.05.17.49-.085.745-.576.745z" />
     </svg>
   );
 }
@@ -79,8 +79,8 @@ function SocialIcon({ icon }: { icon: string }) {
       return <InstagramIcon />;
     case "facebook":
       return <FacebookIcon />;
-    case "twitter":
-      return <TwitterIcon />;
+    case "vk":
+      return <VKIcon />;
     default:
       return null;
   }
@@ -146,7 +146,7 @@ export default function Footer() {
         <div className="border-t border-[var(--color-border)] pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--color-text-muted)]">
             <div>© {year} Aviator. Все права защищены.</div>
-            <div className="text-xs">v0.1.0 · dev</div>
+            <div className="text-xs">Поиск билетов — быстро и безопасно</div>
           </div>
         </div>
       </div>
