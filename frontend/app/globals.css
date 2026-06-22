@@ -126,13 +126,63 @@ body {
   }
 }
 
-/* Плывущие облака в Hero-секции */
+/* Плывущие облака в Hero-секции — мягкие, объёмные (v2) */
+.hero-clouds {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-cloud {
+  position: absolute;
+  left: 0;
+  will-change: transform;
+  animation-name: cloud-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.hero-cloud__shape {
+  position: relative;
+  width: 190px;
+  height: 64px;
+  transform-origin: center;
+  /* размытие даёт мягкие края — это и превращает «пятна» в облака */
+  filter: blur(6px) drop-shadow(0 10px 16px rgba(8, 26, 38, 0.18));
+}
+.hero-cloud__shape span {
+  position: absolute;
+  bottom: 0;
+  border-radius: 50%;
+  /* объём: ярче сверху, чуть мягче снизу */
+  background: radial-gradient(circle at 50% 38%, #ffffff 0%, #ffffff 58%, rgba(255, 255, 255, 0.82) 100%);
+}
+.hero-cloud__shape span:nth-child(1) { width: 96px; height: 96px; left: 47px; bottom: 0; }
+.hero-cloud__shape span:nth-child(2) { width: 72px; height: 72px; left: 8px;  bottom: -6px; }
+.hero-cloud__shape span:nth-child(3) { width: 82px; height: 82px; left: 100px; bottom: -4px; }
+.hero-cloud__shape span:nth-child(4) { width: 56px; height: 56px; left: 140px; bottom: -2px; }
+.hero-cloud__shape span:nth-child(5) { width: 52px; height: 52px; left: 34px;  bottom: 4px; }
+/* плоское основание — «склеивает» нижнюю кромку */
+.hero-cloud__shape::after {
+  content: "";
+  position: absolute;
+  left: 6px; right: 6px; bottom: 0;
+  height: 34px;
+  background: #fff;
+  border-radius: 34px;
+}
 @keyframes cloud-drift {
-  from { transform: translateX(110vw); }
-  to   { transform: translateX(-200px); }
+  0%   { transform: translate(-260px, 0); }
+  50%  { transform: translate(55vw, -12px); }
+  100% { transform: translate(112vw, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cloud-drift { animation: none !important; transform: translateX(20%) !important; }
+  .hero-cloud { animation: none !important; }
+  .hero-cloud:nth-child(1) { transform: translateX(6vw); }
+  .hero-cloud:nth-child(2) { transform: translateX(68vw); }
+  .hero-cloud:nth-child(3) { transform: translateX(38vw); }
+  .hero-cloud:nth-child(4) { transform: translateX(84vw); }
+  .hero-cloud:nth-child(5) { transform: translateX(20vw); }
 }
 
 /* Взлёт самолёта с кнопки «Найти» */

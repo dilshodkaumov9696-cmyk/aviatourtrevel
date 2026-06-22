@@ -13,36 +13,27 @@ import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, Icon
 import FlightMap from "./components/FlightMap";
 
 function HeroClouds() {
+  // top — высота; scale — размер; opacity — глубина (дальние бледнее);
+  // dur — скорость дрейфа; delay — стартовый сдвиг по горизонтали.
   const clouds = [
-    { top: "8%",  w: 320, opacity: 0.13, dur: "90s",  delay: "-5s"  },
-    { top: "20%", w: 220, opacity: 0.08, dur: "75s",  delay: "-30s" },
-    { top: "38%", w: 400, opacity: 0.10, dur: "115s", delay: "-58s" },
-    { top: "12%", w: 260, opacity: 0.07, dur: "82s",  delay: "-22s" },
-    { top: "28%", w: 300, opacity: 0.09, dur: "98s",  delay: "-48s" },
+    { top: "13%", scale: 1.15, opacity: 0.92, dur: "66s",  delay: "-4s"  },
+    { top: "31%", scale: 0.6,  opacity: 0.5,  dur: "104s", delay: "-42s" },
+    { top: "8%",  scale: 0.85, opacity: 0.72, dur: "84s",  delay: "-62s" },
+    { top: "46%", scale: 1.4,  opacity: 0.4,  dur: "122s", delay: "-16s" },
+    { top: "22%", scale: 0.48, opacity: 0.58, dur: "134s", delay: "-92s" },
   ];
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none cloud-drift" aria-hidden>
+    <div className="hero-clouds" aria-hidden>
       {clouds.map((c, i) => (
-        <svg
+        <div
           key={i}
-          width={c.w}
-          height={Math.round(c.w * 0.3)}
-          viewBox="0 0 300 90"
-          fill="white"
-          style={{
-            position: "absolute",
-            top: c.top,
-            left: 0,
-            opacity: c.opacity,
-            animation: `cloud-drift ${c.dur} linear ${c.delay} infinite`,
-            willChange: "transform",
-          }}
+          className="hero-cloud"
+          style={{ top: c.top, opacity: c.opacity, animationDuration: c.dur, animationDelay: c.delay }}
         >
-          <ellipse cx="150" cy="70" rx="145" ry="28" />
-          <ellipse cx="80"  cy="55" rx="65"  ry="45" />
-          <ellipse cx="160" cy="40" rx="80"  ry="48" />
-          <ellipse cx="240" cy="55" rx="60"  ry="38" />
-        </svg>
+          <div className="hero-cloud__shape" style={{ transform: `scale(${c.scale})` }}>
+            <span /><span /><span /><span /><span />
+          </div>
+        </div>
       ))}
     </div>
   );
