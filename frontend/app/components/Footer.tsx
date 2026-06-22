@@ -86,6 +86,36 @@ function SocialIcon({ icon }: { icon: string }) {
   }
 }
 
+function PaymentIcon({ name }: { name: string }) {
+  if (name === "visa") return (
+    <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Visa">
+      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <text x="8" y="19" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="12" fill="#1A1F71">VISA</text>
+    </svg>
+  );
+  if (name === "mc") return (
+    <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mastercard">
+      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <circle cx="17" cy="14" r="8" fill="#EB001B" />
+      <circle cx="27" cy="14" r="8" fill="#F79E1B" />
+      <path d="M22 8.3a8 8 0 010 11.4A8 8 0 0122 8.3z" fill="#FF5F00" />
+    </svg>
+  );
+  if (name === "mir") return (
+    <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="МИР">
+      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <text x="7" y="19" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="11" fill="#00884B">МИР</text>
+    </svg>
+  );
+  if (name === "sbp") return (
+    <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="СБП">
+      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <text x="8" y="19" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="11" fill="#1E5C80">СБП</text>
+    </svg>
+  );
+  return null;
+}
+
 export default function Footer() {
   const year = new Date().getFullYear();
 
@@ -97,14 +127,32 @@ export default function Footer() {
           {/* Бренд слева */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white font-bold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white font-bold shadow-sm">
                 A
               </div>
               <span className="text-lg font-bold text-[var(--color-primary)]">Aviator</span>
             </div>
-            <p className="text-sm text-[var(--color-text-muted)] mb-6">
-              Находи и сравнивай дешёвые авиабилеты за секунды.
+            <p className="text-sm text-[var(--color-text-muted)] mb-5 leading-relaxed">
+              Поиск и сравнение авиабилетов на более чем 500 направлениях. Лучшие цены за секунды.
             </p>
+
+            {/* Контакты */}
+            <div className="mb-5 space-y-2 text-xs text-[var(--color-text-muted)]">
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-primary)]">✉</span>
+                <a href="mailto:support@aviator.ru" className="transition hover:text-[var(--color-primary)]">support@aviator.ru</a>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-primary)]">☎</span>
+                <a href="tel:+78001234567" className="transition hover:text-[var(--color-primary)]">+7 (800) 123-45-67</a>
+                <span className="text-[10px] opacity-60">бесплатно</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[var(--color-primary)]">⏰</span>
+                <span>Пн–Вс, 08:00–23:00</span>
+              </div>
+            </div>
+
             {/* Соцсети */}
             <div className="flex gap-3">
               {SOCIALS.map((s) => (
@@ -142,11 +190,28 @@ export default function Footer() {
           ))}
         </div>
 
+        {/* Платёжные методы */}
+        <div className="mb-6 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-6">
+          <span className="text-xs text-[var(--color-text-muted)]">Принимаем к оплате:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {["visa", "mc", "mir", "sbp"].map((p) => (
+              <PaymentIcon key={p} name={p} />
+            ))}
+          </div>
+          <div className="ml-auto hidden sm:flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+            <span className="text-green-600">🔒</span>
+            Защищённое соединение SSL/TLS
+          </div>
+        </div>
+
         {/* Разделитель */}
-        <div className="border-t border-[var(--color-border)] pt-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-[var(--color-text-muted)]">
-            <div>© {year} Aviator. Все права защищены.</div>
-            <div className="text-xs">Поиск билетов — быстро и безопасно</div>
+        <div className="border-t border-[var(--color-border)] pt-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
+            <div>© {year} Aviator. Все права защищены. Сайт является агрегатором авиабилетов.</div>
+            <div className="flex items-center gap-1 opacity-70">
+              <span>🔒</span>
+              Поиск билетов — быстро и безопасно
+            </div>
           </div>
         </div>
       </div>

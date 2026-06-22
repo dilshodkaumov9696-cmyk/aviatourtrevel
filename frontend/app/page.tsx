@@ -11,6 +11,42 @@ import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments"
 import PassengersPicker, { Passengers, CabinClass, passengersLabel } from "./components/PassengersPicker";
 import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHotel, IconTour, IconSim, IconShield, IconTrain, IconCar } from "./components/icons";
 import FlightMap from "./components/FlightMap";
+
+function HeroClouds() {
+  const clouds = [
+    { top: "8%",  w: 320, opacity: 0.13, dur: "90s",  delay: "-5s"  },
+    { top: "20%", w: 220, opacity: 0.08, dur: "75s",  delay: "-30s" },
+    { top: "38%", w: 400, opacity: 0.10, dur: "115s", delay: "-58s" },
+    { top: "12%", w: 260, opacity: 0.07, dur: "82s",  delay: "-22s" },
+    { top: "28%", w: 300, opacity: 0.09, dur: "98s",  delay: "-48s" },
+  ];
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none cloud-drift" aria-hidden>
+      {clouds.map((c, i) => (
+        <svg
+          key={i}
+          width={c.w}
+          height={Math.round(c.w * 0.3)}
+          viewBox="0 0 300 90"
+          fill="white"
+          style={{
+            position: "absolute",
+            top: c.top,
+            left: 0,
+            opacity: c.opacity,
+            animation: `cloud-drift ${c.dur} linear ${c.delay} infinite`,
+            willChange: "transform",
+          }}
+        >
+          <ellipse cx="150" cy="70" rx="145" ry="28" />
+          <ellipse cx="80"  cy="55" rx="65"  ry="45" />
+          <ellipse cx="160" cy="40" rx="80"  ry="48" />
+          <ellipse cx="240" cy="55" rx="60"  ry="38" />
+        </svg>
+      ))}
+    </div>
+  );
+}
 import ThemeToggle from "./components/ThemeToggle";
 import AuthModal from "./components/AuthModal";
 import SettingsSwitcher from "./components/SettingsSwitcher";
@@ -314,29 +350,32 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
       {/* Header */}
-      <header className={`sticky top-0 z-40 bg-[var(--color-surface)] transition-all duration-200 ${isScrolled ? "border-b border-[var(--color-border)] shadow-md" : "border-b border-[var(--color-border)]"}`}>
-        <div className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-200 ${isScrolled ? "py-2" : "py-4"}`}>
-          <a href="#search" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white font-bold">
+      <header
+        className={`sticky top-0 z-40 transition-all duration-300 ${isScrolled ? "shadow-xl shadow-black/20" : ""}`}
+        style={{ background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)" }}
+      >
+        <div className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-200 ${isScrolled ? "py-2" : "py-3.5"}`}>
+          <a href="#search" className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white font-bold text-[var(--color-primary)] shadow-sm">
               A
             </div>
-            <span className="text-xl font-bold text-[var(--color-primary)]">Aviator</span>
+            <span className="text-xl font-bold text-white tracking-tight">Aviator</span>
           </a>
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-[var(--color-text-muted)]">
-            <a href="#search" className="transition-colors hover:text-[var(--color-primary)]">Авиабилеты</a>
-            <a href="#directions" className="transition-colors hover:text-[var(--color-primary)]">Направления</a>
-            <a href="#deals" className="transition-colors hover:text-[var(--color-primary)]">Акции</a>
-            <a href="#help" className="transition-colors hover:text-[var(--color-primary)]">Помощь</a>
+          <nav className="hidden lg:flex items-center gap-8 text-[13px] font-medium text-white/75">
+            <a href="#search" className="transition-colors hover:text-white">Авиабилеты</a>
+            <a href="#directions" className="transition-colors hover:text-white">Направления</a>
+            <a href="#deals" className="transition-colors hover:text-white">Акции</a>
+            <a href="#help" className="transition-colors hover:text-white">Помощь</a>
           </nav>
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <ThemeToggle />
             <div className="hidden items-center lg:flex">
-              <SettingsSwitcher />
+              <SettingsSwitcher variant="dark" />
             </div>
             <button
               type="button"
               onClick={() => setAuthOpen(true)}
-              className="ml-1 hidden rounded-lg border border-[var(--color-primary)] px-4 py-2 text-sm font-medium text-[var(--color-primary)] transition hover:bg-[var(--color-primary-light)] lg:inline-block"
+              className="ml-1 hidden rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-white/20 lg:inline-block"
             >
               Войти
             </button>
@@ -380,7 +419,7 @@ export default function Home() {
             }}
           />
         </div>
-        {!heroCity && <FlightMap />}
+        {!heroCity && <HeroClouds />}
 
         <div className="relative z-10 mx-auto max-w-3xl w-full text-center">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight drop-shadow-sm">

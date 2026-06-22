@@ -121,8 +121,8 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
                 )}
                 <div className="h-0.5 flex-1 rounded bg-[var(--color-border)]" />
               </div>
-              <div className={`mt-1 text-[11px] ${direct ? "text-green-600" : "text-amber-600"}`}>
-                {stopsText}{f.stopLabel ? ` · ${f.stopLabel}` : ""}
+              <div className={`mt-1 text-[12px] font-medium ${direct ? "text-green-600" : "text-amber-600"}`}>
+                {stopsText}{f.stopLabel ? <span className="ml-1 text-[11px] font-normal opacity-80">({f.stopLabel})</span> : null}
               </div>
             </div>
 
@@ -148,8 +148,20 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
               <AnimatedNumber value={total} format={format} className="text-xl font-bold text-[var(--color-text)]" />
             </span>
             <div className="text-[11px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
-            <div className={`mt-1.5 text-xs ${f.hasBaggage ? "text-green-600" : "text-[var(--color-text-muted)]"}`}>
-              {f.hasBaggage ? "✓ " : ""}{f.baggageLabel}
+            <div className="mt-1.5">
+              {f.hasBaggage ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-950/30 dark:text-green-400">
+                  ✓ {f.baggageLabel}
+                </span>
+              ) : f.baggageLabel === "Только ручная кладь" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
+                  ⬆ Ручная кладь
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-bg-soft)] px-2 py-0.5 text-[11px] text-[var(--color-text-muted)]">
+                  ? Багаж уточните
+                </span>
+              )}
             </div>
           </div>
           <div className="sm:mt-3" onClick={(e) => e.stopPropagation()}>

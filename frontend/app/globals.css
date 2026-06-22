@@ -126,6 +126,15 @@ body {
   }
 }
 
+/* Плывущие облака в Hero-секции */
+@keyframes cloud-drift {
+  from { transform: translateX(110vw); }
+  to   { transform: translateX(-200px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cloud-drift { animation: none !important; transform: translateX(20%) !important; }
+}
+
 /* Взлёт самолёта с кнопки «Найти» */
 @keyframes plane-takeoff {
   0%   { transform: translate(0,0) rotate(45deg); opacity: 1; }

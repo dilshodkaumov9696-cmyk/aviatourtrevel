@@ -539,8 +539,21 @@ export default function SearchResults() {
             </a>
 
             {!isLoading && (
-              <div className="mb-3 text-sm text-[var(--color-text-muted)]">
-                {t("search.found")} <span className="font-semibold text-[var(--color-text)]">{results.length}</span> {plural(results.length)} · <span className="opacity-70">кэш Aviasales</span>
+              <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                <span>
+                  {t("search.found")}{" "}
+                  <span className="font-semibold text-[var(--color-text)]">{results.length}</span>
+                  {results.length !== flights.length && (
+                    <span className="text-[var(--color-text-muted)]"> из {flights.length}</span>
+                  )}
+                  {" "}{plural(results.length)}
+                </span>
+                {results.length !== flights.length && (
+                  <span className="rounded-full bg-[var(--color-primary)] px-2.5 py-0.5 text-[11px] font-medium text-white">
+                    фильтры активны
+                  </span>
+                )}
+                <span className="ml-auto opacity-60 text-xs">кэш Aviasales</span>
               </div>
             )}
             {apiError && !isLoading && (
