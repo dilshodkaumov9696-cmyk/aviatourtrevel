@@ -30,7 +30,7 @@ function IconLanding({ className = "" }: { className?: string }) {
 
 export default function FlightDetailModal({ flight: f, route, dateISO, paxCount, onClose }: Props) {
   const { format, t, lang } = useSettings();
-  const { segments, layovers } = buildItinerary(f, route);
+  const { segments, layovers, estimated } = buildItinerary(f, route);
   const total = f.pricePerPax * paxCount;
   const first = segments[0];
   const last = segments[segments.length - 1];
@@ -60,7 +60,9 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
   });
   const targetUrl = f.bookingUrl || `/book?${bookParams.toString()}`;
 
-  const baggageText = f.tariff.baggageKg ? `${t("modal.baggage")}: ${f.tariff.baggageKg} кг` : t("modal.no_baggage");
+  const baggageText = f.tariff.baggageKg
+    ? `${t("modal.baggage")}: ${f.tariff.baggageKg} кг`
+    : f.baggageLabel || t("modal.no_baggage");
 
   return (
     <div
@@ -78,7 +80,7 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
               {route.fromCity} <span className="text-[var(--color-text-muted)]">→</span> {route.toCity}
             </h2>
             <p className="mt-0.5 text-[13px] text-[var(--color-text-muted)]">
-              {first.departTime} {dateShort(dateISO, first.departDayOffset)} — {last.arriveTime} {dateShort(dateISO, last.arriveDayOffset)} · {formatDuration(f.durationMin)}
+              {f.departTime} {dateShort(dateISO)} — {f.arriveTime} {dateShort(dateISO, f.arriveDayOffset)} · {formatDuration(f.durationMin)}
               {f.stops > 0 && ` · ${stopsText}`}
             </p>
           </div>
@@ -93,103 +95,175 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
 
         {/* Тело */}
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-          {segments.map((seg, i) => (
-            <div key={i}>
-              {/* Сегмент */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={`https://images.kiwi.com/airlines/64/${seg.airlineCode}.png`}
-                    alt={seg.airlineName}
-                    width={32} height={32}
-                    className="h-8 w-8 shrink-0 rounded-full object-contain"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
-                  />
-                  <div>
-                    <div className="font-semibold text-[var(--color-text)]">{seg.airlineName}</div>
-                    <div className="text-[12px] text-[var(--color-text-muted)]">Рейс {seg.flightNumber} · {seg.aircraft}</div>
-                  </div>
+
+          {estimated ? (
+            /* ── API-рейс с пересадками: аэропорт пересадки неизвестен ── */
+            <>
+              {/* Авиакомпания */}
+              <div className="mb-5 flex items-center gap-3">
+                <img
+                  src={`https://images.kiwi.com/airlines/64/${f.airlineCode}.png`}
+                  alt={f.airlineName}
+                  width={36} height={36}
+                  className="h-9 w-9 shrink-0 rounded-full object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-[var(--color-text)]">{f.airlineName}</div>
+                  <div className="text-[12px] text-[var(--color-text-muted)]">Рейс {f.flightNumber}</div>
                 </div>
-                <div className="text-[12px] leading-relaxed text-[var(--color-text-muted)] sm:text-right">
-                  <div>{t("common.economy")} ({f.fareClass})</div>
-                  <div>{f.seatsLeft} {t("modal.seats")}</div>
-                  <div>{t("modal.hand")}: {f.tariff.handKg} кг</div>
+                <div className="shrink-0 text-right text-[12px] leading-relaxed text-[var(--color-text-muted)]">
+                  <div>{t("common.economy")}</div>
                   <div>{baggageText}</div>
                 </div>
               </div>
 
-              {/* Таймлайн сегмента */}
-              <div className="mt-4 flex gap-3.5">
+              {/* Таймлайн: один от вылета до прилёта */}
+              <div className="flex gap-4">
                 <div className="flex w-5 flex-col items-center pt-1">
                   <IconTakeoff className="text-[var(--color-primary)]" />
-                  <div className="my-1.5 w-px flex-1 bg-[var(--color-border)]" />
+                  <div className="my-2 w-px flex-1 border-l-2 border-dashed border-[var(--color-border)]" />
                   <IconLanding className="text-[var(--color-primary)]" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 pb-1">
+                  {/* Вылет */}
                   <div className="flex items-baseline gap-3">
-                    <div className="w-12 shrink-0">
-                      <div className="text-lg font-bold text-[var(--color-text)]">{seg.departTime}</div>
+                    <div className="w-12 shrink-0 text-lg font-bold text-[var(--color-text)]">{f.departTime}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-[var(--color-text)]">{route.fromCity}</div>
+                      <div className="text-[12px] text-[var(--color-text-muted)]">Аэропорт ({route.fromIata})</div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-[var(--color-text)]">{seg.fromCity}</div>
-                      <div className="text-[12px] text-[var(--color-text-muted)]">{seg.fromAirport} ({seg.fromIata})</div>
-                    </div>
-                    <div className="ml-auto shrink-0 text-[12px] text-[var(--color-text-muted)]">{dateShort(dateISO, seg.departDayOffset)}</div>
+                    <div className="shrink-0 text-[12px] text-[var(--color-text-muted)]">{dateShort(dateISO, 0)}</div>
                   </div>
 
-                  <div className="my-3 pl-[3.75rem] text-[12px] font-medium text-[var(--color-primary)]">
-                    {formatDuration(seg.durationMin)}
+                  {/* Продолжительность + пересадки */}
+                  <div className="my-4 pl-[3.75rem]">
+                    <div className="text-[13px] font-semibold text-[var(--color-primary)]">{formatDuration(f.durationMin)}</div>
+                    <div className="mt-0.5 text-[12px] font-medium text-amber-600">
+                      {f.stops === 1 ? "1 пересадка" : `${f.stops} пересадки`}
+                    </div>
                   </div>
 
+                  {/* Прилёт */}
                   <div className="flex items-baseline gap-3">
-                    <div className="w-12 shrink-0">
-                      <div className="text-lg font-bold text-[var(--color-text)]">{seg.arriveTime}</div>
+                    <div className="w-12 shrink-0 text-lg font-bold text-[var(--color-text)]">
+                      {f.arriveTime}
+                      {f.arriveDayOffset > 0 && <sup className="ml-0.5 text-[11px] font-semibold text-amber-600">+{f.arriveDayOffset}</sup>}
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-[var(--color-text)]">{seg.toCity}</div>
-                      <div className="text-[12px] text-[var(--color-text-muted)]">{seg.toAirport} ({seg.toIata})</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-[var(--color-text)]">{route.toCity}</div>
+                      <div className="text-[12px] text-[var(--color-text-muted)]">Аэропорт ({route.toIata})</div>
                     </div>
-                    <div className="ml-auto shrink-0 text-[12px] text-[var(--color-text-muted)]">{dateShort(dateISO, seg.arriveDayOffset)}</div>
+                    <div className="shrink-0 text-[12px] text-[var(--color-text-muted)]">{dateShort(dateISO, f.arriveDayOffset)}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Блок пересадки */}
-              {i < segments.length - 1 && layovers[i] && (
-                <div className="my-4 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 dark:bg-amber-950/40">
-                  <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="#d97706" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
-                  </svg>
-                  <div className="text-[13px] text-amber-800 dark:text-amber-300">
-                    <span className="font-semibold">{formatDuration(layovers[i].durationMin)}</span>
-                    {` · ${t("modal.transfer_in")} `}{layovers[i].city}
-                    {layovers[i].smart && <span className="ml-1 font-medium">· {t("modal.smart")}</span>}
+              {/* Заметка: маршрут пересадки на Aviasales */}
+              <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 text-[12px] text-[var(--color-text-muted)]">
+                <svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14} className="mt-0.5 shrink-0 text-[var(--color-primary)]" aria-hidden>
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+                </svg>
+                Полная схема маршрута с аэропортами пересадки доступна на Aviasales при оформлении билета.
+              </div>
+            </>
+
+          ) : (
+            /* ── Рейс с полными данными о сегментах ── */
+            <>
+              {segments.map((seg, i) => (
+                <div key={i}>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={`https://images.kiwi.com/airlines/64/${seg.airlineCode}.png`}
+                        alt={seg.airlineName}
+                        width={32} height={32}
+                        className="h-8 w-8 shrink-0 rounded-full object-contain"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
+                      />
+                      <div>
+                        <div className="font-semibold text-[var(--color-text)]">{seg.airlineName}</div>
+                        <div className="text-[12px] text-[var(--color-text-muted)]">Рейс {seg.flightNumber}{seg.aircraft ? ` · ${seg.aircraft}` : ""}</div>
+                      </div>
+                    </div>
+                    <div className="text-[12px] leading-relaxed text-[var(--color-text-muted)] sm:text-right">
+                      <div>{t("common.economy")}{f.fareClass ? ` (${f.fareClass})` : ""}</div>
+                      {f.tariff.handKg > 0 && <div>{t("modal.hand")}: {f.tariff.handKg} кг</div>}
+                      <div>{baggageText}</div>
+                    </div>
                   </div>
+
+                  <div className="mt-4 flex gap-3.5">
+                    <div className="flex w-5 flex-col items-center pt-1">
+                      <IconTakeoff className="text-[var(--color-primary)]" />
+                      <div className="my-1.5 w-px flex-1 bg-[var(--color-border)]" />
+                      <IconLanding className="text-[var(--color-primary)]" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-3">
+                        <div className="w-12 shrink-0">
+                          <div className="text-lg font-bold text-[var(--color-text)]">{seg.departTime}</div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-[var(--color-text)]">{seg.fromCity}</div>
+                          <div className="text-[12px] text-[var(--color-text-muted)]">{seg.fromAirport}{seg.fromIata ? ` (${seg.fromIata})` : ""}</div>
+                        </div>
+                        <div className="ml-auto shrink-0 text-[12px] text-[var(--color-text-muted)]">{dateShort(dateISO, seg.departDayOffset)}</div>
+                      </div>
+                      <div className="my-3 pl-[3.75rem] text-[12px] font-medium text-[var(--color-primary)]">
+                        {formatDuration(seg.durationMin)}
+                      </div>
+                      <div className="flex items-baseline gap-3">
+                        <div className="w-12 shrink-0">
+                          <div className="text-lg font-bold text-[var(--color-text)]">{seg.arriveTime}</div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-[var(--color-text)]">{seg.toCity}</div>
+                          <div className="text-[12px] text-[var(--color-text-muted)]">{seg.toAirport}{seg.toIata ? ` (${seg.toIata})` : ""}</div>
+                        </div>
+                        <div className="ml-auto shrink-0 text-[12px] text-[var(--color-text-muted)]">{dateShort(dateISO, seg.arriveDayOffset)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {i < segments.length - 1 && layovers[i] && (
+                    <div className="my-4 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 dark:bg-amber-950/40">
+                      <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="#d97706" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                      <div className="text-[13px] text-amber-800 dark:text-amber-300">
+                        <span className="font-semibold">{formatDuration(layovers[i].durationMin)}</span>
+                        {` · ${t("modal.transfer_in")} `}{layovers[i].city}
+                        {layovers[i].smart && <span className="ml-1 font-medium">· {t("modal.smart")}</span>}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              ))}
+
+              {/* Возврат / Обмен — только для рейсов с реальными тарифными данными */}
+              <div className="mt-4 flex justify-end gap-6 text-[13px]">
+                <div>
+                  <span className="text-[var(--color-text-muted)]">{t("modal.refund")}: </span>
+                  <span className={`font-medium ${f.tariff.refundable ? "text-green-600" : "text-red-500"}`}>
+                    {f.tariff.refundable ? (f.tariff.changeFee ? t("modal.yes_fee") : t("modal.yes")) : t("modal.no")}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[var(--color-text-muted)]">{t("modal.exchange")}: </span>
+                  <span className={`font-medium ${f.tariff.changeable ? "text-green-600" : "text-red-500"}`}>
+                    {f.tariff.changeable ? t("modal.yes") : t("modal.no")}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Местное время */}
           <div className="mt-4 rounded-xl bg-[var(--color-bg-soft)] px-4 py-2.5 text-[12px] text-[var(--color-text-muted)]">
             {t("modal.local_time")}
-          </div>
-
-          {/* Возврат / Обмен */}
-          <div className="mt-4 flex justify-end gap-6 text-[13px]">
-            <div>
-              <span className="text-[var(--color-text-muted)]">{t("modal.refund")}: </span>
-              <span className={`font-medium ${f.tariff.refundable ? "text-green-600" : "text-red-500"}`}>
-                {f.tariff.refundable ? (f.tariff.changeFee ? t("modal.yes_fee") : t("modal.yes")) : t("modal.no")}
-              </span>
-            </div>
-            <div>
-              <span className="text-[var(--color-text-muted)]">{t("modal.exchange")}: </span>
-              <span className={`font-medium ${f.tariff.changeable ? "text-green-600" : "text-red-500"}`}>
-                {f.tariff.changeable ? t("modal.yes") : t("modal.no")}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -203,7 +277,7 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
             href={targetUrl}
             target={f.bookingUrl ? "_blank" : undefined}
             rel={f.bookingUrl ? "noopener noreferrer" : undefined}
-            className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${f.bookingUrl ? "bg-[#FF6D00] hover:bg-[#e65c00]" : "bg-green-600 hover:bg-green-700"}`}
+            className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${f.bookingUrl ? "bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]" : "bg-green-600 hover:bg-green-700"}`}
           >
             {f.bookingUrl ? "Купить на Aviasales →" : `${t("card.select")} · ${format(total)}`}
           </a>

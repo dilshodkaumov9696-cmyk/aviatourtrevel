@@ -91,7 +91,22 @@ interface RawOffer {
   duration_minutes: number;
   transfers: number;
   booking_url: string;
+  stop_airports?: string[];
 }
+
+const IATA_CITY: Record<string, string> = {
+  TBS: "Тбилиси", ALA: "Алматы", TAS: "Ташкент", MSQ: "Минск",
+  IST: "Стамбул", SAW: "Стамбул", GYD: "Баку", FRU: "Бишкек",
+  OSS: "Ош", SKD: "Самарканд", UGC: "Ургенч", NVI: "Навои", BHK: "Бухара",
+  AYT: "Анталья", BJV: "Бодрум", ESB: "Анкара",
+  SVO: "Москва", DME: "Москва", VKO: "Москва", ZIA: "Москва",
+  LED: "Санкт-Петербург", SVX: "Екатеринбург", OVB: "Новосибирск",
+  KUF: "Самара", UFA: "Уфа", KZN: "Казань", AER: "Сочи", KRR: "Краснодар",
+  DYU: "Душанбе", LBD: "Худжанд", NQZ: "Астана", CIT: "Шымкент",
+  DSS: "Дакар", CMN: "Касабланка", DXB: "Дубай", AUH: "Абу-Даби",
+  DOH: "Доха", KWI: "Кувейт", BAH: "Бахрейн", AMM: "Амман",
+  BEY: "Бейрут", CAI: "Каир", ADD: "Аддис-Абеба", NBO: "Найроби",
+};
 
 function parseTime(iso: string): string {
   return iso.slice(11, 16);
@@ -142,6 +157,10 @@ export async function searchFlights(params: {
       arriveDayOffset: daysBetween(offer.depart_at, offer.arrive_at),
       durationMin: offer.duration_minutes,
       stops: offer.transfers,
+      stopCities: offer.stop_airports?.length ? offer.stop_airports : undefined,
+      stopLabel: offer.stop_airports?.length
+        ? offer.stop_airports.map(iata => IATA_CITY[iata] ?? iata).join(", ")
+        : undefined,
       pricePerPax: offer.price,
       hasBaggage: false,
       baggageLabel: "Уточняйте у авиакомпании",

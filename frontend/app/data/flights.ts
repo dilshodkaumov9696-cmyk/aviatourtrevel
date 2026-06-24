@@ -173,23 +173,58 @@ export const AIRLINES = Array.from(
 
 // Названия аэропортов (позже из API)
 export const AIRPORT_NAMES: Record<string, string> = {
+  // Центральная Азия
   DYU: "Аэропорт Душанбе",
   LBD: "Аэропорт Худжанд",
   TAS: "Ташкент Южный",
+  SKD: "Аэропорт Самарканд",
+  BHK: "Аэропорт Бухара",
+  UGC: "Аэропорт Ургенч",
+  NVI: "Аэропорт Навои",
+  FRU: "Манас (Бишкек)",
+  OSS: "Аэропорт Ош",
+  NQZ: "Астана Интернешнл",
   ALA: "Алматы Интернешнл",
-  MSQ: "Минск Национальный",
-  IST: "Стамбул Аэропорт",
-  ESB: "Анкара Эсенбога",
+  CIT: "Аэропорт Шымкент",
+  // Россия
   MOW: "Москва",
   SVO: "Шереметьево",
   DME: "Домодедово",
   VKO: "Внуково",
+  ZIA: "Жуковский",
+  LED: "Пулково (Санкт-Петербург)",
+  SVX: "Кольцово (Екатеринбург)",
+  OVB: "Толмачёво (Новосибирск)",
+  KUF: "Курумоч (Самара)",
+  UFA: "Аэропорт Уфа",
+  KZN: "Аэропорт Казань",
+  AER: "Аэропорт Сочи",
+  KRR: "Аэропорт Краснодар",
+  ROV: "Платов (Ростов-на-Дону)",
+  // Кавказ
+  GYD: "Гейдар Алиев (Баку)",
+  TBS: "Тбилиси Руставели",
+  EVN: "Звартноц (Ереван)",
+  // Турция
+  IST: "Стамбул Аэропорт",
   SAW: "Сабиха Гёкчен",
-  GYD: "Гейдар Алиев",
-  OVB: "Толмачёво",
+  ESB: "Эсенбога (Анкара)",
+  AYT: "Аэропорт Анталья",
+  BJV: "Миляс-Бодрум",
+  ADB: "Аэропорт Измир",
+  // Ближний Восток
+  DXB: "Дубай Интернешнл",
+  AUH: "Абу-Даби Интернешнл",
+  DOH: "Хамад (Доха)",
+  AMM: "Королева Алия (Амман)",
+  BEY: "Рафик Харири (Бейрут)",
+  // СНГ
+  MSQ: "Минск Национальный",
+  KBP: "Борисполь (Киев)",
 };
 
 export function airportName(iata: string, city: string): string {
+  if (!iata) return city;
   return AIRPORT_NAMES[iata] ?? `Аэропорт ${city}`;
 }
 
@@ -230,13 +265,16 @@ function fromMin(total: number): { time: string; dayOffset: number } {
 }
 
 // Строим посегментный маршрут с пересадками из рейса + маршрута поиска
-export function buildItinerary(f: Flight, route: Route): { segments: Segment[]; layovers: Layover[] } {
+export function buildItinerary(f: Flight, route: Route): { segments: Segment[]; layovers: Layover[]; estimated: boolean } {
   const stopIatas = f.stopCities ?? [];
   const stopNames = (f.stopLabel ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
+  // estimated=true: промежуточные аэропорты неизвестны (показываем упрощённый вид в модалке)
+  const estimated = f.stops > 0 && stopIatas.length === 0;
+
   const points = [
     { iata: route.fromIata, city: route.fromCity },
-    ...stopIatas.map((iata, i) => ({ iata, city: stopNames[i] ?? iata })),
+    ...stopIatas.map((iata, i) => ({ iata, city: stopNames[i] ?? (airportName(iata, iata)) })),
     { iata: route.toIata, city: route.toCity },
   ];
 
@@ -288,5 +326,5 @@ export function buildItinerary(f: Flight, route: Route): { segments: Segment[]; 
     }
   }
 
-  return { segments, layovers };
+  return { segments, layovers, estimated };
 }

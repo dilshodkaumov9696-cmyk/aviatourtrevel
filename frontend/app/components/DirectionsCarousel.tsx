@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 interface Direction {
   city: string;
@@ -34,7 +34,6 @@ function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) 
 
 export default function DirectionsCarousel() {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
 

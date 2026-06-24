@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 
@@ -24,7 +24,7 @@ class FlightSearchQuery:
     currency: str = "rub"
 
 
-@dataclass(slots=True)
+@dataclass
 class FlightOffer:
     provider: str
     price: float
@@ -36,6 +36,7 @@ class FlightOffer:
     duration_minutes: int
     transfers: int
     booking_url: str
+    stop_airports: list[str] = field(default_factory=list)  # промежуточные IATA аэропортов пересадки
 
 
 class BookingProvider(ABC):

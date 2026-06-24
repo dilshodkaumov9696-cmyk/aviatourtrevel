@@ -67,11 +67,11 @@ function Stars({ count }: { count: number }) {
 }
 
 export default function Reviews() {
-  const { ref, isInView } = useInViewAnimation();
+  const { ref, isInView } = useInViewAnimation<HTMLElement>();
 
   return (
     <section
-      ref={ref as any}
+      ref={ref}
       className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${
         isInView ? "opacity-100" : "opacity-0 translate-y-10"
       }`}

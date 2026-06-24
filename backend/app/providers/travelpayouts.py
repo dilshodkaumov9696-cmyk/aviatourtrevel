@@ -7,6 +7,8 @@ API (требует 50k+ MAU) или консолидатор — провайд
 from __future__ import annotations
 
 import asyncio
+import re
+import urllib.parse
 from datetime import datetime, timedelta
 
 import httpx  # pyright: ignore[reportMissingImports]
@@ -130,6 +132,11 @@ class TravelpayoutsProvider(BookingProvider):
         duration = int(item.get("duration_to") or item.get("duration") or 0)
         airline = item.get("airline") or "—"
         flight_no = item.get("flight_number")
+        link = item.get("link") or ""
+        origin_airport = item.get("origin_airport") or item.get("origin") or ""
+        dest_airport = item.get("destination_airport") or item.get("destination") or ""
+        transfers = int(item.get("transfers", 0))
+        stop_airports = self._parse_stop_airports(link, origin_airport, dest_airport) if transfers > 0 else []
         return FlightOffer(
             provider=self.name,
             price=float(item.get("price", 0)),
@@ -139,9 +146,40 @@ class TravelpayoutsProvider(BookingProvider):
             depart_at=depart_at,
             arrive_at=self._add_minutes(depart_at, duration),
             duration_minutes=duration,
-            transfers=int(item.get("transfers", 0)),
-            booking_url=self._booking_url(item.get("link") or ""),
+            transfers=transfers,
+            booking_url=self._booking_url(link),
+            stop_airports=stop_airports,
         )
+
+    @staticmethod
+    def _parse_stop_airports(link: str, origin: str, destination: str) -> list[str]:
+        """Извлекает IATA-коды промежуточных аэропортов из параметра t= в ссылке Aviasales.
+
+        Формат t=: {airline}{timestamp_dep}{timestamp_arr}{pad}{dur}{IATA...}_{hash}_{price}
+        Пример: SZ17826252001782708900001515DYUTBSSAW_abc123_24280
+        Маршрут кодируется как последовательные 3-буквенные IATA-коды в конце первого сегмента.
+        """
+        try:
+            qs = urllib.parse.urlparse(link).query
+            params = urllib.parse.parse_qs(qs)
+            t_vals = params.get("t", [])
+            if not t_vals:
+                return []
+            t_segment = t_vals[0].split("_")[0]  # часть до первого подчёркивания
+            # Ищем блок IATA-кодов в конце (один или более 3-буквенных групп заглавных букв)
+            m = re.search(r"([A-Z]{3})+$", t_segment)
+            if not m:
+                return []
+            iata_block = m.group(0)
+            iatas = [iata_block[i:i + 3] for i in range(0, len(iata_block), 3)]
+            # Удаляем первый (origin) и последний (destination) аэропорты
+            if iatas and iatas[0] == origin:
+                iatas = iatas[1:]
+            if iatas and iatas[-1] == destination:
+                iatas = iatas[:-1]
+            return iatas
+        except Exception:
+            return []
 
     def _booking_url(self, link: str) -> str:
         if not link:

@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
-import { Flight } from "../data/flights";
+import { Flight, getFlights } from "../data/flights";
 import { searchFlights, buildAviasalesUrl } from "../lib/api";
 import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
@@ -56,7 +55,6 @@ function getTimePeriod(time: string): TimePeriod {
 export default function SearchResults() {
   const { t, format } = useSettings();
   const sp = useSearchParams();
-  const router = useRouter();
   const fromCity = sp.get("fromCity") || "Москва";
   const fromIata = sp.get("fromIata") || "MOW";
   const toCity = sp.get("toCity") || "Стамбул";
@@ -76,6 +74,7 @@ export default function SearchResults() {
 
   const [flights, setFlights] = useState<Flight[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [dataNotice, setDataNotice] = useState<string | null>(null);
   const totalOf = (f: Flight) => f.pricePerPax * paxCount;
 
   const priceBounds = useMemo<[number, number]>(() => {
@@ -147,8 +146,13 @@ export default function SearchResults() {
 
   useEffect(() => {
     let cancelled = false;
+    const fallbackFlights = () => getFlights(
+      departAirportList.map((a) => a.iata),
+      arriveAirportList.map((a) => a.iata),
+    );
     setIsLoading(true);
     setApiError(null);
+    setDataNotice(null);
     searchFlights({
       origin: fromIata,
       destination: toIata,
@@ -157,12 +161,20 @@ export default function SearchResults() {
       adults,
     }).then((result) => {
       if (cancelled) return;
-      setFlights(result);
-      resetFilters(result);
+      const nextFlights = result.length ? result : fallbackFlights();
+      setFlights(nextFlights);
+      resetFilters(nextFlights);
+      if (result.length === 0) {
+        setDataNotice("В кэше Travelpayouts пока нет цен по этому маршруту, показываем демо-рейсы для проверки интерфейса.");
+      }
       setIsLoading(false);
     }).catch((err) => {
       if (cancelled) return;
+      const nextFlights = fallbackFlights();
+      setFlights(nextFlights);
+      resetFilters(nextFlights);
       setApiError(String(err));
+      setDataNotice("API сейчас недоступен, поэтому показываем демо-рейсы. Кнопка Aviasales всё равно откроет полный поиск.");
       setIsLoading(false);
     });
     return () => { cancelled = true; };
@@ -557,8 +569,13 @@ export default function SearchResults() {
               </div>
             )}
             {apiError && !isLoading && (
-              <div className="mb-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
+              <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
                 Не удалось получить рейсы: {apiError}
+              </div>
+            )}
+            {dataNotice && !isLoading && (
+              <div className="mb-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)]">
+                {dataNotice}
               </div>
             )}
             {isLoading ? (

@@ -290,6 +290,12 @@ export default function BookingPage() {
   const total = Number(sp.get("total") || 0);
   const baggageLabel = sp.get("baggageLabel") || "";
   const airlineCode = sp.get("airlineCode") || "";
+  const airlineDisplayName =
+    airlineName && airlineName !== airlineCode
+      ? airlineName
+      : airlineCode
+        ? `Авиакомпания ${airlineCode}`
+        : "Авиакомпания";
   const externalBookingUrl = sp.get("bookingUrl") || (
     fromIata && toIata && dateISO
       ? buildAviasalesUrl({ origin: fromIata, destination: toIata, departDate: dateISO, adults: paxCount })
@@ -456,17 +462,99 @@ export default function BookingPage() {
               }`}>
                 {i < 2 ? "✓" : i + 1}
               </span>
-              <span className="hidden sm:inline">{step}</span>
+              <span className={i === 2 ? "inline" : "hidden sm:inline"}>{step}</span>
             </div>
           ))}
         </div>
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
+        <div className="mx-auto max-w-7xl px-4 pt-4 lg:hidden">
+          <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+            <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase text-[var(--color-text-muted)]">
+                    Ваш билет
+                  </div>
+                  <div className="mt-0.5 text-sm font-bold text-[var(--color-text)]">
+                    {fromCity} → {toCity}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[11px] text-[var(--color-text-muted)]">Итого</div>
+                  <div className="text-lg font-bold text-[var(--color-text)]">{format(grandTotal)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <img
+                  src={`https://images.kiwi.com/airlines/64/${airlineCode}.png`}
+                  alt={airlineDisplayName}
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 rounded object-contain"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-[var(--color-text)]">{airlineDisplayName}</div>
+                  <div className="text-[11px] text-[var(--color-text-muted)]">{flightNumber}{aircraft ? ` · ${aircraft}` : ""}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-[72px_1fr_72px] items-center gap-3">
+                <div>
+                  <div className="text-2xl font-bold leading-none text-[var(--color-text)]">{departTime}</div>
+                  <div className="mt-1 text-xs text-[var(--color-text-muted)]">{fromIata}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[11px] text-[var(--color-text-muted)]">{formatDuration(durationMin)}</div>
+                  <div className="my-2 h-px bg-[var(--color-border)]" />
+                  <div className={`text-[11px] font-semibold ${stops === 0 ? "text-green-600" : "text-amber-600"}`}>
+                    {stops === 0 ? "прямой" : `${stops} пересадка`}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold leading-none text-[var(--color-text)]">{arriveTime}</div>
+                  <div className="mt-1 text-xs text-[var(--color-text-muted)]">{toIata}</div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2 text-[12px] text-[var(--color-text-muted)]">
+                <span className="rounded-full bg-[var(--color-bg-soft)] px-2.5 py-1">{dateLabel}</span>
+                <span className="rounded-full bg-[var(--color-bg-soft)] px-2.5 py-1">{baggageLabel}</span>
+                <span className="rounded-full bg-green-50 px-2.5 py-1 font-medium text-green-700 dark:bg-green-950/30 dark:text-green-400">
+                  +{format(bonus)} бонусами
+                </span>
+              </div>
+
+              {externalBookingUrl ? (
+                <a
+                  href={externalBookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 block w-full rounded-xl bg-[#FF6D00] py-3 text-center text-sm font-bold text-white transition hover:bg-[#e65c00]"
+                >
+                  Купить на Aviasales
+                </a>
+              ) : (
+                <a
+                  href="#passenger-data"
+                  className="mt-4 block w-full rounded-xl bg-[var(--color-primary)] py-3 text-center text-sm font-bold text-white transition hover:bg-[var(--color-primary-dark)]"
+                >
+                  Заполнить данные пассажира
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="mx-auto max-w-7xl gap-6 px-4 py-6 lg:flex lg:items-start">
           {/* Левая колонка: формы */}
           <div className="flex-1 space-y-5">
-            <h2 className="text-xl font-bold text-[var(--color-text)]">Данные пассажиров</h2>
+            <h2 id="passenger-data" className="text-xl font-bold text-[var(--color-text)]">Данные пассажиров</h2>
 
             {passengers.map((pax, i) => (
               <PassengerForm
@@ -656,13 +744,13 @@ export default function BookingPage() {
                 <div className="mb-3 flex items-center gap-2">
                   <img
                     src={`https://images.kiwi.com/airlines/64/${airlineCode}.png`}
-                    alt={airlineName}
+                    alt={airlineDisplayName}
                     width={24} height={24}
                     className="h-6 w-6 rounded object-contain"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                   />
                   <div>
-                    <div className="text-sm font-semibold text-[var(--color-text)]">{airlineName}</div>
+                    <div className="text-sm font-semibold text-[var(--color-text)]">{airlineDisplayName}</div>
                     <div className="text-[11px] text-[var(--color-text-muted)]">{flightNumber} · {aircraft}</div>
                   </div>
                 </div>

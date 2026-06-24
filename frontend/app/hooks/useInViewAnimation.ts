@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useInViewAnimation() {
-  const ref = useRef<HTMLElement | null>(null);
+export function useInViewAnimation<T extends HTMLElement = HTMLElement>() {
+  const ref = useRef<T | null>(null);
   const [isInView, setIsInView] = useState(false);
 
   useEffect(() => {

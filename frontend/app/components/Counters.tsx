@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useInViewAnimation } from "../hooks/useInViewAnimation";
 
 interface Counter {
@@ -23,7 +23,6 @@ function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: st
   useEffect(() => {
     if (!inView) return;
 
-    let start = 0;
     const duration = 2000; // 2 seconds
     const startTime = Date.now();
 
@@ -60,11 +59,11 @@ function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: st
 }
 
 export default function Counters() {
-  const { ref, isInView } = useInViewAnimation();
+  const { ref, isInView } = useInViewAnimation<HTMLElement>();
 
   return (
     <section
-      ref={ref as any}
+      ref={ref}
       className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${
         isInView ? "opacity-100" : "opacity-0 translate-y-10"
       }`}

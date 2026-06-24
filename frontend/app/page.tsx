@@ -8,9 +8,8 @@ import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
-import PassengersPicker, { Passengers, CabinClass, passengersLabel } from "./components/PassengersPicker";
+import PassengersPicker, { Passengers, CabinClass } from "./components/PassengersPicker";
 import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHotel, IconTour, IconSim, IconShield, IconTrain, IconCar } from "./components/icons";
-import FlightMap from "./components/FlightMap";
 
 function HeroClouds() {
   // top — высота; scale — размер; opacity — глубина (дальние бледнее);
@@ -213,10 +212,9 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Анимации при скролле для основных секций
-  const { ref: advantagesRef, isInView: advInView } = useInViewAnimation();
-  const { ref: directionsRef, isInView: dirInView } = useInViewAnimation();
-  const { ref: dealsRef, isInView: dealsInView } = useInViewAnimation();
-  const { ref: helpRef, isInView: helpInView } = useInViewAnimation();
+  const { ref: directionsRef, isInView: dirInView } = useInViewAnimation<HTMLElement>();
+  const { ref: dealsRef, isInView: dealsInView } = useInViewAnimation<HTMLElement>();
+  const { ref: helpRef, isInView: helpInView } = useInViewAnimation<HTMLElement>();
   const localDeals = ORIGIN_DEALS[localOrigin];
 
   useEffect(() => {
@@ -720,7 +718,7 @@ export default function Home() {
       </section>
 
       {/* Популярные направления — иммерсивные плитки с фото */}
-      <section id="directions" ref={directionsRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${dirInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
+      <section id="directions" ref={directionsRef} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${dirInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-[var(--color-text)]">Популярные направления</h2>
@@ -769,7 +767,7 @@ export default function Home() {
       </section>
 
       {/* Горящие предложения — карточки рейсов со скидками */}
-      <section id="deals" ref={dealsRef as any} className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${dealsInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
+      <section id="deals" ref={dealsRef} className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${dealsInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-8 flex items-end justify-between">
             <div>
@@ -827,7 +825,7 @@ export default function Home() {
       <Reviews />
 
       {/* Помощь */}
-      <section id="help" ref={helpRef as any} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${helpInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
+      <section id="help" ref={helpRef} className={`bg-[var(--color-bg-soft)] py-16 transition-all duration-700 ${helpInView ? "opacity-100" : "opacity-0 translate-y-10"}`}>
         <div className="mx-auto max-w-3xl px-6">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-[var(--color-text)]">Помощь и поддержка</h2>
