@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query  # pyright: ignore[reportMis
 
 from app.providers import get_provider
 from app.providers.base import FlightSearchQuery, ProviderError
+from app.services import search_cache
 
 router = APIRouter()
 
@@ -28,14 +29,20 @@ async def search_flights(
         adults=adults,
         currency=currency,
     )
-    try:
-        offers = await provider.search(query)
-    except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    offers = await search_cache.get_cached(query)
+    cached = offers is not None
+
+    if not cached:
+        try:
+            offers = await provider.search(query)
+        except ProviderError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        await search_cache.set_cached(query, offers)
 
     return {
         "provider": provider.name,
         "currency": currency.upper(),
+        "cached": cached,
         "count": len(offers),
         "offers": [asdict(offer) for offer in offers],
     }

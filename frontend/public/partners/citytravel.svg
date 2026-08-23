@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="City Travel">
+  <rect width="96" height="96" rx="22" fill="#FFF1E8"/>
+  <path d="M24 65h48v9H24v-9z" fill="#F26722"/>
+  <path d="M28 61V34h12v27H28zm18 0V25h12v36H46zm18 0V42h12v19H64z" fill="#F26722"/>
+  <path d="M22 38c18 5 35 5 52 0" stroke="#FFB27A" stroke-width="7" stroke-linecap="round"/>
+</svg>

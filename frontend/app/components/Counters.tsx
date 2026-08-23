@@ -52,7 +52,7 @@ function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: st
   }
 
   return (
-    <span className="text-4xl font-bold text-[var(--color-primary)]">
+    <span className="font-mono text-4xl font-bold text-[var(--color-primary)]">
       {format(current)}{suffix}
     </span>
   );
@@ -64,7 +64,7 @@ export default function Counters() {
   return (
     <section
       ref={ref}
-      className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${
+      className={`py-16 transition-all duration-700 ${
         isInView ? "opacity-100" : "opacity-0 translate-y-10"
       }`}
     >

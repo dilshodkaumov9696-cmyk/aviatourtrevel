@@ -7,7 +7,9 @@ services:
       POSTGRES_PASSWORD: aviator
       POSTGRES_DB: aviator_web
     ports:
-      - "5432:5432"
+      # 5432 на хосте занят нативным Postgres (там база другого проекта),
+      # и он перехватывает localhost. Разводим порты, чтобы не трогать чужое.
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

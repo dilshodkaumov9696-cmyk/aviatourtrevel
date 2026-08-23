@@ -20,6 +20,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
+  const [typedHint, setTypedHint] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +38,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
 
   useEffect(() => {
     if (!focused) {
+      setTypedHint("");
       setResults([]);
       setOpen(false);
       return;
@@ -53,6 +55,32 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
     setOpen(filtered.length > 0);
     setHighlighted(0);
   }, [query, all, excludeIata, focused]);
+
+  function getTypedHint(text: string) {
+    if (text.includes("Куда")) return "Введите город назначения";
+    if (text.includes("Откуда")) return "Введите город вылета";
+    return "Введите город";
+  }
+
+  useEffect(() => {
+    if (!focused || query.trim().length > 0 || airport) {
+      setTypedHint("");
+      return;
+    }
+
+    const hint = getTypedHint(placeholder);
+    setTypedHint("");
+    let index = 0;
+    const timer = window.setInterval(() => {
+      setTypedHint(hint.slice(0, index + 1));
+      index += 1;
+      if (index >= hint.length) {
+        window.clearInterval(timer);
+      }
+    }, 95);
+
+    return () => window.clearInterval(timer);
+  }, [focused, query, airport, placeholder]);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -118,12 +146,12 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
           }}
           onKeyDown={handleKey}
           onFocus={() => setFocused(true)}
-          placeholder={placeholder}
+          placeholder={typedHint ? "" : placeholder}
           autoComplete="off"
-          className="w-full bg-transparent outline-none text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal text-[15px] font-medium leading-tight"
+          className="w-full bg-transparent text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] placeholder:font-normal text-[15px] font-medium leading-tight outline-none focus:outline-none focus-visible:outline-none"
         />
         {airport && (
-          <span className="flex-shrink-0 text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary-light)] px-1.5 py-0.5 rounded">
+          <span className="flex-shrink-0 font-mono text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary-light)] px-1.5 py-0.5 rounded">
             {airport.iata}
           </span>
         )}
@@ -131,13 +159,19 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
           <button
             type="button"
             onMouseDown={handleClear}
-            className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition text-xs leading-none"
+            className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition text-xs leading-none outline-none focus:outline-none focus-visible:outline-none"
             tabIndex={-1}
           >
             ✕
           </button>
         )}
       </div>
+
+      {typedHint && (
+        <div className="mt-1 h-5 text-sm font-medium text-emerald-600 transition-all duration-200 dark:text-emerald-400">
+          {typedHint}
+        </div>
+      )}
 
       {open && (
         <div className="absolute left-0 top-full z-50 mt-2 min-w-full w-max max-w-[420px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
@@ -173,7 +207,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold tracking-wide ${
+                    className={`shrink-0 rounded-md px-2 py-1 font-mono text-[11px] font-bold tracking-wide ${
                       isCity
                         ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
                         : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"

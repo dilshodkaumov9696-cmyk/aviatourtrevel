@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
   mode: "single" | "range";
@@ -10,6 +10,8 @@ interface Props {
   onReturnChange: (d: string) => void;
   initialField?: "depart" | "return";
   onClose: () => void;
+  originIata?: string;
+  destinationIata?: string;
 }
 
 const MONTHS_RU = [
@@ -46,6 +48,14 @@ function fmtShort(d: string): string {
   return `${parseInt(day)} ${MONTHS_SHORT[parseInt(m) - 1]}`;
 }
 
+// Price heatmap: дешевле — зеленее, дороже — краснее. Полупрозрачный оверлей,
+// поэтому не требует отдельной палитры под тёмную тему.
+function priceHeatColor(price: number, min: number, max: number): string {
+  const t = max > min ? (price - min) / (max - min) : 0;
+  const hue = 120 - 120 * Math.max(0, Math.min(1, t));
+  return `hsla(${hue}, 75%, 45%, ${0.28 - 0.1 * t})`;
+}
+
 type DayState = "past" | "normal" | "single" | "start" | "end" | "between";
 
 interface MonthProps {
@@ -58,11 +68,13 @@ interface MonthProps {
   onDayClick: (d: string) => void;
   onDayHover: (d: string) => void;
   className?: string;
+  prices?: Record<string, number>;
+  priceRange?: { min: number; max: number };
 }
 
 function MonthGrid({
   year, month, today, departDate, effectiveEnd, isRange,
-  onDayClick, onDayHover, className = "",
+  onDayClick, onDayHover, className = "", prices, priceRange,
 }: MonthProps) {
   const offset = firstWeekday(year, month);
   const count = daysInMonth(year, month);
@@ -110,17 +122,22 @@ function MonthGrid({
               ? "text-[var(--color-primary)] font-medium cursor-pointer hover:bg-[var(--color-primary)] hover:text-white"
               : `text-[var(--color-text)] cursor-pointer hover:bg-[var(--color-bg-soft)] ${isToday ? "font-bold text-[var(--color-primary)]" : ""}`;
 
+          const price = prices?.[d];
+          const heat = price && priceRange && state === "normal" ? priceHeatColor(price, priceRange.min, priceRange.max) : undefined;
+
           return (
             <div key={d} className="relative h-10 flex items-center justify-center">
               {state === "between" && <span className="absolute inset-y-1 inset-x-0 bg-[var(--color-primary-light)]" />}
               {state === "start" && <span className="absolute inset-y-1 left-1/2 right-0 bg-[var(--color-primary-light)]" />}
               {state === "end" && <span className="absolute inset-y-1 left-0 right-1/2 bg-[var(--color-primary-light)]" />}
+              {heat && <span className="absolute h-9 w-9 rounded-full" style={{ backgroundColor: heat }} />}
 
               <button
                 type="button"
                 disabled={state === "past"}
                 onClick={() => state !== "past" && onDayClick(d)}
                 onMouseEnter={() => state !== "past" && onDayHover(d)}
+                title={price ? `~${price.toLocaleString("ru-RU")} ₽` : undefined}
                 className={`relative z-10 w-9 h-9 flex items-center justify-center text-sm rounded-full transition-colors ${btn}`}
               >
                 {day}
@@ -138,6 +155,8 @@ export default function DateRangePicker({
   onDepartChange, onReturnChange,
   initialField = "depart",
   onClose,
+  originIata,
+  destinationIata,
 }: Props) {
   const isRange = mode === "range";
   const now = new Date();
@@ -145,10 +164,42 @@ export default function DateRangePicker({
   const [leftMonth, setLeftMonth] = useState(now.getMonth());
   const [selectingReturn, setSelectingReturn] = useState(isRange && initialField === "return" && !!departDate);
   const [hovered, setHovered] = useState("");
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const fetchedMonths = useRef(new Set<string>());
 
   const today = todayStr();
   const right = addMonths(leftYear, leftMonth, 1);
   const atCurrentMonth = leftYear === now.getFullYear() && leftMonth === now.getMonth();
+
+  // Price heatmap: подтягиваем цены Aviasales по датам для видимых месяцев.
+  // Кэшируем по месяцу, чтобы не дёргать API повторно при листании туда-обратно.
+  useEffect(() => {
+    if (!originIata || !destinationIata) return;
+    const months = isRange ? [[leftYear, leftMonth], [right.year, right.month]] : [[leftYear, leftMonth]];
+
+    for (const [y, m] of months) {
+      const monthStr = `${y}-${String(m + 1).padStart(2, "0")}`;
+      const key = `${originIata}-${destinationIata}-${monthStr}`;
+      if (fetchedMonths.current.has(key)) continue;
+      fetchedMonths.current.add(key);
+
+      fetch(`/api/calendar-prices?origin=${originIata}&destination=${destinationIata}&month=${monthStr}`)
+        .then((r) => r.json())
+        .then((data: { prices?: Record<string, number> }) => {
+          if (data.prices && Object.keys(data.prices).length > 0) {
+            setPrices((cur) => ({ ...cur, ...data.prices }));
+          }
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originIata, destinationIata, leftYear, leftMonth, isRange]);
+
+  const priceRange = useMemo(() => {
+    const values = Object.values(prices);
+    if (values.length === 0) return undefined;
+    return { min: Math.min(...values), max: Math.max(...values) };
+  }, [prices]);
 
   const effectiveEnd =
     isRange && selectingReturn && hovered && hovered > departDate ? hovered : returnDate;
@@ -204,6 +255,8 @@ export default function DateRangePicker({
     isRange,
     onDayClick: handleDayClick,
     onDayHover: setHovered,
+    prices,
+    priceRange,
   };
 
   return (

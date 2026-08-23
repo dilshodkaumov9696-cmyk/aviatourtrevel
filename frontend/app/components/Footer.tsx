@@ -1,31 +1,45 @@
 "use client";
 
+import Link from "next/link";
+
 const SECTIONS = [
   {
-    title: "Компания",
+    title: "Навигация",
     links: [
-      { label: "О нас", href: "#" },
-      { label: "Карьера", href: "#" },
-      { label: "Блог", href: "#" },
-      { label: "Пресс-центр", href: "#" },
+      { label: "Поиск рейсов", href: "/search-results" },
+      { label: "Направления", href: "/destinations" },
+      { label: "Блог", href: "/travel-blog" },
+      { label: "О нас", href: "/about" },
+      { label: "Контакты", href: "/contact" },
+    ],
+  },
+  {
+    title: "Информация",
+    links: [
+      { label: "Статус рейса", href: "/flight-status" },
+      { label: "Правила тарифов", href: "/fare-rules" },
+      { label: "Багаж", href: "/baggage-policy" },
+      { label: "Визы", href: "/visa-info" },
+      { label: "Онлайн-регистрация", href: "/online-check-in" },
+      { label: "Программа лояльности", href: "/loyalty-program" },
     ],
   },
   {
     title: "Поддержка",
     links: [
-      { label: "Служба помощи", href: "#help" },
-      { label: "Контакты", href: "#" },
-      { label: "FAQ", href: "#help" },
-      { label: "Статус системы", href: "#" },
+      { label: "Управление бронированием", href: "/manage-booking" },
+      { label: "Частые вопросы", href: "/faq" },
+      { label: "Мои бронирования", href: "/my-bookings" },
+      { label: "Связаться с нами", href: "/contact" },
     ],
   },
   {
-    title: "Юридическое",
+    title: "Компания",
     links: [
-      { label: "Условия использования", href: "#" },
-      { label: "Политика конфиденциальности", href: "#" },
-      { label: "Политика cookies", href: "#" },
-      { label: "Возврат билетов", href: "#" },
+      { label: "Корпоративным клиентам", href: "/corporate" },
+      { label: "Вакансии", href: "/careers" },
+      { label: "Политика конфиденциальности", href: "/privacy" },
+      { label: "Условия использования", href: "/terms" },
     ],
   },
 ];
@@ -86,6 +100,24 @@ function SocialIcon({ icon }: { icon: string }) {
   }
 }
 
+function FooterLink({ href, label }: { href: string; label: string }) {
+  const isExternal = /^https?:\/\//.test(href) || href.startsWith("mailto:");
+
+  if (isExternal) {
+    return (
+      <a href={href} className="text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
+        {label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className="text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
+      {label}
+    </Link>
+  );
+}
+
 function PaymentIcon({ name }: { name: string }) {
   if (name === "visa") return (
     <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Visa">
@@ -121,39 +153,35 @@ export default function Footer() {
 
   return (
     <footer className="bg-[var(--color-surface)] border-t border-[var(--color-border)] mt-20">
-      {/* Основной контент */}
       <div className="mx-auto max-w-7xl px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Бренд слева */}
-          <div className="md:col-span-1">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] mb-10">
+          <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white font-bold shadow-sm">
                 A
               </div>
-              <span className="text-lg font-bold text-[var(--color-primary)]">Aviator</span>
+              <span className="text-lg font-bold text-[var(--color-primary)]">Aviatour.travel</span>
             </div>
             <p className="text-sm text-[var(--color-text-muted)] mb-5 leading-relaxed">
-              Поиск и сравнение авиабилетов на более чем 500 направлениях. Лучшие цены за секунды.
+              Ваш персональный навигатор в мире авиаперелётов. Лучшие цены, проверенные авиакомпании и безупречный сервис.
             </p>
 
-            {/* Контакты */}
             <div className="mb-5 space-y-2 text-xs text-[var(--color-text-muted)]">
               <div className="flex items-center gap-2">
                 <span className="text-[var(--color-primary)]">✉</span>
-                <a href="mailto:support@aviator.ru" className="transition hover:text-[var(--color-primary)]">support@aviator.ru</a>
+                <a href="mailto:hello@aviatour.travel" className="transition hover:text-[var(--color-primary)]">hello@aviatour.travel</a>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[var(--color-primary)]">☎</span>
-                <a href="tel:+78001234567" className="transition hover:text-[var(--color-primary)]">+7 (800) 123-45-67</a>
-                <span className="text-[10px] opacity-60">бесплатно</span>
+                <a href="tel:+78005550199" className="transition hover:text-[var(--color-primary)]">+7 (800) 555-01-99</a>
+                <span className="text-[10px] opacity-60">круглосуточно</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[var(--color-primary)]">⏰</span>
-                <span>Пн–Вс, 08:00–23:00</span>
+                <span>Пн–Вс, 24/7</span>
               </div>
             </div>
 
-            {/* Соцсети */}
             <div className="flex gap-3">
               {SOCIALS.map((s) => (
                 <a
@@ -170,19 +198,13 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* 3 колонки ссылок */}
           {SECTIONS.map((section) => (
             <div key={section.title}>
               <h3 className="mb-4 text-sm font-semibold text-[var(--color-text)]">{section.title}</h3>
               <ul className="space-y-2.5">
                 {section.links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      className="text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]"
-                    >
-                      {link.label}
-                    </a>
+                    <FooterLink href={link.href} label={link.label} />
                   </li>
                 ))}
               </ul>
@@ -190,7 +212,6 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Платёжные методы */}
         <div className="mb-6 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-6">
           <span className="text-xs text-[var(--color-text-muted)]">Принимаем к оплате:</span>
           <div className="flex flex-wrap items-center gap-2">
@@ -204,10 +225,9 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Разделитель */}
         <div className="border-t border-[var(--color-border)] pt-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
-            <div>© {year} Aviator. Все права защищены. Сайт является агрегатором авиабилетов.</div>
+            <div>© {year} Aviatour.travel. Все права защищены. Сайт является агрегатором авиабилетов.</div>
             <div className="flex items-center gap-1 opacity-70">
               <span>🔒</span>
               Поиск билетов — быстро и безопасно

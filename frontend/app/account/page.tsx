@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { MyOrders, SearchHistory } from "./AccountPanels";
+import AccountHeader from "./AccountHeader";
 
 export default function AccountPage() {
   return (
@@ -26,15 +28,12 @@ export default function AccountPage() {
           </p>
         </div>
 
+        <AccountHeader />
+
         <section className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_0.9fr]">
           <div className="space-y-5">
             <Panel title="Мои заказы">
-              <EmptyState
-                icon="🎫"
-                title="Заказов пока нет"
-                description="Здесь появятся ваши билеты после бронирования. Начните поиск прямо сейчас."
-                action={<Link href="/#search" className="inline-block rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">Найти рейс</Link>}
-              />
+              <MyOrders />
             </Panel>
 
             <Panel title="Пассажиры и документы">
@@ -53,11 +52,7 @@ export default function AccountPage() {
 
           <div className="space-y-5">
             <Panel title="История поиска">
-              <EmptyState
-                icon="🔍"
-                title="История пуста"
-                description="Маршруты, которые вы искали, будут отображаться здесь."
-              />
+              <SearchHistory />
             </Panel>
 
             <Panel title="Избранные маршруты">

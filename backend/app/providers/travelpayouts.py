@@ -7,6 +7,7 @@ API (требует 50k+ MAU) или консолидатор — провайд
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import urllib.parse
 from datetime import datetime, timedelta
@@ -20,8 +21,15 @@ from app.providers.base import (
     ProviderError,
 )
 
+logger = logging.getLogger(__name__)
+
 PRICES_URL = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
 AVIASALES_BASE = "https://www.aviasales.com"
+
+# Повторы на сетевых сбоях: задержки 0.5 с и 1 с. Больше ждать нельзя —
+# запрос идёт синхронно в ответ пользователю.
+RETRY_ATTEMPTS = 3
+RETRY_BASE_DELAY = 0.5
 
 # Город/аэропорты одной агломерации — маршрут «внутри города» бессмыслен.
 _SAME_CITY_GROUPS = (
@@ -87,6 +95,36 @@ class TravelpayoutsProvider(BookingProvider):
         offers.sort(key=lambda o: o.price)
         return offers
 
+    async def _get_with_retry(self, client: httpx.AsyncClient, params: dict) -> httpx.Response:
+        """GET с повтором на сетевых сбоях и 5xx.
+
+        В логах ловились ConnectTimeout к Travelpayouts: одиночный таймаут
+        ронял весь поиск, хотя следующая попытка проходила. Повторяем только
+        то, что имеет шанс починиться само — таймауты, обрывы и ошибки на
+        стороне провайдера. На 4xx (плохой запрос, исчерпан лимит) повтор
+        бессмысленен, отдаём ошибку сразу.
+        """
+        last: Exception | None = None
+        for attempt in range(RETRY_ATTEMPTS):
+            try:
+                resp = await client.get(PRICES_URL, params=params)
+                resp.raise_for_status()
+                return resp
+            except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+                # 4xx не повторяем — сам по себе не исправится.
+                if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code < 500:
+                    raise
+                last = exc
+                if attempt < RETRY_ATTEMPTS - 1:
+                    delay = RETRY_BASE_DELAY * (2**attempt)
+                    logger.warning(
+                        "Travelpayouts не ответил (попытка %d/%d): %s. Повтор через %.1f с",
+                        attempt + 1, RETRY_ATTEMPTS, type(exc).__name__, delay,
+                    )
+                    await asyncio.sleep(delay)
+
+        raise ProviderError(f"travelpayouts не ответил за {RETRY_ATTEMPTS} попытки: {last}") from last
+
     async def _fetch(
         self,
         client: httpx.AsyncClient,
@@ -110,8 +148,7 @@ class TravelpayoutsProvider(BookingProvider):
         if return_at:
             params["return_at"] = return_at
 
-        resp = await client.get(PRICES_URL, params=params)
-        resp.raise_for_status()
+        resp = await self._get_with_retry(client, params)
         data = resp.json()
         if not data.get("success"):
             raise ProviderError(f"success=false: {data.get('error') or data}")

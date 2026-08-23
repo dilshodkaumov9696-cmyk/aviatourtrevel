@@ -44,7 +44,7 @@ const IconCheck = () => (
 const ITEMS = [
   { icon: <IconShield />, title: "Безопасная оплата", text: "Платежи защищены, данные карты под надёжным шифрованием." },
   { icon: <IconSupport />, title: "Поддержка 24/7", text: "Помогаем в любое время — до, во время и после поездки." },
-  { icon: <IconTag />, title: "Лучшая цена", text: "Сравниваем сотни авиакомпаний и агентств за секунды." },
+  { icon: <IconTag />, title: "Лучшая цена", text: "" },
   { icon: <IconCheck />, title: "Без скрытых сборов", text: "Честная итоговая стоимость — без доплат на последнем шаге." },
 ];
 
@@ -54,7 +54,7 @@ export default function WhyUs() {
   return (
     <section
       ref={ref}
-      className={`bg-[var(--color-bg)] py-16 transition-all duration-700 ${
+      className={`py-16 transition-all duration-700 ${
         isInView ? "opacity-100" : "opacity-0 translate-y-10"
       }`}
     >

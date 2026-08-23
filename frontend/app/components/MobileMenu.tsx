@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import SettingsSwitcher from "./SettingsSwitcher";
 
-const NAV = [
-  { href: "#search", label: "Авиабилеты" },
-  { href: "#directions", label: "Направления" },
-  { href: "#deals", label: "Акции" },
-  { href: "#help", label: "Помощь" },
+type SectionKey = "search" | "directions" | "deals" | "help";
+
+const NAV: Array<{ href: string; label: string; section: SectionKey }> = [
+  { href: "#search", label: "Авиабилеты", section: "search" },
+  { href: "#directions", label: "Направления", section: "directions" },
+  { href: "#deals", label: "Акции", section: "deals" },
+  { href: "#help", label: "Помощь", section: "help" },
 ];
 
-export default function MobileMenu({ onLogin }: { onLogin: () => void }) {
+export default function MobileMenu({ onLogin, activeSection }: { onLogin: () => void; activeSection: SectionKey }) {
   const [open, setOpen] = useState(false);
 
   // Esc для закрытия + блокировка прокрутки фона, пока меню открыто
@@ -89,7 +91,7 @@ export default function MobileMenu({ onLogin }: { onLogin: () => void }) {
                   key={n.href}
                   href={n.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-xl px-4 py-3 text-base font-medium text-[var(--color-text)] transition hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)]"
+                  className={`rounded-xl px-4 py-3 text-base font-medium transition ${activeSection === n.section ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)]"}`}
                 >
                   {n.label}
                 </a>

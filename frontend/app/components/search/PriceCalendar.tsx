@@ -24,12 +24,6 @@ function addDays(d: Date, n: number): Date {
 function dayLabel(d: Date): string {
   return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${WEEKDAYS[d.getDay()]}`;
 }
-// Детерминированный мок — пока нет данных API
-function mockPrice(d: Date): number {
-  const seed = (d.getDate() * 7 + d.getMonth() * 13) % 23;
-  const base = 3300 + seed * 130;
-  return seed % 4 === 0 ? base * 3 : base;
-}
 
 interface Props {
   selected: string;
@@ -66,11 +60,10 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
   const base = parseISO(anchor);
   const days = Array.from({ length: 7 }, (_, i) => addDays(base, i - 3));
 
-  function priceFor(d: Date): { price: number; isReal: boolean } {
+  function priceFor(d: Date): number | null {
     const iso = toISO(d);
-    if (iso === selected && selectedPrice) return { price: selectedPrice, isReal: true };
-    if (apiPrices[iso]) return { price: apiPrices[iso], isReal: true };
-    return { price: mockPrice(d), isReal: false };
+    if (iso === selected && selectedPrice) return selectedPrice;
+    return apiPrices[iso] ?? null;
   }
 
   return (
@@ -88,8 +81,8 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
         {days.map((d) => {
           const iso = toISO(d);
           const isSel = iso === selected;
-          const { price, isReal } = priceFor(d);
-          const cheap = price < 10000;
+          const price = priceFor(d);
+          const cheap = price !== null && price < 10000;
           return (
             <button
               key={iso}
@@ -102,11 +95,12 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
               }`}
             >
               <div className="text-[11px] text-[var(--color-text-muted)]">{dayLabel(d)}</div>
-              <div className={`text-[13px] font-semibold ${cheap ? "text-green-600" : "text-red-500"}`}>
-                {format(price)}
-              </div>
-              {!isReal && (
-                <div className="text-[9px] text-[var(--color-text-muted)] opacity-60">~</div>
+              {price !== null ? (
+                <div className={`text-[13px] font-semibold ${cheap ? "text-green-600" : "text-red-500"}`}>
+                  {format(price)}
+                </div>
+              ) : (
+                <div className="text-[13px] font-semibold text-[var(--color-text-muted)] opacity-50">—</div>
               )}
             </button>
           );

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Sirena">
+  <rect width="96" height="96" rx="22" fill="#EAF4FF"/>
+  <path d="M21 56c18-23 37-31 56-24-20 4-34 15-43 33l-13-9z" fill="#1F6FB2"/>
+  <path d="M32 60c13-13 26-17 40-13-12 5-21 13-27 24l-13-11z" fill="#64B5F6"/>
+  <circle cx="70" cy="27" r="6" fill="#1F6FB2"/>
+</svg>

@@ -32,8 +32,6 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
   const { format, t, lang } = useSettings();
   const { segments, layovers, estimated } = buildItinerary(f, route);
   const total = f.pricePerPax * paxCount;
-  const first = segments[0];
-  const last = segments[segments.length - 1];
   const stopsText = lang === "ru" ? stopsLabel(f.stops) : `${f.stops} ${t("card.stops_word")}`;
 
   useEffect(() => {

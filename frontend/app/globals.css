@@ -4,43 +4,49 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Основной — глубокий морской синий (как у референса) */
-  --color-primary: #1E5C80;
-  --color-primary-dark: #15425C;
-  --color-primary-light: #E8F1F7;
-  /* Акцент — светло-голубой */
-  --color-secondary: #49A8DE;
-  --color-tertiary: #4CAEC0;
-  /* CTA — золотой/жёлтый (как у референса) */
-  --color-accent: #FFD700;
-  --color-accent-dark: #E6C200;
-  /* Тёплый дополнительный — песочный */
-  --color-warm: #F0D7AA;
+  /* Основной — новый синий */
+  --color-primary: #2E6BFF;
+  --color-primary-dark: #1E4FD1;
+  --color-primary-light: #E6F0FF;
+  --color-secondary: #2F7FA8;
+  --color-tertiary: #24A7B6;
+  /* Акцент — электрик-зелёный */
+  --color-accent: #2FD98A;
+  --color-accent-dark: #22B873;
+  --color-accent-foreground: #04331F; /* тёмный текст на акценте */
+  --color-highlight: #FF4FA0;
+  --color-warm: #FFE3C2;
   /* База */
-  --color-bg: #ffffff;
-  --color-bg-soft: #F4F8FB;
-  --color-surface: #ffffff;
-  --color-text: #1A1A1A;
-  --color-text-muted: #64748B;
-  --color-border: #CAD9E0;
+  --color-bg: #FFFFFF;
+  --color-bg-soft: #F3F7FF;
+  --color-surface: #FFFFFF;
+  --color-text: #112533;
+  --color-text-muted: #5E7282;
+  --color-border: #D8E5EE;
+  --radius-sm: 0.65rem;
+  --radius-md: 0.9rem;
+  --radius-lg: 1.2rem;
+  --shadow-soft: 0 12px 40px rgba(46, 107, 255, 0.06);
+  --shadow-card: 0 16px 48px rgba(46, 107, 255, 0.10);
 }
 
-/* Тёмная тема — морской бренд сохраняем, поверхности уходят в тёмный сланец */
 .dark {
-  --color-primary: #4AA3D8;
-  --color-primary-dark: #2E7BAD;
-  --color-primary-light: #1B3A4D;
-  --color-secondary: #5BB4E6;
-  --color-tertiary: #5FBFD0;
-  --color-accent: #FFD700;
-  --color-accent-dark: #E6C200;
-  --color-warm: #E9CFA0;
-  --color-bg: #0D1A24;
-  --color-bg-soft: #1B2C39;
-  --color-surface: #14232E;
-  --color-text: #E7EFF5;
-  --color-text-muted: #93A6B5;
-  --color-border: #2C404E;
+  --color-primary: #56B5E2;
+  --color-primary-dark: #2A7FA8;
+  --color-primary-light: #153446;
+  --color-secondary: #69C5F2;
+  --color-tertiary: #27C7D1;
+  --color-accent: #2FD98A;
+  --color-accent-dark: #22B873;
+  --color-warm: #F4D1A9;
+  --color-bg: #07131A;
+  --color-bg-soft: #11212A;
+  --color-surface: #0F1D27;
+  --color-text: #eef6fb;
+  --color-text-muted: #95a9b7;
+  --color-border: #254455;
+  --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 18px 55px rgba(0, 0, 0, 0.34);
 }
 
 @theme inline {
@@ -51,6 +57,10 @@
   --color-cta-dark: var(--color-accent-dark);
   --color-soft: var(--color-bg-soft);
   --color-muted: var(--color-text-muted);
+  /* Имена приходят из next/font (см. app/layout.tsx), а не из внешнего запроса. */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: var(--font-syne), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 html {
@@ -58,10 +68,50 @@ html {
 }
 
 body {
-  background: var(--color-bg);
+  background: #ffffff;
   color: var(--color-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 28%),
+    linear-gradient(135deg, #07131a 0%, #0f202c 45%, #112730 100%);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(255, 216, 77, 0.35);
+  color: var(--color-text);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition: all 180ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
 }
 
 /* Якорные секции не прячутся под будущий sticky-хедер */
@@ -211,5 +261,58 @@ body {
   .animate-fade-in-down,
   .animate-scale-in,
   .animate-slide-in-right,
-  .animate-marquee { animation: none; }
+  .animate-marquee,
+  .animate-pulse,
+  .animate-bounce { animation: none; }
+}
+
+/* ===== Глобус MapLibre ===== */
+.globe-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.globe-canvas .maplibregl-canvas { outline: none; }
+.globe-canvas .maplibregl-ctrl-attrib { display: none; }
+
+/* Карточка направления на глобусе */
+.globe-card {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 5px;
+  background: #fff; border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(8, 22, 34, 0.28);
+  cursor: pointer; user-select: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap; position: relative;
+}
+.globe-card:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 28px rgba(8, 22, 34, 0.36); z-index: 5; }
+.globe-card__img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.globe-card__body { display: flex; flex-direction: column; gap: 1px; padding-right: 4px; }
+.globe-card__city { font-size: 14px; font-weight: 700; color: #15425C; line-height: 1.1; }
+.globe-card__meta { display: flex; align-items: center; gap: 5px; font-size: 12px; line-height: 1.1; }
+.globe-card__temp { color: #C65300; font-weight: 600; font-family: var(--font-mono); }
+.globe-card__w { font-size: 11px; }
+.globe-card__price { color: #1D9E55; font-weight: 700; font-family: var(--font-mono); }
+/* «Хвостик» карточки к точке города */
+.globe-card__pin {
+  position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+  width: 9px; height: 9px; background: #E24B4A; border: 2px solid #fff; border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* Хаб (Душанбе) */
+.globe-hub { display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.globe-hub__dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #FFD700; border: 2px solid #fff;
+  box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.6);
+  animation: globe-pulse 2s infinite;
+}
+.globe-hub__label {
+  margin-top: 3px; font-size: 13px; font-weight: 700; color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+@keyframes globe-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(255, 215, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .globe-hub__dot { animation: none; }
 }

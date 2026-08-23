@@ -48,11 +48,16 @@ interface Props {
   onCabin: (c: CabinClass) => void;
   align?: "left" | "right";
   className?: string;
+  /**
+   * "standalone" — самостоятельная карточка с рамкой (сложный маршрут).
+   * "bar" — ячейка единой строки поиска: без рамки и фона, тянется на всю высоту строки.
+   */
+  variant?: "standalone" | "bar";
 }
 
 export default function PassengersPicker({
   passengers, cabin, onPassengers, onCabin,
-  align = "right", className = "",
+  align = "right", className = "", variant = "standalone",
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -73,9 +78,13 @@ export default function PassengersPicker({
   }
 
   return (
-    <div ref={ref} className={`relative ${className}`}>
+    <div ref={ref} className={`relative flex ${className}`}>
       <div
-        className="flex items-center gap-2.5 min-h-[52px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-3.5 py-1.5 cursor-pointer hover:border-[var(--color-primary)] transition"
+        className={
+          variant === "bar"
+            ? "flex h-full w-full min-h-[60px] items-center gap-2.5 px-4 py-2 cursor-pointer transition-colors duration-200 hover:bg-[var(--color-surface)]"
+            : "flex w-full items-center gap-2.5 min-h-[52px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-3.5 py-1.5 cursor-pointer hover:border-[var(--color-primary)] transition"
+        }
         onClick={() => setOpen((v) => !v)}
       >
         <IconUser className="text-[var(--color-primary)] shrink-0" />

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Flight, getFlights } from "../data/flights";
-import { searchFlights, buildAviasalesUrl } from "../lib/api";
+import { searchFlights, buildAviasalesUrl, createPriceAlert } from "../lib/api";
 import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
 import FlightLoader from "../components/search/FlightLoader";
@@ -25,6 +25,13 @@ const SORT_KEY: Record<Sort, string> = {
   baggage: "search.sort_baggage",
 };
 const SORT_CYCLE: Sort[] = ["best", "price", "duration", "baggage"];
+
+// Чип свёрнутой формы поиска в шапке. flex-auto (а не flex-1) растягивает строку на всю
+// ширину, отталкиваясь от естественной ширины содержимого: длинная дата получает больше
+// места, чем короткий город, и ничего не обрезается раньше времени.
+// min-w-0 + truncate внутри страхуют от совсем длинных названий.
+const searchChip =
+  "flex min-w-0 flex-auto items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]";
 
 const HUB_AIRPORTS: Record<string, { iata: string; name: string }[]> = {
   MOW: [
@@ -61,7 +68,18 @@ export default function SearchResults() {
   const toIata = sp.get("toIata") || "IST";
   const adults = Number(sp.get("adults") || 1);
   const children = Number(sp.get("children") || 0);
+  const infants = Number(sp.get("infants") || 0);
+  // Два разных счёта, их нельзя путать:
+  // paxTotal — сколько человек летит, включая младенцев без места. Идёт в шапку, чтобы
+  //   совпадало с формой на главной (она считает младенцев).
+  // paxCount — на сколько тарифов умножается цена. Младенец без места отдельный тариф
+  //   не занимает, поэтому в множитель не входит.
+  const paxTotal = Math.max(1, adults + children + infants);
   const paxCount = Math.max(1, adults + children);
+  // Класс обслуживания приходит из формы на главной; неизвестное значение — эконом.
+  const cabinKey = ({ business: "common.business", first: "common.first" } as const)[
+    sp.get("cabin") as "business" | "first"
+  ] ?? "common.economy";
   const urlReturnDate = sp.get("returnDate") || "";
 
   const isRoundTrip = Boolean(urlReturnDate);
@@ -102,6 +120,8 @@ export default function SearchResults() {
   const [priceAlertEmail, setPriceAlertEmail] = useState("");
   const [priceTarget, setPriceTarget] = useState("5000");
   const [priceAlertSaved, setPriceAlertSaved] = useState(false);
+  const [priceAlertSending, setPriceAlertSending] = useState(false);
+  const [priceAlertError, setPriceAlertError] = useState("");
   const [filters, setFilters] = useState<FilterState>({
     stopsMax: null,
     priceMin: 0,
@@ -260,29 +280,35 @@ export default function SearchResults() {
         <div className="mx-auto max-w-7xl px-4 py-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex shrink-0 items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-[var(--color-primary)]">A</div>
+              {/* Знак как на главной: 36px, squircle, салатовое кольцо. Заливка инвертирована —
+                  на синей шапке синий фон знака слился бы с градиентом. */}
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--color-accent)] bg-white font-bold text-[var(--color-primary)] shadow-sm">A</div>
               <span className="hidden text-lg font-bold lg:block">Aviator</span>
             </Link>
 
-            <Link href="/" className="flex flex-1 flex-wrap items-center gap-2" title="Изменить поиск">
-              <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]">
-                <IconPlane size={15} className="text-[var(--color-primary)]" />
-                {fromCity} <span className="text-[11px] text-slate-400">{fromIata}</span>
+            {/* Свёрнутая форма поиска. flex-1 на каждом чипе — строка занимает всю ширину
+                от логотипа до «Изменить», без пустоты справа. */}
+            <Link href="/" className="flex min-w-0 flex-1 flex-wrap items-center gap-2" title="Изменить поиск">
+              <span className={searchChip}>
+                <IconPlane size={15} className="shrink-0 text-[var(--color-primary)]" />
+                <span className="truncate">{fromCity}</span>
+                <span className="shrink-0 text-[11px] text-slate-400">{fromIata}</span>
               </span>
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[var(--color-primary)]">
                 <IconSwap size={13} />
               </span>
-              <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]">
-                <IconPin size={15} className="text-[var(--color-primary)]" />
-                {toCity} <span className="text-[11px] text-slate-400">{toIata}</span>
+              <span className={searchChip}>
+                <IconPin size={15} className="shrink-0 text-[var(--color-primary)]" />
+                <span className="truncate">{toCity}</span>
+                <span className="shrink-0 text-[11px] text-slate-400">{toIata}</span>
               </span>
-              <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]">
-                <IconCalendar size={15} className="text-[var(--color-primary)]" />
-                {dShort}{rShort ? ` — ${rShort}` : ""}
+              <span className={searchChip}>
+                <IconCalendar size={15} className="shrink-0 text-[var(--color-primary)]" />
+                <span className="truncate">{dShort}{rShort ? ` — ${rShort}` : ""}</span>
               </span>
-              <span className="hidden items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A] sm:flex">
-                <IconUser size={15} className="text-[var(--color-primary)]" />
-                {paxCount} {t("common.passengers")}, {t("common.economy")}
+              <span className={`${searchChip} hidden sm:flex`}>
+                <IconUser size={15} className="shrink-0 text-[var(--color-primary)]" />
+                <span className="truncate">{paxTotal} {t("common.passengers")}, {t(cabinKey)}</span>
               </span>
             </Link>
 
@@ -292,7 +318,7 @@ export default function SearchResults() {
 
             <Link
               href="/"
-              className="shrink-0 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700"
+              className="shrink-0 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-[1.06]"
             >
               {t("common.change")}
             </Link>
@@ -450,16 +476,43 @@ export default function SearchResults() {
               />
               <button
                 type="button"
-                onClick={() => setPriceAlertSaved(Boolean(priceAlertEmail && priceTarget))}
-                className="rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+                disabled={priceAlertSending || !priceAlertEmail || !priceTarget}
+                onClick={async () => {
+                  setPriceAlertError("");
+                  setPriceAlertSending(true);
+                  try {
+                    await createPriceAlert({
+                      email: priceAlertEmail,
+                      origin: fromIata,
+                      destination: toIata,
+                      departDate: date,
+                      // returnDate — состояние с дефолтом на будущее, поэтому оно
+                      // непусто и для перелётов в одну сторону. Признак — isRoundTrip.
+                      returnDate: isRoundTrip ? returnDate : undefined,
+                      targetPrice: Number(priceTarget),
+                      cabin: sp.get("cabin") ?? "economy",
+                    });
+                    setPriceAlertSaved(true);
+                  } catch (e) {
+                    setPriceAlertError(e instanceof Error ? e.message : "Не удалось подписаться");
+                  } finally {
+                    setPriceAlertSending(false);
+                  }
+                }}
+                className="rounded-xl bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Следить
+                {priceAlertSending ? "Сохраняем…" : "Следить"}
               </button>
             </div>
           </div>
-          {priceAlertSaved && (
+          {priceAlertSaved && !priceAlertError && (
             <div className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
               Готово: уведомим на {priceAlertEmail}, когда цена будет ниже {Number(priceTarget).toLocaleString("ru-RU")} ₽.
+            </div>
+          )}
+          {priceAlertError && (
+            <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+              {priceAlertError}
             </div>
           )}
         </div>
@@ -612,6 +665,7 @@ export default function SearchResults() {
                           : () => handleSelectReturn(f)
                       ) : undefined}
                       isSelected={isRoundTrip && (phase === "outbound" ? isOut : isRet)}
+                      isBest={sort === "best" && f.id === results[0]?.id}
                     />
                   );
                 })}

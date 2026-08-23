@@ -21,8 +21,10 @@ function fmtDate(d: string): string {
   return `${parseInt(day)} ${MONTHS_SHORT[parseInt(m) - 1]}`;
 }
 
+// Ячейка сегмента: рамку и фон даёт контейнер-бар, поля стыкуются вплотную
+// и разделяются 1px-дивайдерами — как в основной форме поиска на главной.
 const box =
-  "flex items-center gap-2.5 min-h-[52px] rounded-xl border bg-[var(--color-bg-soft)] px-3.5 py-1.5 transition-colors";
+  "relative flex min-h-[60px] w-full items-center gap-2.5 px-4 py-2 transition-colors duration-200 hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)]";
 
 interface Props {
   segments: MultiSegment[];
@@ -58,9 +60,11 @@ export default function MultiCitySegments({
             {idx + 1}
           </div>
 
+          {/* Единый бар сегмента: Откуда | Куда | Когда — без зазоров */}
+          <div className="flex min-w-0 flex-1 flex-col divide-y divide-[var(--color-border)] rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] md:flex-row md:divide-x md:divide-y-0">
           {/* Маршрут */}
-          <div className="relative flex flex-col sm:flex-row gap-2 flex-1 min-w-0">
-            <div className={`flex-1 ${box} focus-within:border-[var(--color-primary)] ${errors[`from${seg.id}`] ? "border-red-400" : "border-[var(--color-border)]"}`}>
+          <div className="relative flex flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 flex-1 min-w-0">
+            <div className={`flex-1 min-w-0 ${box} rounded-t-2xl sm:rounded-tr-none md:rounded-bl-2xl ${errors[`from${seg.id}`] ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
               <IconPlane className="text-[var(--color-primary)] shrink-0" />
               <AirportInput
                 airport={seg.from}
@@ -80,7 +84,7 @@ export default function MultiCitySegments({
               <IconSwap size={15} className="rotate-90 sm:rotate-0" />
             </button>
 
-            <div className={`flex-1 ${box} focus-within:border-[var(--color-primary)] ${errors[`to${seg.id}`] ? "border-red-400" : "border-[var(--color-border)]"}`}>
+            <div className={`flex-1 min-w-0 ${box} sm:rounded-tr-2xl md:rounded-tr-none ${errors[`to${seg.id}`] ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
               <IconPin className="text-[var(--color-primary)] shrink-0" />
               <AirportInput
                 airport={seg.to}
@@ -93,9 +97,9 @@ export default function MultiCitySegments({
           </div>
 
           {/* Дата */}
-          <div ref={openDateId === seg.id ? popupRef : null} className="relative md:w-44">
+          <div ref={openDateId === seg.id ? popupRef : null} className="relative flex shrink-0 md:w-44">
             <div
-              className={`${box} cursor-pointer hover:border-[var(--color-primary)] ${errors[`date${seg.id}`] ? "border-red-400" : "border-[var(--color-border)]"}`}
+              className={`${box} cursor-pointer rounded-bl-2xl rounded-br-2xl md:rounded-bl-none md:rounded-tr-2xl ${errors[`date${seg.id}`] ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}
               onClick={() => setOpenDateId(openDateId === seg.id ? null : seg.id)}
             >
               <IconCalendar className={`shrink-0 ${seg.date ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
@@ -119,6 +123,7 @@ export default function MultiCitySegments({
                 />
               </div>
             )}
+          </div>
           </div>
 
           {/* Удалить */}

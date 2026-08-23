@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { formatDuration } from "../data/flights";
 import { useSettings } from "../context/settings";
 import PaymentStep from "../components/booking/PaymentStep";
-import { buildAviasalesUrl } from "../lib/api";
+import { buildAviasalesUrl, createOrder } from "../lib/api";
 
 const GENDERS = [
   { v: "male", label: "Мужской" },
@@ -110,6 +110,8 @@ const PAYMENT_METHODS: { id: PaymentMethod; title: string; desc: string }[] = [
 ];
 
 const STATUS_STEPS = ["Заявка создана", "Ожидает оплаты", "Оплачено", "Билет выписан"];
+// Коды статусов с бэкенда в том же порядке, что и подписи выше.
+const STATUS_ORDER = ["new", "awaiting_payment", "paid", "issued"];
 const OCCUPIED_SEATS = new Set(["1A", "1B", "2C", "4D", "5E", "7F"]);
 
 function SeatPicker({
@@ -313,6 +315,10 @@ export default function BookingPage() {
   const [selectedSeat, setSelectedSeat] = useState("");
   const [promo, setPromo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+  const [submitting, setSubmitting] = useState(false);
+  // Код и статус заявки от бэкенда — показываем клиенту, по коду заявка находится.
+  const [orderRef, setOrderRef] = useState("");
+  const [orderStatus, setOrderStatus] = useState("");
 
   const activeTariff = TARIFFS.find((t) => t.code === tariff) ?? TARIFFS[1];
   const tariffExtra = activeTariff.extraPerPax * paxCount;
@@ -337,9 +343,45 @@ export default function BookingPage() {
     return errs.length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (validate()) setStep("payment");
+    if (!validate()) return;
+
+    setSubmitting(true);
+    try {
+      const created = await createOrder({
+        email,
+        phone,
+        origin: fromIata,
+        destination: toIata,
+        departDate: dateISO,
+        cabin: sp.get("cabin") ?? "economy",
+        airline: airlineCode || undefined,
+        flightNumber: sp.get("flightNumber") ?? undefined,
+        tariff,
+        seat: selectedSeat || undefined,
+        promo: promoApplied ? promo.trim().toUpperCase() : undefined,
+        paymentMethod,
+        totalAmount: grandTotal,
+        passengers: passengers.map((p) => ({
+          firstName: p.firstName,
+          lastName: p.lastName,
+          middleName: p.middleName || undefined,
+          dob: p.dob,
+          gender: p.gender,
+          citizenship: p.citizenship,
+          docNumber: p.docNumber,
+          docExpiry: p.docExpiry || undefined,
+        })),
+      });
+      setOrderRef(created.ref);
+      setOrderStatus(created.status);
+      setStep("payment");
+    } catch (err) {
+      setErrors([err instanceof Error ? err.message : "Не удалось создать заявку"]);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (step === "payment") {
@@ -355,7 +397,8 @@ export default function BookingPage() {
   }
 
   if (step === "success") {
-    const bookingNumber = `AV-${new Date().getFullYear()}-${String(Math.floor(grandTotal + paxCount * 97)).slice(-6)}`;
+    // Код приходит от бэкенда при создании заявки — по нему её можно найти.
+    const bookingNumber = orderRef;
 
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--color-bg-soft)] px-4 py-10">
@@ -386,19 +429,26 @@ export default function BookingPage() {
           </div>
 
           <div className="mt-6 grid gap-2 text-left sm:grid-cols-4">
-            {STATUS_STEPS.map((step, i) => (
-              <div
-                key={step}
-                className={`rounded-xl border px-3 py-3 ${
-                  i <= 1
-                    ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
-                    : "border-[var(--color-border)] bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
-                }`}
-              >
-                <div className="text-xs font-semibold">{step}</div>
-                <div className="mt-1 text-[11px]">{i <= 1 ? "активно" : "следующий шаг"}</div>
-              </div>
-            ))}
+            {STATUS_STEPS.map((step, i) => {
+              // Подсвечиваем ровно до реального статуса заявки, а не фиксированные два шага.
+              const reached = i <= STATUS_ORDER.indexOf(orderStatus);
+              const current = i === STATUS_ORDER.indexOf(orderStatus);
+              return (
+                <div
+                  key={step}
+                  className={`rounded-xl border px-3 py-3 ${
+                    reached
+                      ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+                      : "border-[var(--color-border)] bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
+                  }`}
+                >
+                  <div className="text-xs font-semibold">{step}</div>
+                  <div className="mt-1 text-[11px]">
+                    {current ? "текущий статус" : reached ? "пройдено" : "следующий шаг"}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-6 text-xl font-bold text-[var(--color-text)]">{format(grandTotal)}</div>
@@ -531,14 +581,22 @@ export default function BookingPage() {
               </div>
 
               {externalBookingUrl ? (
-                <a
-                  href={externalBookingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 block w-full rounded-xl bg-[#FF6D00] py-3 text-center text-sm font-bold text-white transition hover:bg-[#e65c00]"
-                >
-                  Купить на Aviasales
-                </a>
+                <>
+                  <a
+                    href={externalBookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 block w-full rounded-xl bg-[#FF6D00] py-3 text-center text-sm font-bold text-white transition hover:bg-[#e65c00]"
+                  >
+                    Купить на Aviasales
+                  </a>
+                  <a
+                    href="#passenger-data"
+                    className="mt-2 block w-full rounded-xl border border-[var(--color-primary)] py-3 text-center text-sm font-bold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-light)]"
+                  >
+                    Оставить заявку у нас
+                  </a>
+                </>
               ) : (
                 <a
                   href="#passenger-data"
@@ -717,23 +775,26 @@ export default function BookingPage() {
               </div>
             )}
 
-            {externalBookingUrl ? (
-              <a
-                href={externalBookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full rounded-xl bg-[#FF6D00] py-3.5 text-center text-base font-bold text-white transition hover:bg-[#e65c00] lg:hidden"
-              >
-                Купить на Aviasales · {format(grandTotal)} →
-              </a>
-            ) : (
+            {/* Оба пути доступны: покупка у партнёра и заявка у нас. */}
+            <div className="lg:hidden">
+              {externalBookingUrl && (
+                <a
+                  href={externalBookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-2 block w-full rounded-xl bg-[#FF6D00] py-3.5 text-center text-base font-bold text-white transition hover:bg-[#e65c00]"
+                >
+                  Купить на Aviasales · {format(grandTotal)} →
+                </a>
+              )}
               <button
                 type="submit"
-                className="w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 lg:hidden"
+                disabled={submitting}
+                className="w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Оплатить · {format(grandTotal)}
+                {submitting ? "Отправляем заявку…" : `Оставить заявку · ${format(grandTotal)}`}
               </button>
-            )}
+            </div>
           </div>
 
           {/* Правая колонка: итог */}
@@ -835,25 +896,29 @@ export default function BookingPage() {
                   </div>
                 </div>
 
-                {externalBookingUrl ? (
-                  <a
-                    href={externalBookingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 hidden w-full rounded-xl bg-[#FF6D00] py-3.5 text-center text-base font-bold text-white transition hover:bg-[#e65c00] lg:block"
-                  >
-                    Купить на Aviasales →
-                  </a>
-                ) : (
+                <div className="hidden lg:block">
+                  {externalBookingUrl && (
+                    <a
+                      href={externalBookingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 block w-full rounded-xl bg-[#FF6D00] py-3.5 text-center text-base font-bold text-white transition hover:bg-[#e65c00]"
+                    >
+                      Купить на Aviasales →
+                    </a>
+                  )}
                   <button
                     type="submit"
-                    className="mt-4 hidden w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 lg:block"
+                    disabled={submitting}
+                    className="mt-2 w-full rounded-xl bg-green-600 py-3.5 text-base font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Оплатить
+                    {submitting ? "Отправляем заявку…" : "Оставить заявку"}
                   </button>
-                )}
+                </div>
                 <p className="mt-3 text-center text-[11px] text-[var(--color-text-muted)]">
-                  {externalBookingUrl ? "Вы перейдёте на Aviasales для завершения покупки" : "Нажимая кнопку, вы соглашаетесь с условиями использования"}
+                  {externalBookingUrl
+                    ? "Купить сразу — на Aviasales. Оставить заявку — мы подберём и свяжемся с вами."
+                    : "Нажимая кнопку, вы соглашаетесь с условиями использования"}
                 </p>
               </div>
             </div>

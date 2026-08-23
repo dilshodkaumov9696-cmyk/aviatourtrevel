@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/auth";
+import { googleLoginUrl } from "../lib/api";
 
 interface Props {
   open: boolean;
@@ -15,9 +17,16 @@ const inputCls =
 const labelCls = "block text-xs font-semibold text-[var(--color-text-muted)] mb-1.5";
 
 export default function AuthModal({ open, onClose }: Props) {
+  const { login, register } = useAuth();
   const [tab, setTab] = useState<Tab>("login");
   const [showPass, setShowPass] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Esc для закрытия + блокировка прокрутки фона
   useEffect(() => {
@@ -38,14 +47,32 @@ export default function AuthModal({ open, onClose }: Props) {
     if (!open) {
       setSubmitted(false);
       setShowPass(false);
+      setError("");
+      setLoading(false);
+      setName("");
+      setEmail("");
+      setPassword("");
     }
   }, [open]);
 
   if (!open) return null;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setLoading(true);
+    try {
+      if (tab === "login") {
+        await login(email, password);
+      } else {
+        await register(email, password, name || undefined);
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось выполнить вход");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -85,6 +112,7 @@ export default function AuthModal({ open, onClose }: Props) {
               onClick={() => {
                 setTab(t);
                 setSubmitted(false);
+                setError("");
               }}
               className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
                 tab === t
@@ -103,10 +131,10 @@ export default function AuthModal({ open, onClose }: Props) {
               ✓
             </div>
             <h3 className="text-lg font-bold text-[var(--color-text)]">
-              {tab === "login" ? "Почти готово!" : "Аккаунт создан!"}
+              {tab === "login" ? "Вы вошли" : "Аккаунт создан"}
             </h3>
             <p className="mx-auto mt-2 max-w-xs text-sm text-[var(--color-text-muted)]">
-              Это демо-форма. Реальная авторизация заработает после подключения бэкенда.
+              {email}
             </p>
             <button
               type="button"
@@ -122,13 +150,26 @@ export default function AuthModal({ open, onClose }: Props) {
               {tab === "register" && (
                 <div>
                   <label className={labelCls}>Имя</label>
-                  <input type="text" required placeholder="Как вас зовут?" className={inputCls} />
+                  <input
+                    type="text"
+                    placeholder="Как вас зовут?"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={inputCls}
+                  />
                 </div>
               )}
 
               <div>
                 <label className={labelCls}>Email</label>
-                <input type="email" required placeholder="you@example.com" className={inputCls} />
+                <input
+                  type="email"
+                  required
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputCls}
+                />
               </div>
 
               <div>
@@ -137,7 +178,10 @@ export default function AuthModal({ open, onClose }: Props) {
                   <input
                     type={showPass ? "text" : "password"}
                     required
+                    minLength={6}
                     placeholder="Минимум 6 символов"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className={`${inputCls} pr-12`}
                   />
                   <button
@@ -151,22 +195,18 @@ export default function AuthModal({ open, onClose }: Props) {
                 </div>
               </div>
 
-              {tab === "login" && (
-                <div className="text-right">
-                  <button
-                    type="button"
-                    className="text-xs font-medium text-[var(--color-primary)] hover:underline"
-                  >
-                    Забыли пароль?
-                  </button>
+              {error && (
+                <div className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                  {error}
                 </div>
               )}
 
               <button
                 type="submit"
-                className="w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] active:scale-[0.99]"
+                disabled={loading}
+                className="w-full rounded-xl bg-[var(--color-primary)] py-3 text-sm font-semibold text-white shadow-md transition hover:bg-[var(--color-primary-dark)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {tab === "login" ? "Войти" : "Зарегистрироваться"}
+                {loading ? "Секунду…" : tab === "login" ? "Войти" : "Зарегистрироваться"}
               </button>
             </form>
 
@@ -178,9 +218,8 @@ export default function AuthModal({ open, onClose }: Props) {
             </div>
 
             {/* Соц-вход */}
-            <button
-              type="button"
-              onClick={handleSubmit}
+            <a
+              href={googleLoginUrl()}
               className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-3 text-sm font-medium text-[var(--color-text)] transition hover:bg-[var(--color-bg-soft)]"
             >
               <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -190,14 +229,14 @@ export default function AuthModal({ open, onClose }: Props) {
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.3 5.3C41.6 36 45 30.6 45 24c0-1.2-.1-2.3-.4-3.5z" />
               </svg>
               Продолжить с Google
-            </button>
+            </a>
 
             {/* Переключение вкладки */}
             <p className="mt-5 text-center text-sm text-[var(--color-text-muted)]">
               {tab === "login" ? "Нет аккаунта?" : "Уже есть аккаунт?"}{" "}
               <button
                 type="button"
-                onClick={() => setTab(tab === "login" ? "register" : "login")}
+                onClick={() => { setTab(tab === "login" ? "register" : "login"); setError(""); }}
                 className="font-semibold text-[var(--color-primary)] hover:underline"
               >
                 {tab === "login" ? "Зарегистрируйтесь" : "Войдите"}

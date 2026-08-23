@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 
 // Системы бронирования / агенты — наши партнёрские системы.
-// Логотипа в публичных CDN нет, поэтому грузим из локального файла /public/partners/*.png
+// Логотипа в публичных CDN нет, поэтому грузим из локального файла /public/partners/*.svg
 // (кинь файл туда → подхватится), а пока показываем брендовый бейдж с буквой.
 const PARTNERS = [
-  { name: "Sirena", logo: "/partners/sirena.png", letter: "S", color: "#1F6FB2" },
-  { name: "Mixvel", logo: "/partners/mixvel.png", letter: "M", color: "#16B0A6" },
-  { name: "ТКП", logo: "/partners/tkp.png", letter: "Т", color: "#1B6CB0" },
-  { name: "City Travel", logo: "/partners/citytravel.png", letter: "C", color: "#F26722" },
+  { name: "Sirena", logo: "/partners/sirena.svg", letter: "S", color: "#1F6FB2" },
+  { name: "Mixvel", logo: "/partners/mixvel.svg", letter: "M", color: "#16B0A6" },
+  { name: "ТКП", logo: "/partners/tkp.svg", letter: "Т", color: "#1B6CB0" },
+  { name: "City Travel", logo: "/partners/citytravel.svg", letter: "C", color: "#F26722" },
 ];
 
 // Авиакомпании СНГ и Азии — логотипы Kiwi CDN по IATA-коду
