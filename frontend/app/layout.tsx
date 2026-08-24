@@ -5,6 +5,7 @@ import { SettingsProvider } from "./context/settings";
 import { AuthProvider } from "./context/auth";
 import ChatWidget from "./components/ChatWidget";
 import PWARegister from "./components/PWARegister";
+import CookieConsent from "./components/CookieConsent";
 
 // next/font сам хостит файлы и убирает внешний запрос к fonts.googleapis.com:
 // нет блокирующей загрузки и нет скачка вёрстки при подмене шрифта.
@@ -109,6 +110,7 @@ export default function RootLayout({
             {children}
             <ChatWidget />
             <PWARegister />
+            <CookieConsent />
           </AuthProvider>
         </SettingsProvider>
       </body>

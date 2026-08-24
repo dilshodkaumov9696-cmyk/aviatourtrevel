@@ -8,7 +8,11 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt в окружении проекта конфликтует с текущей версией его нативного
+# расширения и ломает регистрацию. PBKDF2-SHA256 не требует внешнего бинарного
+# модуля, является безопасным KDF и стабильно работает везде. bcrypt оставлен
+# вторым, чтобы существующие аккаунты можно было мигрировать при следующем входе.
+_pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated=["bcrypt"])
 
 SESSION_COOKIE = "aviator_session"
 

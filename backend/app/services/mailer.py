@@ -16,6 +16,14 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
+def _mask_email(address: str) -> str:
+    """Не оставляем полный адрес клиента в журнале приложения."""
+    local, sep, domain = address.partition("@")
+    if not sep:
+        return "***"
+    return f"{local[:1]}***@{domain}"
+
+
 def _send_sync(to: str, subject: str, body: str) -> None:
     """Блокирующая отправка. Вызывается в отдельном потоке."""
     message = EmailMessage()
@@ -39,14 +47,14 @@ async def send_email(to: str, subject: str, body: str) -> bool:
     цикл событий на время SMTP-сессии.
     """
     if not settings.smtp_host:
-        logger.info("SMTP не настроен, письмо не отправлено.\nКому: %s\nТема: %s\n%s", to, subject, body)
+        logger.info("SMTP не настроен: письмо подготовлено для %s", _mask_email(to))
         return False
 
     try:
         await asyncio.to_thread(_send_sync, to, subject, body)
     except (smtplib.SMTPException, OSError) as exc:
-        logger.error("Не удалось отправить письмо на %s: %s", to, exc)
+        logger.error("Не удалось отправить письмо на %s: %s", _mask_email(to), type(exc).__name__)
         return False
 
-    logger.info("Письмо отправлено на %s: %s", to, subject)
+    logger.info("Письмо отправлено для %s", _mask_email(to))
     return True

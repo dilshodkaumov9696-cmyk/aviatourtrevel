@@ -60,6 +60,10 @@ class UserOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AuthProvidersOut(BaseModel):
+    google: bool
+
+
 def _set_session_cookie(response: Response, user_id: int) -> None:
     token = create_session_token(user_id)
     response.set_cookie(
@@ -121,6 +125,12 @@ async def logout(response: Response) -> None:
 @router.get("/auth/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.get("/auth/providers", response_model=AuthProvidersOut)
+async def auth_providers() -> AuthProvidersOut:
+    """Фронтенд показывает только реально подключённые способы входа."""
+    return AuthProvidersOut(google=bool(settings.google_client_id and settings.google_client_secret))
 
 
 @router.get("/auth/google/login")

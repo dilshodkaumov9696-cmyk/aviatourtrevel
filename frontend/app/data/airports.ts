@@ -5,6 +5,13 @@ export interface Airport {
   country: string;
 }
 
+export interface AirportSearchResult {
+  airport: Airport;
+  /** A city-level choice followed by its individual airport terminals. */
+  kind: "city" | "airport";
+  child: boolean;
+}
+
 // Полная база (~4000 flightable-аэропортов) лежит в /public/airports.json
 // и загружается один раз на клиенте. Кешируется на уровне модуля.
 let cache: Airport[] | null = null;
@@ -87,4 +94,80 @@ export function rankAirports(
 
   scored.sort((x, y) => x.s - y.s || x.a.city.length - y.a.city.length);
   return scored.slice(0, limit).map((x) => x.a);
+}
+
+function normalise(value: string): string {
+  return value.toLocaleLowerCase("ru-RU").replaceAll("ё", "е").trim();
+}
+
+function scoreAirport(airport: Airport, query: string): number | null {
+  const iata = normalise(airport.iata);
+  const city = normalise(airport.city);
+  const name = normalise(airport.name);
+  const country = normalise(airport.country);
+  if (iata === query) return 0;
+  if (iata.startsWith(query)) return 1;
+  if (city.startsWith(query)) return 2;
+  if (name.startsWith(query)) return 3;
+  if (country.startsWith(query)) return 4;
+  if (city.includes(query)) return 5;
+  if (name.includes(query)) return 6;
+  if (country.includes(query)) return 7;
+  return null;
+}
+
+/**
+ * Search over all terms a traveller is likely to know: a city, country,
+ * airport name, or IATA code. A matching city with more than one airport is
+ * expanded into a city-level "all airports" row and its individual terminals.
+ */
+export function searchAirports(
+  list: Airport[],
+  rawQuery: string,
+  limit = 12,
+  excludeIata?: string,
+): AirportSearchResult[] {
+  const query = normalise(rawQuery);
+  if (query.length < 2) return [];
+
+  const matches = list
+    .filter((airport) => airport.iata !== excludeIata)
+    .map((airport) => ({ airport, score: scoreAirport(airport, query) }))
+    .filter((entry): entry is { airport: Airport; score: number } => entry.score !== null)
+    .sort((a, b) => a.score - b.score || a.airport.city.localeCompare(b.airport.city, "ru"));
+
+  const byCity = new Map<string, { airport: Airport; score: number }[]>();
+  for (const entry of matches) {
+    const key = `${normalise(entry.airport.city)}|${normalise(entry.airport.country)}`;
+    byCity.set(key, [...(byCity.get(key) ?? []), entry]);
+  }
+
+  const result: AirportSearchResult[] = [];
+  const used = new Set<string>();
+  for (const entry of matches) {
+    if (result.length >= limit) break;
+    const key = `${normalise(entry.airport.city)}|${normalise(entry.airport.country)}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    const cityMatches = byCity.get(key) ?? [];
+    const allCityAirports = list.filter((airport) =>
+      airport.iata !== excludeIata && airport.name !== "Все аэропорты" && normalise(airport.city) === normalise(entry.airport.city) && normalise(airport.country) === normalise(entry.airport.country),
+    );
+    const cityWasTyped = normalise(entry.airport.city).includes(query) || normalise(entry.airport.country).includes(query);
+    const metro = METRO_AIRPORTS.find((airport) => normalise(airport.city) === normalise(entry.airport.city));
+
+    if (cityWasTyped && allCityAirports.length > 1) {
+      result.push({ airport: metro ?? { ...entry.airport, name: "Все аэропорты" }, kind: "city", child: false });
+      for (const airport of allCityAirports) {
+        if (result.length >= limit) break;
+        result.push({ airport, kind: "airport", child: true });
+      }
+    } else {
+      for (const matched of cityMatches) {
+        if (result.length >= limit) break;
+        result.push({ airport: matched.airport, kind: "airport", child: false });
+      }
+    }
+  }
+  return result.slice(0, limit);
 }

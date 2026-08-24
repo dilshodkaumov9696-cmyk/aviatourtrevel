@@ -9,7 +9,8 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_manager_key
+from app.api.deps import get_current_user_optional, require_manager_key
+from app.models.user import User
 from app.db.session import get_session
 from app.models.order import Order, OrderStatus, Passenger
 from app.services.mailer import send_email
@@ -125,6 +126,7 @@ def _to_out(order: Order) -> dict:
 async def create_order(
     payload: OrderCreate,
     session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(get_current_user_optional),
 ) -> dict:
     """Оформить заявку. Возвращает код вида AV-7K2M9X — по нему клиент её найдёт."""
     if payload.origin == payload.destination:
@@ -135,7 +137,7 @@ async def create_order(
         raise HTTPException(status_code=422, detail="Дата вылета уже прошла")
 
     data = payload.model_dump(exclude={"passengers"})
-    order = Order(**data, passengers=[Passenger(**p.model_dump()) for p in payload.passengers])
+    order = Order(**data, user_id=user.id if user else None, passengers=[Passenger(**p.model_dump()) for p in payload.passengers])
     session.add(order)
     await session.commit()
     await session.refresh(order)
@@ -155,6 +157,38 @@ async def create_order(
     )
 
     return _to_out(order)
+
+
+@router.get("/orders/admin", response_model=list[OrderOut], dependencies=[Depends(require_manager_key)])
+async def list_orders_for_manager(
+    status: OrderStatus | None = None,
+    session: AsyncSession = Depends(get_session),
+) -> list[dict]:
+    """Очередь оператора. Доступна только при корректном X-Manager-Key."""
+    query = select(Order).order_by(Order.created_at.desc()).limit(200)
+    if status is not None:
+        query = query.where(Order.status == status)
+    result = await session.scalars(query)
+    return [_to_out(order) for order in result]
+
+
+@router.post("/orders/{ref}/resend-email", dependencies=[Depends(require_manager_key)])
+async def resend_order_email(
+    ref: str,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, bool]:
+    """Оператор может повторно отправить клиенту подтверждение заявки."""
+    order = await session.scalar(select(Order).where(Order.ref == ref.upper()))
+    if order is None:
+        raise HTTPException(status_code=404, detail="Заявка не найдена")
+    await send_email(
+        order.contact_email,
+        f"Статус заявки {order.ref}",
+        f"Ваша заявка {order.ref}: {order.origin} → {order.destination}.\n"
+        f"Текущий статус: {order.status.label}.\n",
+    )
+    logger.info("Оператор запросил повторную отправку подтверждения для заявки %s", order.ref)
+    return {"ok": True}
 
 
 @router.get("/orders/{ref}", response_model=OrderOut)

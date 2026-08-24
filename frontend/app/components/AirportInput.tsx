@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Airport, loadAirports, rankAirports, getPopularAirports } from "../data/airports";
+import { Airport, AirportSearchResult, loadAirports, searchAirports, getPopularAirports } from "../data/airports";
 import { IconPin, IconPlane } from "./icons";
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
 export default function AirportInput({ airport, onChange, label, placeholder, excludeIata, onQueryChange }: Props) {
   const [query, setQuery] = useState(airport?.city ?? "");
   const [all, setAll] = useState<Airport[]>([]);
-  const [results, setResults] = useState<Airport[]>([]);
+  const [results, setResults] = useState<AirportSearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [highlighted, setHighlighted] = useState(0);
@@ -45,14 +45,14 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
     }
     if (query.trim().length < 1) {
       const popular = getPopularAirports(8, excludeIata);
-      setResults(popular);
+      setResults(popular.map((airport) => ({ airport, kind: "city", child: false })));
       setOpen(popular.length > 0);
       setHighlighted(-1);
       return;
     }
-    const filtered = rankAirports(all, query, 7, excludeIata);
+    const filtered = searchAirports(all, query, 12, excludeIata);
     setResults(filtered);
-    setOpen(filtered.length > 0);
+    setOpen(true);
     setHighlighted(0);
   }, [query, all, excludeIata, focused]);
 
@@ -111,7 +111,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
       setHighlighted((h) => Math.max(h - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (results[highlighted]) select(results[highlighted]);
+      if (results[highlighted]) select(results[highlighted].airport);
     } else if (e.key === "Escape") {
       setFocused(false);
       setOpen(false);
@@ -181,15 +181,15 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
             </div>
           )}
           <ul className="max-h-[380px] overflow-auto p-1.5">
-            {results.map((a, i) => {
-              const isCity = showingPopular || a.name === a.city || a.name === "Все аэропорты";
+            {results.map(({ airport: a, kind, child }, i) => {
+              const isCity = showingPopular || kind === "city" || a.name === "Все аэропорты";
               const active = i === highlighted;
               return (
                 <li
                   key={a.iata}
                   onMouseDown={() => select(a)}
                   onMouseEnter={() => setHighlighted(i)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition ${
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition ${child ? "ml-4 border-l-2 border-[var(--color-border)]" : ""} ${
                     active ? "bg-[var(--color-primary-light)]" : "hover:bg-[var(--color-bg-soft)]"
                   }`}
                 >
@@ -218,6 +218,11 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
                 </li>
               );
             })}
+            {!showingPopular && results.length === 0 && (
+              <li className="px-4 py-5 text-sm text-[var(--color-text-muted)]">
+                Ничего не найдено. Попробуйте город, страну, аэропорт или IATA-код.
+              </li>
+            )}
           </ul>
         </div>
       )}

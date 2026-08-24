@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.models.price_alert import PriceAlert
+from app.services.mailer import send_email
 
 router = APIRouter()
 
@@ -104,6 +105,12 @@ async def create_alert(
 
     await session.commit()
     await session.refresh(alert)
+    await send_email(
+        alert.email,
+        f"Подписка на цену {alert.origin} → {alert.destination}",
+        f"Будем следить за ценой на {alert.origin} → {alert.destination} на {alert.depart_date:%d.%m.%Y}.\n"
+        f"Напишем, когда цена станет не выше {float(alert.target_price):,.0f} {alert.currency}.\n".replace(",", " "),
+    )
     return alert
 
 

@@ -242,6 +242,33 @@ export async function listOrders(email: string): Promise<OrderSummary[]> {
   }));
 }
 
+/** Статус одной заявки: код дополняется email, чтобы нельзя было перебрать чужие данные. */
+export async function getOrder(ref: string, email: string): Promise<OrderSummary> {
+  const res = await fetch(`${API_URL}/api/v1/orders/${encodeURIComponent(ref)}?email=${encodeURIComponent(email)}`);
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+  const o = await res.json() as Record<string, unknown>;
+  return {
+    ref: o.ref as string, status: o.status as string, statusLabel: o.status_label as string,
+    origin: o.origin as string, destination: o.destination as string, departDate: o.depart_date as string,
+    returnDate: (o.return_date as string) ?? null, airline: (o.airline as string) ?? null,
+    flightNumber: (o.flight_number as string) ?? null, tariff: o.tariff as string,
+    seat: (o.seat as string) ?? null, totalAmount: o.total_amount as number,
+    currency: o.currency as string, paxCount: (o.passengers as unknown[]).length, createdAt: o.created_at as string,
+  };
+}
+
+export async function listManagerOrders(key: string): Promise<OrderSummary[]> {
+  const res = await fetch(`${API_URL}/api/v1/orders/admin`, { headers: { "X-Manager-Key": key } });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+  const data = await res.json() as Record<string, unknown>[];
+  return data.map((o) => ({ ref: o.ref as string, status: o.status as string, statusLabel: o.status_label as string, origin: o.origin as string, destination: o.destination as string, departDate: o.depart_date as string, returnDate: (o.return_date as string) ?? null, airline: (o.airline as string) ?? null, flightNumber: (o.flight_number as string) ?? null, tariff: o.tariff as string, seat: (o.seat as string) ?? null, totalAmount: o.total_amount as number, currency: o.currency as string, paxCount: (o.passengers as unknown[]).length, createdAt: o.created_at as string }));
+}
+
+export async function resendOrderEmail(ref: string, key: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/orders/${encodeURIComponent(ref)}/resend-email`, { method: "POST", headers: { "X-Manager-Key": key } });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+}
+
 /** Разбирает detail из FastAPI: строку от наших проверок либо список ошибок pydantic. */
 async function apiErrorMessage(res: Response): Promise<string> {
   const data = await res.json().catch(() => null);
@@ -349,6 +376,18 @@ export async function logoutUser(): Promise<void> {
 export function googleLoginUrl(): string {
   return `${API_URL}/api/v1/auth/google/login`;
 }
+
+export async function getAuthProviders(): Promise<{ google: boolean }> {
+  const res = await fetch(`${API_URL}/api/v1/auth/providers`);
+  if (!res.ok) return { google: false };
+  return res.json();
+}
+
+const cabinetFetch = (path: string, init?: RequestInit) => fetch(`${API_URL}/api/v1/cabinet${path}`, { credentials: "include", ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
+export async function cabinetData<T>(path: string, init?: RequestInit): Promise<T> { const r = await cabinetFetch(path, init); if (!r.ok) throw new Error(await apiErrorMessage(r)); return r.status === 204 ? undefined as T : r.json(); }
+export type CabinetOrder = { ref:string; status:string; status_label:string; origin:string; destination:string; depart_date:string; return_date:string|null; airline:string|null; flight_number:string|null; total_amount:number; currency:string; pnr:string|null; passengers:number; tariff:string; depart_at?:string|null; arrive_at?:string|null; seat?:string|null };
+export type SavedPassenger = { id:number; first_name:string; last_name:string; middle_name:string|null; dob:string; citizenship:string; doc_number:string; doc_expiry:string|null };
+export type CabinetAlert = { id:number; origin:string; destination:string; depart_date:string; target_price:number; currency:string; last_seen_price:number|null; is_active:boolean };
 
 export async function searchFlights(params: {
   origin: string;

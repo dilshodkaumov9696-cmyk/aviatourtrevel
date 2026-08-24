@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/auth";
-import { googleLoginUrl } from "../lib/api";
+import { getAuthProviders, googleLoginUrl } from "../lib/api";
 
 interface Props {
   open: boolean;
@@ -23,6 +23,7 @@ export default function AuthModal({ open, onClose }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleEnabled, setGoogleEnabled] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,6 +54,10 @@ export default function AuthModal({ open, onClose }: Props) {
       setEmail("");
       setPassword("");
     }
+  }, [open]);
+
+  useEffect(() => {
+    if (open) void getAuthProviders().then((providers) => setGoogleEnabled(providers.google));
   }, [open]);
 
   if (!open) return null;
@@ -218,7 +223,7 @@ export default function AuthModal({ open, onClose }: Props) {
             </div>
 
             {/* Соц-вход */}
-            <a
+            {googleEnabled ? <a
               href={googleLoginUrl()}
               className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-3 text-sm font-medium text-[var(--color-text)] transition hover:bg-[var(--color-bg-soft)]"
             >
@@ -229,7 +234,9 @@ export default function AuthModal({ open, onClose }: Props) {
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.3 5.3C41.6 36 45 30.6 45 24c0-1.2-.1-2.3-.4-3.5z" />
               </svg>
               Продолжить с Google
-            </a>
+            </a> : <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 text-center text-sm text-[var(--color-text-muted)]">
+              Вход через Google появится после подключения сервиса
+            </div>}
 
             {/* Переключение вкладки */}
             <p className="mt-5 text-center text-sm text-[var(--color-text-muted)]">

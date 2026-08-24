@@ -455,6 +455,9 @@ export default function BookingPage() {
           <div className="mt-1 text-sm text-green-600">Начислим {format(bonus)} бонусами</div>
 
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Link href={`/order/${bookingNumber}`} className="rounded-xl bg-[var(--color-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--color-accent-foreground)] transition hover:bg-[var(--color-accent-dark)]">
+              Проверить статус
+            </Link>
             <Link href="/account" className="rounded-xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]">
               Открыть личный кабинет
             </Link>
