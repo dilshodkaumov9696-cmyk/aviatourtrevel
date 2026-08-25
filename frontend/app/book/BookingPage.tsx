@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { formatDuration } from "../data/flights";
 import { useSettings } from "../context/settings";
+import { useAuth } from "../context/auth";
 import PaymentStep from "../components/booking/PaymentStep";
-import { buildAviasalesUrl, createOrder } from "../lib/api";
+import { buildAviasalesUrl, cabinetData, createOrder, type SavedPassenger } from "../lib/api";
+import PassportScanButton from "../components/PassportScanButton";
+import { nationalityToRussian, type ScannedPassport } from "../lib/passportScan";
 
 const GENDERS = [
   { v: "male", label: "Мужской" },
@@ -32,28 +35,31 @@ const EMPTY_PAX: Passenger = {
   docNumber: "", docExpiry: "",
 };
 
-const SAVED_PASSENGERS: Passenger[] = [
-  {
-    firstName: "IVAN",
-    lastName: "IVANOV",
-    middleName: "IVANOVICH",
-    dob: "1990-04-12",
-    gender: "male",
-    citizenship: "Россия",
-    docNumber: "AA 1234567",
-    docExpiry: "2030-10-12",
-  },
-  {
-    firstName: "ANNA",
-    lastName: "PETROVA",
-    middleName: "",
-    dob: "1994-08-25",
-    gender: "female",
-    citizenship: "Таджикистан",
-    docNumber: "AB 2345678",
-    docExpiry: "2029-05-08",
-  },
-];
+function toPassenger(p: SavedPassenger): Passenger {
+  return {
+    firstName: p.first_name,
+    lastName: p.last_name,
+    middleName: p.middle_name ?? "",
+    dob: p.dob,
+    gender: p.gender === "female" ? "female" : "male",
+    citizenship: p.citizenship,
+    docNumber: p.doc_number,
+    docExpiry: p.doc_expiry ?? "",
+  };
+}
+
+function toSavedPassengerIn(p: Passenger) {
+  return {
+    first_name: p.firstName,
+    last_name: p.lastName,
+    middle_name: p.middleName || null,
+    dob: p.dob,
+    gender: p.gender,
+    citizenship: p.citizenship,
+    doc_number: p.docNumber,
+    doc_expiry: p.docExpiry || null,
+  };
+}
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -183,31 +189,100 @@ function PassengerForm({
   index,
   pax,
   onChange,
-  onAutofill,
+  savedPassengers,
+  onPick,
+  onSave,
 }: {
   index: number;
   pax: Passenger;
   onChange: (p: Passenger) => void;
-  onAutofill?: () => void;
+  savedPassengers: SavedPassenger[];
+  onPick: (p: SavedPassenger) => void;
+  onSave?: () => Promise<void>;
 }) {
   const set = (key: keyof Passenger, value: string) => onChange({ ...pax, [key]: value });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+
+  function onScanned(data: ScannedPassport) {
+    onChange({
+      ...pax,
+      firstName: data.firstName?.toUpperCase() ?? pax.firstName,
+      lastName: data.lastName?.toUpperCase() ?? pax.lastName,
+      dob: data.dob ?? pax.dob,
+      gender: data.sex ?? pax.gender,
+      citizenship: nationalityToRussian(data.nationality) ?? pax.citizenship,
+      docNumber: data.docNumber ?? pax.docNumber,
+      docExpiry: data.docExpiry ?? pax.docExpiry,
+    });
+    setSaveMsg("");
+  }
+
+  const canSave = pax.firstName.trim() && pax.lastName.trim() && pax.dob && pax.citizenship && pax.docNumber.trim().length >= 4;
+
+  async function save() {
+    if (!onSave) return;
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      await onSave();
+      setSaveMsg("Сохранён в кабинете");
+    } catch (e) {
+      setSaveMsg(e instanceof Error ? e.message : "Не удалось сохранить");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-base font-semibold text-[var(--color-text)]">
           Пассажир {index + 1}
         </h3>
-        {onAutofill && (
-          <button
-            type="button"
-            onClick={onAutofill}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-          >
-            Заполнить из кабинета
-          </button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <PassportScanButton onConfirm={onScanned} />
+          {savedPassengers.length > 0 && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPickerOpen((v) => !v)}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                Мои пассажиры
+              </button>
+              {pickerOpen && (
+                <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-lg">
+                  {savedPassengers.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-[var(--color-bg-soft)]">
+                      <span className="truncate">{p.last_name} {p.first_name}</span>
+                      <button
+                        type="button"
+                        onClick={() => { onPick(p); setPickerOpen(false); setSaveMsg(""); }}
+                        className="shrink-0 rounded-lg bg-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-white"
+                      >
+                        Выбрать
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {onSave && (
+            <button
+              type="button"
+              onClick={save}
+              disabled={!canSave || saving}
+              className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? "Сохраняем…" : "Сохранить пассажира"}
+            </button>
+          )}
+        </div>
       </div>
+      {saveMsg && <p className="mb-3 text-xs text-[var(--color-text-muted)]">{saveMsg}</p>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Фамилия (латиницей)" required>
           <input
@@ -307,6 +382,18 @@ export default function BookingPage() {
   const [passengers, setPassengers] = useState<Passenger[]>(
     Array.from({ length: paxCount }, () => ({ ...EMPTY_PAX }))
   );
+  const { user } = useAuth();
+  const [savedPassengers, setSavedPassengers] = useState<SavedPassenger[]>([]);
+  const reloadSavedPassengers = useCallback(async () => {
+    if (!user) { setSavedPassengers([]); return; }
+    try { setSavedPassengers(await cabinetData<SavedPassenger[]>("/passengers")); }
+    catch { /* кабинет недоступен — бронирование всё равно должно работать */ }
+  }, [user]);
+  useEffect(() => { void reloadSavedPassengers(); }, [reloadSavedPassengers]);
+  async function savePassenger(pax: Passenger) {
+    await cabinetData("/passengers", { method: "POST", body: JSON.stringify(toSavedPassengerIn(pax)) });
+    await reloadSavedPassengers();
+  }
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [step, setStep] = useState<"form" | "payment" | "success">("form");
@@ -623,10 +710,9 @@ export default function BookingPage() {
                 index={i}
                 pax={pax}
                 onChange={(p) => setPassengers((prev) => prev.map((x, j) => (j === i ? p : x)))}
-                onAutofill={() => {
-                  const saved = SAVED_PASSENGERS[i % SAVED_PASSENGERS.length];
-                  setPassengers((prev) => prev.map((x, j) => (j === i ? { ...saved } : x)));
-                }}
+                savedPassengers={savedPassengers}
+                onPick={(saved) => setPassengers((prev) => prev.map((x, j) => (j === i ? toPassenger(saved) : x)))}
+                onSave={user ? () => savePassenger(pax) : undefined}
               />
             ))}
 

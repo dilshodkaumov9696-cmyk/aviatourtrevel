@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // BlinkID: сторонний минифицированный JS, копируется скриптом postinstall.
+    "public/resources/**",
   ]),
 ]);
 

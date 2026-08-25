@@ -34,9 +34,13 @@ export default function AccountHeader() {
   return (
     <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-bold text-white">
-          {(user.fullName || user.email)[0]?.toUpperCase()}
-        </span>
+        {user.avatarUrl ? (
+          <img src={user.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+        ) : (
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-bold text-white">
+            {(user.fullName || user.email)[0]?.toUpperCase()}
+          </span>
+        )}
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-[var(--color-text)]">{user.fullName || "Без имени"}</div>
           <div className="truncate text-xs text-[var(--color-text-muted)]">{user.email}</div>

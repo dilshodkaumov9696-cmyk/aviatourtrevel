@@ -19,7 +19,10 @@ export function buildAviasalesUrl(params: {
   return `https://www.aviasales.ru/search/${route}?marker=${MARKER}`;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// || а не ?? нарочно: пустая строка в NEXT_PUBLIC_API_URL (а не отсутствие
+// переменной) — частый случай в .env-файлах — иначе шла бы в new URL() как есть
+// и падала с "Failed to construct 'URL': Invalid URL".
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const AIRLINE_NAMES: Record<string, string> = {
   // СНГ и Россия
@@ -324,6 +327,7 @@ export interface AuthUser {
   email: string;
   fullName: string | null;
   avatarUrl: string | null;
+  emailVerified: boolean;
 }
 
 function mapUser(data: Record<string, unknown>): AuthUser {
@@ -332,6 +336,7 @@ function mapUser(data: Record<string, unknown>): AuthUser {
     email: data.email as string,
     fullName: (data.full_name as string) ?? null,
     avatarUrl: (data.avatar_url as string) ?? null,
+    emailVerified: Boolean(data.email_verified),
   };
 }
 
@@ -372,6 +377,22 @@ export async function logoutUser(): Promise<void> {
   await fetch(`${API_URL}/api/v1/auth/logout`, { method: "POST", credentials: "include" });
 }
 
+/** Подтверждение почты по ссылке из письма. */
+export async function verifyEmail(token: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+}
+
+/** Повторная отправка письма с подтверждением — только для текущего залогиненного пользователя. */
+export async function resendVerification(): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/auth/resend-verification`, { method: "POST", credentials: "include" });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+}
+
 /** Ссылка на вход через Google — редиректит на страницу согласия Google. */
 export function googleLoginUrl(): string {
   return `${API_URL}/api/v1/auth/google/login`;
@@ -386,8 +407,57 @@ export async function getAuthProviders(): Promise<{ google: boolean }> {
 const cabinetFetch = (path: string, init?: RequestInit) => fetch(`${API_URL}/api/v1/cabinet${path}`, { credentials: "include", ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
 export async function cabinetData<T>(path: string, init?: RequestInit): Promise<T> { const r = await cabinetFetch(path, init); if (!r.ok) throw new Error(await apiErrorMessage(r)); return r.status === 204 ? undefined as T : r.json(); }
 export type CabinetOrder = { ref:string; status:string; status_label:string; origin:string; destination:string; depart_date:string; return_date:string|null; airline:string|null; flight_number:string|null; total_amount:number; currency:string; pnr:string|null; passengers:number; tariff:string; depart_at?:string|null; arrive_at?:string|null; seat?:string|null };
-export type SavedPassenger = { id:number; first_name:string; last_name:string; middle_name:string|null; dob:string; citizenship:string; doc_number:string; doc_expiry:string|null };
+export type SavedPassenger = { id:number; first_name:string; last_name:string; middle_name:string|null; dob:string; gender:string|null; citizenship:string; doc_number:string; doc_expiry:string|null };
 export type CabinetAlert = { id:number; origin:string; destination:string; depart_date:string; target_price:number; currency:string; last_seen_price:number|null; is_active:boolean };
+export type CabinetOrderDetail = Omit<CabinetOrder, "passengers"> & { passengers: { name:string; citizenship:string; document:string }[]; ticket_numbers:string|null; paid_at:string|null; issued_at:string|null };
+export type SupportKind = "refund" | "exchange" | "question";
+export type SupportStatus = "open" | "in_progress" | "closed";
+export type SupportTicket = { id:number; kind:SupportKind; status:SupportStatus; message:string; order_ref:string; created_at:string };
+export type AdminSupportTicket = SupportTicket & { user_email:string };
+
+/** Запрос ссылки восстановления пароля. Ответ одинаков независимо от того, есть ли такой email. */
+export async function forgotPassword(email: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/v1/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+}
+
+/** Смена имени в кабинете. Возвращает обновлённого пользователя, чтобы обновить контекст авторизации. */
+export async function updateProfile(fullName: string | null): Promise<AuthUser> {
+  const res = await cabinetFetch("/profile", { method: "PATCH", body: JSON.stringify({ full_name: fullName }) });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+  return mapUser(await res.json());
+}
+
+export async function listManagerSupport(key: string, status?: SupportStatus): Promise<AdminSupportTicket[]> {
+  const url = new URL(`${API_URL}/api/v1/cabinet/admin/support`);
+  if (status) url.searchParams.set("status", status);
+  const res = await fetch(url.toString(), { headers: { "X-Manager-Key": key } });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+  return res.json();
+}
+
+export async function updateManagerSupportStatus(id: number, status: SupportStatus, key: string): Promise<AdminSupportTicket> {
+  const res = await fetch(`${API_URL}/api/v1/cabinet/admin/support/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "X-Manager-Key": key },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+  return res.json();
+}
 
 export async function searchFlights(params: {
   origin: string;
