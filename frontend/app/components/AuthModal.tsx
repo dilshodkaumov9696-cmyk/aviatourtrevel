@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "../context/auth";
 import { getAuthProviders, googleLoginUrl } from "../lib/api";
 
@@ -184,10 +185,10 @@ export default function AuthModal({ open, onClose }: Props) {
                     type={showPass ? "text" : "password"}
                     required
                     minLength={6}
-                    placeholder="Минимум 6 символов"
+                    placeholder="Пароль"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`${inputCls} pr-12`}
+                    className={`${inputCls} pr-16`}
                   />
                   <button
                     type="button"
@@ -198,6 +199,15 @@ export default function AuthModal({ open, onClose }: Props) {
                     {showPass ? "Скрыть" : "Показать"}
                   </button>
                 </div>
+                {tab === "login" && (
+                  <Link
+                    href="/forgot-password"
+                    onClick={onClose}
+                    className="mt-2 inline-block text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                  >
+                    Забыли пароль?
+                  </Link>
+                )}
               </div>
 
               {error && (
