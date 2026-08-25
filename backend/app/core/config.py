@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # ручка отвечает 503, а не пускает всех подряд.
     manager_api_key: str = ""
 
+    # Куда слать копию нового обращения в поддержку. Пусто — уведомление
+    # не уходит (только клиенту), обращение всё равно видно в /admin.
+    support_notify_email: str = ""
+
     # Вход через Google. Пока клиент не настроен, email+пароль работает как
     # обычно — кнопка Google просто вернёт понятную ошибку вместо падения.
     google_client_id: str = ""
@@ -26,6 +30,28 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://aviator:aviator@localhost:5433/aviator_web"
     redis_url: str = "redis://localhost:6379/0"
+
+    # --- Rate limiting auth-эндпоинтов (счётчики в Redis, fixed window) ---
+    # В dev Redis уже поднят docker-compose'ом (см. start.sh) — настраивать
+    # отдельно ничего не нужно. Если Redis недоступен, лимитер логирует
+    # предупреждение и пропускает запрос (fail open) — обычный вход/регистрация
+    # не должны падать из-за временной недоступности Redis.
+    auth_rate_limit_enabled: bool = True
+
+    auth_login_rate_limit: int = 10
+    auth_login_rate_limit_window: int = 300  # 10 попыток за 5 минут — на IP и на email
+
+    auth_register_rate_limit: int = 5
+    auth_register_rate_limit_window: int = 3600  # 5 регистраций в час с одного IP
+
+    auth_password_reset_rate_limit: int = 3
+    auth_password_reset_rate_limit_window: int = 3600  # 3 forgot-password в час — на IP и на email
+
+    auth_code_verify_rate_limit: int = 5
+    auth_code_verify_rate_limit_window: int = 3600  # 5 попыток предъявить токен в час, на IP
+
+    auth_google_callback_rate_limit: int = 30
+    auth_google_callback_rate_limit_window: int = 600  # щедро — не мешает обычному OAuth-флоу
 
     cors_origins: str = "http://localhost:3000"
 

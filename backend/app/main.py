@@ -1,11 +1,10 @@
-from contextlib import asynccontextmanager
-
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request # pyright: ignore[reportMissingImports]
-from fastapi.middleware.cors import CORSMiddleware # pyright: ignore[reportMissingImports]
+from fastapi import FastAPI, Request  # pyright: ignore[reportMissingImports]
+from fastapi.middleware.cors import CORSMiddleware  # pyright: ignore[reportMissingImports]
 
 from app.api.v1 import alerts, auth, cabinet, hello, orders, search
 from app.core.config import settings
@@ -32,6 +31,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Базовые заголовки безопасности. Без CSP: сайт грузит карты, шрифты и
+    аватары с внешних доменов — правильный CSP под это нужно проектировать
+    отдельно, а не гадать, чтобы не сломать рендер."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
 
 
 @app.middleware("http")

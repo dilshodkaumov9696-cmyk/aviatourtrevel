@@ -29,6 +29,7 @@ class ProfilePassenger(Base, TimestampMixin):
     last_name: Mapped[str] = mapped_column(String(64))
     middle_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     dob: Mapped[object] = mapped_column(Date)
+    gender: Mapped[str | None] = mapped_column(String(8), nullable=True)
     citizenship: Mapped[str] = mapped_column(String(64))
     doc_number: Mapped[str] = mapped_column(String(32))
     doc_expiry: Mapped[object | None] = mapped_column(Date, nullable=True)
