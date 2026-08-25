@@ -80,19 +80,23 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
         ‹
       </button>
 
-      <div className={`flex flex-1 gap-1 transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}>
-        {days.map((d) => {
+      <div className={`flex min-w-0 flex-1 gap-1 transition-opacity ${loading ? "opacity-50" : "opacity-100"}`}>
+        {days.map((d, i) => {
           const iso = toISO(d);
           const isSel = iso === selected;
           const price = priceFor(d);
           const cheap = price !== null && price < 10000;
           const isCheapestVisible = price !== null && cheapestVisible !== null && price === cheapestVisible;
+          // На узких экранах 7 колонок не помещаются без обрезки текста —
+          // показываем только 3 центральные (выбранный день ±1), остальные
+          // появляются с sm: и шире, где для них хватает места.
+          const isEdge = i <= 1 || i >= 5;
           return (
             <button
               key={iso}
               type="button"
               onClick={() => onSelect(iso)}
-              className={`relative flex-1 rounded-lg border px-1 py-1.5 text-center transition ${
+              className={`relative min-w-0 flex-1 rounded-lg border px-1 py-1.5 text-center transition ${isEdge ? "hidden sm:block" : ""} ${
                 isSel
                   ? "border-green-500 bg-[var(--color-bg-soft)]"
                   : isCheapestVisible
@@ -105,9 +109,9 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
                   дешевле
                 </span>
               )}
-              <div className="text-[11px] text-[var(--color-text-muted)]">{dayLabel(d)}</div>
+              <div className="truncate text-[11px] text-[var(--color-text-muted)]">{dayLabel(d)}</div>
               {price !== null ? (
-                <div className={`text-[13px] font-semibold ${cheap ? "text-green-600" : "text-red-500"}`}>
+                <div className={`truncate text-[13px] font-semibold ${cheap ? "text-green-600" : "text-red-500"}`}>
                   {format(price)}
                 </div>
               ) : (
