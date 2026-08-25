@@ -9,7 +9,7 @@ import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
 import FlightLoader from "../components/search/FlightLoader";
 import PriceCalendar from "../components/search/PriceCalendar";
-import FiltersPanel, { FilterState, TimePeriod } from "../components/search/FiltersPanel";
+import FiltersPanel, { countActiveFilters, FilterState, TimePeriod } from "../components/search/FiltersPanel";
 import { IconPlane, IconPin, IconCalendar, IconUser, IconSwap } from "../components/icons";
 import SettingsSwitcher from "../components/SettingsSwitcher";
 import { useSettings } from "../context/settings";
@@ -91,8 +91,9 @@ export default function SearchResults() {
   const returnBarRef = useRef<HTMLDivElement>(null);
 
   const [flights, setFlights] = useState<Flight[]>([]);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState(false);
   const [dataNotice, setDataNotice] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
   const totalOf = (f: Flight) => f.pricePerPax * paxCount;
 
   const priceBounds = useMemo<[number, number]>(() => {
@@ -105,8 +106,8 @@ export default function SearchResults() {
   const minDuration = useMemo(() => flights.length ? Math.min(...flights.map((f) => f.durationMin)) : 0, [flights]);
   const maxDuration = useMemo(() => flights.length ? Math.max(...flights.map((f) => f.durationMin)) : 1440, [flights]);
 
-  const departAirportList = HUB_AIRPORTS[fromIata] ?? [{ iata: fromIata, name: fromCity }];
-  const arriveAirportList = HUB_AIRPORTS[toIata] ?? [{ iata: toIata, name: toCity }];
+  const departAirportList = useMemo(() => HUB_AIRPORTS[fromIata] ?? [{ iata: fromIata, name: fromCity }], [fromIata, fromCity]);
+  const arriveAirportList = useMemo(() => HUB_AIRPORTS[toIata] ?? [{ iata: toIata, name: toCity }], [toIata, toCity]);
 
   function futureDateISO(days: number) {
     const d = new Date(); d.setDate(d.getDate() + days);
@@ -142,6 +143,11 @@ export default function SearchResults() {
     [flights],
   );
 
+  const activeFilterCount = useMemo(
+    () => countActiveFilters(filters, priceBounds, [minDuration, maxDuration], airlineList, departAirportList, arriveAirportList),
+    [filters, priceBounds, minDuration, maxDuration, airlineList, departAirportList, arriveAirportList],
+  );
+
   function reset() { resetFilters(flights); }
 
   function resetFilters(newFlights: Flight[]) {
@@ -171,7 +177,7 @@ export default function SearchResults() {
       arriveAirportList.map((a) => a.iata),
     );
     setIsLoading(true);
-    setApiError(null);
+    setApiError(false);
     setDataNotice(null);
     searchFlights({
       origin: fromIata,
@@ -190,16 +196,18 @@ export default function SearchResults() {
       setIsLoading(false);
     }).catch((err) => {
       if (cancelled) return;
+      // Технические детали — только в консоль, пользователю показываем понятное сообщение.
+      console.error("searchFlights failed:", err);
       const nextFlights = fallbackFlights();
       setFlights(nextFlights);
       resetFilters(nextFlights);
-      setApiError(String(err));
-      setDataNotice("API сейчас недоступен, поэтому показываем демо-рейсы. Кнопка Aviasales всё равно откроет полный поиск.");
+      setApiError(true);
+      setDataNotice("Не удалось загрузить актуальные предложения, поэтому показываем демо-рейсы. Кнопка Aviasales всё равно откроет полный поиск.");
       setIsLoading(false);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromIata, toIata, date, returnDate, adults]);
+  }, [fromIata, toIata, date, returnDate, adults, retryTick]);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -548,6 +556,7 @@ export default function SearchResults() {
             className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm font-medium text-[var(--color-text)] lg:hidden"
           >
             {t("search.filters")}
+            {activeFilterCount > 0 && <span className="text-[var(--color-primary)]">({activeFilterCount})</span>}
           </button>
         </div>
 
@@ -563,6 +572,7 @@ export default function SearchResults() {
                 airlineList={airlineList}
                 departAirportList={departAirportList}
                 arriveAirportList={arriveAirportList}
+                onReset={reset}
               />
             </div>
           </aside>
@@ -622,8 +632,15 @@ export default function SearchResults() {
               </div>
             )}
             {apiError && !isLoading && (
-              <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                Не удалось получить рейсы: {apiError}
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+                <span>Не удалось загрузить актуальные предложения.</span>
+                <button
+                  type="button"
+                  onClick={() => setRetryTick((n) => n + 1)}
+                  className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-800 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-950/50"
+                >
+                  Попробовать снова
+                </button>
               </div>
             )}
             {dataNotice && !isLoading && (
@@ -674,12 +691,20 @@ export default function SearchResults() {
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] py-16 text-center">
                 <div className="text-lg font-semibold text-[var(--color-text)]">{t("search.empty_title")}</div>
                 <div className="mt-1 text-sm text-[var(--color-text-muted)]">{t("search.empty_sub")}</div>
-                <button
-                  onClick={reset}
-                  className="mt-4 rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
-                >
-                  {t("search.empty_reset")}
-                </button>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={reset}
+                    className="rounded-xl bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+                  >
+                    {t("search.empty_reset")}
+                  </button>
+                  <Link
+                    href="/"
+                    className="rounded-xl border border-[var(--color-border)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  >
+                    Изменить поиск
+                  </Link>
+                </div>
               </div>
             )}
           </div>
@@ -692,8 +717,16 @@ export default function SearchResults() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
           <div className="animate-slide-in-right absolute inset-y-0 right-0 flex w-[86%] max-w-sm flex-col bg-[var(--color-surface)]">
             <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-              <span className="text-lg font-bold text-[var(--color-text)]">{t("search.filters")}</span>
-              <button onClick={() => setDrawerOpen(false)} aria-label="Закрыть" className="text-2xl leading-none text-[var(--color-text-muted)]">×</button>
+              <span className="text-lg font-bold text-[var(--color-text)]">
+                {t("search.filters")}
+                {activeFilterCount > 0 && <span className="ml-1.5 text-[var(--color-primary)]">({activeFilterCount})</span>}
+              </span>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={reset} className="text-xs font-semibold text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
+                  Сбросить
+                </button>
+                <button onClick={() => setDrawerOpen(false)} aria-label="Закрыть" className="text-2xl leading-none text-[var(--color-text-muted)]">×</button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto px-5">
               <FiltersPanel
@@ -704,6 +737,7 @@ export default function SearchResults() {
                 airlineList={airlineList}
                 departAirportList={departAirportList}
                 arriveAirportList={arriveAirportList}
+                showHeader={false}
               />
             </div>
             <div className="border-t border-[var(--color-border)] p-4">

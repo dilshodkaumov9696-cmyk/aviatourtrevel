@@ -66,6 +66,9 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
     return apiPrices[iso] ?? null;
   }
 
+  const visiblePrices = days.map(priceFor).filter((p): p is number => p !== null);
+  const cheapestVisible = visiblePrices.length ? Math.min(...visiblePrices) : null;
+
   return (
     <div className="flex items-center gap-1.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2">
       <button
@@ -83,17 +86,25 @@ export default function PriceCalendar({ selected, onSelect, selectedPrice, origi
           const isSel = iso === selected;
           const price = priceFor(d);
           const cheap = price !== null && price < 10000;
+          const isCheapestVisible = price !== null && cheapestVisible !== null && price === cheapestVisible;
           return (
             <button
               key={iso}
               type="button"
               onClick={() => onSelect(iso)}
-              className={`flex-1 rounded-lg border px-1 py-1.5 text-center transition ${
+              className={`relative flex-1 rounded-lg border px-1 py-1.5 text-center transition ${
                 isSel
                   ? "border-green-500 bg-[var(--color-bg-soft)]"
-                  : "border-transparent hover:bg-[var(--color-bg-soft)]"
+                  : isCheapestVisible
+                    ? "border-green-300 bg-green-50/60 dark:border-green-800 dark:bg-green-950/20"
+                    : "border-transparent hover:bg-[var(--color-bg-soft)]"
               }`}
             >
+              {isCheapestVisible && !isSel && (
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-green-600 px-1.5 py-[1px] text-[9px] font-bold text-white">
+                  дешевле
+                </span>
+              )}
               <div className="text-[11px] text-[var(--color-text-muted)]">{dayLabel(d)}</div>
               {price !== null ? (
                 <div className={`text-[13px] font-semibold ${cheap ? "text-green-600" : "text-red-500"}`}>

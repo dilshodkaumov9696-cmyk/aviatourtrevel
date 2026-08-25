@@ -156,6 +156,7 @@ const ru: Dict = {
   "filters.duration_to": "до",
   "filters.airport_from": "Аэропорт вылета",
   "filters.airport_to": "Аэропорт прилёта",
+  "filters.title": "Фильтры",
   "filters.airlines": "Авиакомпании",
   // flight card / modal
   "card.select": "Выбрать",
@@ -287,6 +288,7 @@ const tj: Dict = {
   "filters.duration_to": "то",
   "filters.airport_from": "Фурудгоҳи парвоз",
   "filters.airport_to": "Фурудгоҳи фуруд",
+  "filters.title": "Филтрҳо",
   "filters.airlines": "Ширкатҳои ҳавоӣ",
   "card.select": "Интихоб",
   "card.per_all": "барои ҳама мусофирон",
@@ -414,6 +416,7 @@ const en: Dict = {
   "filters.duration_to": "up to",
   "filters.airport_from": "Departure airport",
   "filters.airport_to": "Arrival airport",
+  "filters.title": "Filters",
   "filters.airlines": "Airlines",
   "card.select": "Select",
   "card.per_all": "for all passengers",
@@ -531,6 +534,7 @@ const uz: Dict = {
   "filters.duration_to": "gacha",
   "filters.airport_from": "Uchish aeroporti",
   "filters.airport_to": "Qo‘nish aeroporti",
+  "filters.title": "Filtrlar",
   "filters.airlines": "Aviakompaniyalar",
   "card.select": "Tanlash",
 };
@@ -591,6 +595,7 @@ const ky: Dict = {
   "filters.duration_to": "чейин",
   "filters.airport_from": "Учуу аэропорту",
   "filters.airport_to": "Конуу аэропорту",
+  "filters.title": "Фильтрлер",
   "filters.airlines": "Авиакомпаниялар",
   "card.select": "Тандоо",
 };

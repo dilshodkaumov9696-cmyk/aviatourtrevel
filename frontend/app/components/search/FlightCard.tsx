@@ -115,7 +115,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
       ? f.airlineName
       : `Авиакомпания ${f.airlineCode}`;
 
-  const baggageExtra = baggageAdded ? 250000 : 0;
+  const baggageExtra = baggageAdded ? 2500 : 0;
   const total = (f.pricePerPax + baggageExtra) * paxCount;
 
   const bookParams = new URLSearchParams({

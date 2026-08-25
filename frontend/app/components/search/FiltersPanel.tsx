@@ -27,6 +27,30 @@ interface Props {
   airlineList: { code: string; name: string }[];
   departAirportList: { iata: string; name: string }[];
   arriveAirportList: { iata: string; name: string }[];
+  onReset?: () => void;
+  showHeader?: boolean;
+}
+
+/** Сколько фильтров реально отклонены от значения "сброшено" — для бейджа "Фильтры (N)". */
+export function countActiveFilters(
+  state: FilterState,
+  priceBounds: [number, number],
+  durationBounds: [number, number],
+  airlineList: { code: string }[],
+  departAirportList: { iata: string }[],
+  arriveAirportList: { iata: string }[],
+): number {
+  let n = 0;
+  if (state.stopsMax !== null) n++;
+  if (state.baggageMode !== "all") n++;
+  if (state.timePeriods.size > 0) n++;
+  if (state.fastestOnly) n++;
+  if (state.priceMin > priceBounds[0] || state.priceMax < priceBounds[1]) n++;
+  if (state.durationMax < durationBounds[1]) n++;
+  if (airlineList.length > 0 && state.airlines.size < airlineList.length) n++;
+  if (departAirportList.length > 1 && state.departAirports.size < departAirportList.length) n++;
+  if (arriveAirportList.length > 1 && state.arriveAirports.size < arriveAirportList.length) n++;
+  return n;
 }
 
 const STOPS_OPTS: { v: number | null; key: string }[] = [
@@ -68,10 +92,11 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-export default function FiltersPanel({ state, set, priceBounds, durationBounds, airlineList, departAirportList = [], arriveAirportList = [] }: Props) {
+export default function FiltersPanel({ state, set, priceBounds, durationBounds, airlineList, departAirportList = [], arriveAirportList = [], onReset, showHeader = true }: Props) {
   const { format, t } = useSettings();
   const [min, max] = priceBounds;
   const [, durationMax] = durationBounds;
+  const activeCount = countActiveFilters(state, priceBounds, durationBounds, airlineList, departAirportList, arriveAirportList);
 
   function toggleAirline(code: string) {
     const next = new Set(state.airlines);
@@ -94,6 +119,24 @@ export default function FiltersPanel({ state, set, priceBounds, durationBounds, 
 
   return (
     <div className="text-sm">
+      {showHeader && (
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] py-3">
+          <span className="font-bold text-[var(--color-text)]">
+            {t("filters.title")}
+            {activeCount > 0 && <span className="ml-1.5 text-[var(--color-primary)]">({activeCount})</span>}
+          </span>
+          {activeCount > 0 && onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="text-xs font-semibold text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]"
+            >
+              Сбросить
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Быстрые тогглы */}
       <FGroup title={t("filters.params")}>
         <Toggle checked={state.fastestOnly} onChange={(v) => set({ fastestOnly: v })} label={t("filters.fastest")} />

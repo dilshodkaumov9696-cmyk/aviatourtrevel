@@ -57,6 +57,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ prices });
   } catch (err) {
     console.error("calendar-prices error:", err);
-    return NextResponse.json({ prices: {} }, { status: 200 }); // фоллбэк — пустые цены, UI покажет мок
+    return NextResponse.json({ prices: {} }, { status: 200 }); // фоллбэк — пустые цены, UI покажет "—", не выдуманную цену
   }
 }
