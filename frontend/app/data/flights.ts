@@ -1,12 +1,90 @@
 export type BadgeTone = "deal" | "time" | "morning" | "exclusive" | "cheap" | "muted";
 
-export interface Tariff {
-  handKg: number;
-  baggageKg: number | null;
-  refundable: boolean;
-  changeable: boolean;
-  changeFee: number | null;
+/**
+ * Доступность услуги/багажа. "unknown" — источник (реальный API) не предоставил
+ * значение. Это НЕ "нет" — намеренно отдельное состояние, чтобы UI показывал
+ * "Уточняется", а не выдумывал "included"/"not_included" там, где мы не знаем.
+ */
+export type Availability = "included" | "not_included" | "unknown";
+/** То же самое, но для услуг, которые бывают платными отдельно от вкл./выкл. */
+export type ServiceLevel = "included" | "paid" | "not_available" | "unknown";
+export type YesNoUnknown = "yes" | "no" | "unknown";
+
+export interface Dimensions3D {
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
 }
+
+/** Зарегистрированный багаж. Условия конкретного Flight/тарифа, НЕ авиакомпании в целом. */
+export interface BaggageAllowance {
+  status: Availability;
+  /** Piece-based: сколько мест багажа разрешено (1, 2…). null — неизвестно/неприменимо. */
+  pieces: number | null;
+  /** Вес одного места, если норма piece-based (напр. 23 при "1 × 23 кг"). */
+  weightPerPieceKg: number | null;
+  /** Weight-based норма без разбивки на места (напр. просто "20 кг"), если источник даёт только так. */
+  totalWeightKg: number | null;
+  dimensionsCm: Dimensions3D | null;
+  /** Сумма трёх измерений одного места (напр. 158 см), если источник даёт только так. */
+  maxTotalLinearCm: number | null;
+  /** Стоимость докупки места багажа сверх нормы, если источник её даёт. */
+  extraPrice: number | null;
+  extraCurrency: string | null;
+}
+
+/** Ручная кладь. Намеренно отдельный тип от BaggageAllowance — их нельзя путать. */
+export interface CarryOnAllowance {
+  status: Availability;
+  pieces: number | null;
+  weightKg: number | null;
+  dimensionsCm: Dimensions3D | null;
+  extraPrice: number | null;
+  extraCurrency: string | null;
+}
+
+export interface RefundExchangeTerm {
+  allowed: YesNoUnknown;
+  /** null при allowed="yes" = бесплатно; null при allowed="unknown" = не указано поставщиком. */
+  penalty: number | null;
+  currency: string | null;
+}
+
+/** Условия конкретного тарифа конкретного рейса (не общее правило авиакомпании). */
+export interface FareConditions {
+  /** "Economy Basic" / "Economy Standard" / "Economy Flex"… null → показываем общий "Эконом". */
+  brandName: string | null;
+  cabin: "economy" | "business" | "first" | null;
+  baggage: BaggageAllowance;
+  carryOn: CarryOnAllowance;
+  refund: RefundExchangeTerm;
+  exchange: RefundExchangeTerm;
+  /** Условия при неявке на рейс, свободный текст поставщика. null — не указано. */
+  noShow: string | null;
+  seatSelection: ServiceLevel;
+  meal: ServiceLevel;
+  priorityBoarding: ServiceLevel;
+  lounge: ServiceLevel;
+  mileageAccrual: ServiceLevel;
+  onlineCheckin: ServiceLevel;
+}
+
+/** Полностью "неизвестно" — источник не дал условий тарифа. Не выдумываем significant/false. */
+export const UNKNOWN_FARE: FareConditions = {
+  brandName: null,
+  cabin: null,
+  baggage: { status: "unknown", pieces: null, weightPerPieceKg: null, totalWeightKg: null, dimensionsCm: null, maxTotalLinearCm: null, extraPrice: null, extraCurrency: null },
+  carryOn: { status: "unknown", pieces: null, weightKg: null, dimensionsCm: null, extraPrice: null, extraCurrency: null },
+  refund: { allowed: "unknown", penalty: null, currency: null },
+  exchange: { allowed: "unknown", penalty: null, currency: null },
+  noShow: null,
+  seatSelection: "unknown",
+  meal: "unknown",
+  priorityBoarding: "unknown",
+  lounge: "unknown",
+  mileageAccrual: "unknown",
+  onlineCheckin: "unknown",
+};
 
 export interface Flight {
   id: string;
@@ -26,12 +104,57 @@ export interface Flight {
   stopLabel?: string;
   stopCities?: string[];
   pricePerPax: number;
-  hasBaggage: boolean;
-  baggageLabel: string;
-  tariff: Tariff;
+  /** Условия тарифа этого конкретного рейса. UNKNOWN_FARE, если источник их не дал. */
+  fare: FareConditions;
   isNight: boolean;
   badges: { label: string; tone: BadgeTone }[];
   bookingUrl?: string;
+}
+
+/** "С багажом" в фильтрах — это именно baggage.status === "included", не "любое непустое поле". */
+export function baggageIncluded(f: Flight): boolean {
+  return f.fare.baggage.status === "included";
+}
+
+export function baggageShortLabel(b: BaggageAllowance): string {
+  if (b.status === "unknown") return "Уточняется";
+  if (b.status === "not_included") return b.extraPrice != null ? "Багаж платно" : "Без багажа";
+  if (b.pieces && b.weightPerPieceKg) return `${b.pieces} × ${b.weightPerPieceKg} кг`;
+  if (b.totalWeightKg) return `${b.totalWeightKg} кг`;
+  return "Включён";
+}
+
+export function carryOnShortLabel(c: CarryOnAllowance): string {
+  if (c.status === "unknown") return "Уточняется";
+  if (c.status === "not_included") return c.extraPrice != null ? "Платно" : "Не включена";
+  if (c.pieces && c.weightKg) return `${c.pieces} × ${c.weightKg} кг`;
+  if (c.weightKg) return `${c.weightKg} кг`;
+  return "Включена";
+}
+
+/** Короткая сводка багажа для передачи в booking flow (BookingPage.tsx читает только строку). */
+export function baggageSummaryForBooking(f: Flight): string {
+  return baggageShortLabel(f.fare.baggage);
+}
+
+export function serviceLevelLabel(level: ServiceLevel): string {
+  if (level === "included") return "Включено";
+  if (level === "paid") return "Платно";
+  if (level === "not_available") return "Недоступно";
+  return "Уточняется";
+}
+
+export function dimensionsSummary(dims: Dimensions3D | null, maxLinearCm: number | null): string | undefined {
+  if (dims) return `${dims.lengthCm} × ${dims.widthCm} × ${dims.heightCm} см`;
+  if (maxLinearCm) return `${maxLinearCm} см по сумме измерений`;
+  return undefined;
+}
+
+export function refundExchangeLabel(term: RefundExchangeTerm, kind: "refund" | "exchange"): string {
+  const verb = kind === "refund" ? "Возврат" : "Обмен";
+  if (term.allowed === "unknown") return `${verb} уточняется`;
+  if (term.allowed === "no") return kind === "refund" ? "Невозвратный" : "Без обмена";
+  return term.penalty ? `${verb} со штрафом` : `${verb} разрешён`;
 }
 
 export interface Route {
@@ -69,107 +192,9 @@ export interface Layover {
   smart: boolean;
 }
 
-const TEMPLATES: Omit<Flight, "id">[] = [
-  {
-    airlineCode: "SZ", airlineName: "Somon Air", flightNumber: "SZ 43", aircraft: "Boeing 737-800",
-    fareClass: "Y/UOWSZ", seatsLeft: 9,
-    departTime: "08:30", arriveTime: "09:15", arriveDayOffset: 0, durationMin: 45,
-    stops: 0, isNight: false,
-    pricePerPax: 3328, hasBaggage: true, baggageLabel: "Багаж 20 кг",
-    tariff: { handKg: 7, baggageKg: 20, refundable: true, changeable: true, changeFee: 1500 },
-    badges: [{ label: "Выгодная цена", tone: "deal" }, { label: "Удобно по времени", tone: "time" }, { label: "Вылет утром", tone: "morning" }],
-  },
-  {
-    airlineCode: "DP", airlineName: "Pobeda", flightNumber: "DP 407", aircraft: "Boeing 737-800",
-    fareClass: "O/OZ0R", seatsLeft: 4,
-    departTime: "22:10", arriveTime: "23:05", arriveDayOffset: 0, durationMin: 55,
-    stops: 0, isNight: true,
-    pricePerPax: 3290, hasBaggage: false, baggageLabel: "Только ручная кладь",
-    tariff: { handKg: 5, baggageKg: null, refundable: false, changeable: false, changeFee: null },
-    badges: [{ label: "Дешевле всех", tone: "cheap" }],
-  },
-  {
-    airlineCode: "S7", airlineName: "S7 Airlines", flightNumber: "S7 112", aircraft: "Airbus A320",
-    fareClass: "K/KSFO", seatsLeft: 9,
-    departTime: "06:15", arriveTime: "07:10", arriveDayOffset: 0, durationMin: 55,
-    stops: 0, isNight: false,
-    pricePerPax: 4100, hasBaggage: false, baggageLabel: "Только ручная кладь",
-    tariff: { handKg: 10, baggageKg: null, refundable: false, changeable: true, changeFee: 2000 },
-    badges: [{ label: "Вылет утром", tone: "morning" }],
-  },
-  {
-    airlineCode: "SZ", airlineName: "Somon Air", flightNumber: "SZ 41", aircraft: "Boeing 737-800",
-    fareClass: "Y/UOWSZ", seatsLeft: 7,
-    departTime: "18:00", arriveTime: "18:45", arriveDayOffset: 0, durationMin: 45,
-    stops: 0, isNight: false,
-    pricePerPax: 3328, hasBaggage: true, baggageLabel: "Багаж 20 кг",
-    tariff: { handKg: 7, baggageKg: 20, refundable: true, changeable: true, changeFee: 1500 },
-    badges: [{ label: "Вылет вечером", tone: "muted" }],
-  },
-  {
-    airlineCode: "S7", airlineName: "S7 Airlines", flightNumber: "S7 118", aircraft: "Airbus A319",
-    fareClass: "M/MSFO", seatsLeft: 9,
-    departTime: "15:20", arriveTime: "16:15", arriveDayOffset: 0, durationMin: 55,
-    stops: 0, isNight: false,
-    pricePerPax: 4450, hasBaggage: true, baggageLabel: "Багаж 20 кг",
-    tariff: { handKg: 10, baggageKg: 20, refundable: true, changeable: true, changeFee: 2000 },
-    badges: [{ label: "Удобно по времени", tone: "time" }],
-  },
-  {
-    airlineCode: "HY", airlineName: "Uzbekistan Airways", flightNumber: "HY 502", aircraft: "Airbus A320-200 Neo",
-    fareClass: "Q/QOWUZ", seatsLeft: 6,
-    departTime: "10:30", arriveTime: "14:30", arriveDayOffset: 0, durationMin: 240,
-    stops: 1, stopLabel: "Ташкент", stopCities: ["TAS"], isNight: false,
-    pricePerPax: 6450, hasBaggage: true, baggageLabel: "Багаж 23 кг",
-    tariff: { handKg: 10, baggageKg: 23, refundable: true, changeable: true, changeFee: 3000 },
-    badges: [{ label: "Эксклюзив", tone: "exclusive" }],
-  },
-  {
-    airlineCode: "KC", airlineName: "Air Astana", flightNumber: "KC 132", aircraft: "Airbus A321",
-    fareClass: "K/KSFO", seatsLeft: 9,
-    departTime: "07:40", arriveTime: "12:20", arriveDayOffset: 0, durationMin: 280,
-    stops: 1, stopLabel: "Алматы", stopCities: ["ALA"], isNight: false,
-    pricePerPax: 8200, hasBaggage: true, baggageLabel: "Багаж 23 кг",
-    tariff: { handKg: 8, baggageKg: 23, refundable: true, changeable: true, changeFee: 2500 },
-    badges: [],
-  },
-  {
-    airlineCode: "B2", airlineName: "Belavia", flightNumber: "B2 774", aircraft: "Embraer E175",
-    fareClass: "T/TOWB2", seatsLeft: 5,
-    departTime: "13:00", arriveTime: "20:35", arriveDayOffset: 0, durationMin: 455,
-    stops: 1, stopLabel: "Минск", stopCities: ["MSQ"], isNight: false,
-    pricePerPax: 7300, hasBaggage: false, baggageLabel: "Только ручная кладь",
-    tariff: { handKg: 8, baggageKg: null, refundable: false, changeable: false, changeFee: null },
-    badges: [],
-  },
-  {
-    airlineCode: "TK", airlineName: "Turkish Airlines", flightNumber: "TK 415", aircraft: "Boeing 777",
-    fareClass: "O/OH0R34", seatsLeft: 9,
-    departTime: "09:00", arriveTime: "06:30", arriveDayOffset: 1, durationMin: 1290,
-    stops: 2, stopLabel: "Стамбул, Анкара", stopCities: ["IST", "ESB"], isNight: false,
-    pricePerPax: 12500, hasBaggage: true, baggageLabel: "Багаж 20 кг",
-    tariff: { handKg: 8, baggageKg: 20, refundable: false, changeable: true, changeFee: 5000 },
-    badges: [],
-  },
-];
-
-// Аэропорты вылета/прилёта раздаются по реальному маршруту поиска, чтобы
-// рейсы совпадали с фильтром хабов (иначе при поиске в Москву рейсы с
-// прилётом в Стамбул вырезались бы и выдавало «0 рейсов»).
-export function getFlights(departIatas?: string[], arriveIatas?: string[]): Flight[] {
-  const departAirports = departIatas?.length ? departIatas : ["SVO", "DME", "VKO"];
-  const arriveAirports = arriveIatas?.length ? arriveIatas : ["IST", "SAW"];
-  return TEMPLATES.map((t, i) => ({
-    ...t,
-    id: `f${i}`,
-    departAirportIata: t.departAirportIata ?? departAirports[i % departAirports.length],
-    arriveAirportIata: t.arriveAirportIata ?? arriveAirports[i % arriveAirports.length],
-  }));
-}
-
-export const AIRLINES = Array.from(
-  new Map(TEMPLATES.map((t) => [t.airlineCode, t.airlineName])).entries()
-).map(([code, name]) => ({ code, name }));
+// Demo-фикстуры (getDemoFlights/DEMO_AIRLINES) физически вынесены в
+// flights.demo.ts — см. комментарий там. Здесь остаются только типы и
+// хелперы, которыми пользуются и настоящие данные API тоже.
 
 // Названия аэропортов (позже из API)
 export const AIRPORT_NAMES: Record<string, string> = {

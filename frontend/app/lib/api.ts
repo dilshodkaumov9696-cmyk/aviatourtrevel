@@ -1,4 +1,4 @@
-import type { Flight } from "../data/flights";
+import { UNKNOWN_FARE, type Flight } from "../data/flights";
 
 const MARKER = "488971";
 
@@ -502,9 +502,9 @@ export async function searchFlights(params: {
         ? offer.stop_airports.map(iata => IATA_CITY[iata] ?? iata).join(", ")
         : undefined,
       pricePerPax: offer.price,
-      hasBaggage: false,
-      baggageLabel: "Уточняйте у авиакомпании",
-      tariff: { handKg: 0, baggageKg: null, refundable: false, changeable: false, changeFee: null },
+      // Travelpayouts не отдаёт условия тарифа (багаж/возврат/обмен и т.д.) — честно
+      // помечаем "неизвестно", а не выдумываем false/0 как будто это подтверждённый факт.
+      fare: UNKNOWN_FARE,
       isNight: hour >= 22 || hour < 6,
       badges: [],
       bookingUrl: offer.booking_url,

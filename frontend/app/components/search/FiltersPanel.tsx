@@ -5,9 +5,12 @@ import { formatDuration } from "../../data/flights";
 
 export type BaggageMode = "all" | "with" | "without";
 export type TimePeriod = "morning" | "day" | "evening" | "night";
+/** 0 = прямой, 1 = ровно 1 пересадка, 2 = "2 и больше" (не "до 2"). */
+export type StopsBucket = 0 | 1 | 2;
 
 export interface FilterState {
-  stopsMax: number | null;
+  /** Пустой набор = фильтр не применён, показываем все варианты пересадок. */
+  stops: Set<StopsBucket>;
   priceMin: number;
   priceMax: number;
   durationMax: number;
@@ -41,7 +44,7 @@ export function countActiveFilters(
   arriveAirportList: { iata: string }[],
 ): number {
   let n = 0;
-  if (state.stopsMax !== null) n++;
+  if (state.stops.size > 0) n++;
   if (state.baggageMode !== "all") n++;
   if (state.timePeriods.size > 0) n++;
   if (state.fastestOnly) n++;
@@ -53,11 +56,10 @@ export function countActiveFilters(
   return n;
 }
 
-const STOPS_OPTS: { v: number | null; key: string }[] = [
-  { v: null, key: "filters.stops_all" },
+const STOPS_OPTS: { v: StopsBucket; key: string }[] = [
   { v: 0, key: "filters.stops_0" },
   { v: 1, key: "filters.stops_1" },
-  { v: 2, key: "filters.stops_2" },
+  { v: 2, key: "filters.stops_2plus" },
 ];
 
 const BAGGAGE_OPTS: { v: BaggageMode; key: string }[] = [
@@ -117,6 +119,12 @@ export default function FiltersPanel({ state, set, priceBounds, durationBounds, 
     set({ timePeriods: next });
   }
 
+  function toggleStops(bucket: StopsBucket) {
+    const next = new Set(state.stops);
+    if (next.has(bucket)) next.delete(bucket); else next.add(bucket);
+    set({ stops: next });
+  }
+
   return (
     <div className="text-sm">
       {showHeader && (
@@ -174,15 +182,24 @@ export default function FiltersPanel({ state, set, priceBounds, durationBounds, 
         ))}
       </FGroup>
 
-      {/* Пересадки */}
+      {/* Пересадки: чекбоксы с точной семантикой (0 / ровно 1 / 2 и больше),
+          комбинируются — например "прямой" + "2 и больше" одновременно. */}
       <FGroup title={t("filters.stops")}>
+        <label className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
+          <input
+            type="checkbox"
+            checked={state.stops.size === 0}
+            onChange={() => set({ stops: new Set() })}
+            className="accent-[var(--color-primary)]"
+          />
+          {t("filters.stops_all")}
+        </label>
         {STOPS_OPTS.map((o) => (
-          <label key={String(o.v)} className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
+          <label key={o.v} className="flex cursor-pointer items-center gap-2.5 py-1.5 text-[var(--color-text-muted)]">
             <input
-              type="radio"
-              name="stops"
-              checked={state.stopsMax === o.v}
-              onChange={() => set({ stopsMax: o.v })}
+              type="checkbox"
+              checked={state.stops.has(o.v)}
+              onChange={() => toggleStops(o.v)}
               className="accent-[var(--color-primary)]"
             />
             {t(o.key)}

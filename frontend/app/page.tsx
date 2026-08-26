@@ -1,3 +1,7 @@
+
+
+
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -287,6 +291,43 @@ export default function Home() {
 
     return () => window.clearTimeout(fallback);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // "Изменить" на /search передаёт текущий маршрут через query-параметры
+  // (см. changeHref в SearchResults.tsx) — здесь их читаем и заполняем форму,
+  // иначе кнопка "Изменить" всегда открывала пустую форму поиска.
+  // Через window.location.search (не useSearchParams()), чтобы не переводить
+  // всю главную страницу в динамический рендеринг ради этого узкого случая.
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search);
+    const qFromIata = qs.get("fromIata");
+    const qToIata = qs.get("toIata");
+    if (!qFromIata && !qToIata) return;
+
+    if (qFromIata) {
+      const qFromCity = qs.get("fromCity") || qFromIata;
+      setOriginAirport({ iata: qFromIata, city: qFromCity, name: qFromCity, country: "" });
+    }
+    if (qToIata) {
+      const qToCity = qs.get("toCity") || qToIata;
+      setDestAirport({ iata: qToIata, city: qToCity, name: qToCity, country: "" });
+    }
+    const qDate = qs.get("date");
+    if (qDate) setDepartDate(qDate);
+    const qReturnDate = qs.get("returnDate");
+    if (qReturnDate) setReturnDate(qReturnDate);
+    const qCabin = qs.get("cabin");
+    if (qCabin === "economy" || qCabin === "business" || qCabin === "first") setCabin(qCabin);
+    const qAdults = qs.get("adults");
+    const qChildren = qs.get("children");
+    const qInfants = qs.get("infants");
+    if (qAdults || qChildren || qInfants) {
+      setPassengers({
+        adults: Math.max(1, Number(qAdults) || 1),
+        children: Math.max(0, Number(qChildren) || 0),
+        infants: Math.max(0, Number(qInfants) || 0),
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -587,7 +628,7 @@ export default function Home() {
             <form
               onSubmit={handleSearch}
               noValidate
-              className="animate-fade-in-down relative z-10 mx-auto mt-10 w-full max-w-[1440px] overflow-visible rounded-[30px] border border-white/35 bg-gradient-to-br from-white/95 via-white/90 to-[rgba(240,246,250,0.9)] p-2 text-left shadow-[0_24px_90px_rgba(6,24,36,0.22)] ring-1 ring-white/40 backdrop-blur-2xl dark:border-white/10 dark:from-[rgba(15,29,39,0.96)] dark:via-[rgba(15,29,39,0.93)] dark:to-[rgba(12,24,32,0.95)]"
+              className="animate-fade-in-down relative z-10 mx-auto mt-10 w-full max-w-[1440px] overflow-visible text-left"
             >
             {/* Верхняя строка: переключатель сложного маршрута */}
             <div className="px-5 pt-4 flex justify-end">

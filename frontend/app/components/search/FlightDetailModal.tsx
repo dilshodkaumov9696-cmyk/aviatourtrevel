@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
-import { Flight, Route, buildItinerary, formatDuration, dateShort, stopsLabel } from "../../data/flights";
+import { useEffect, useRef } from "react";
+import {
+  Flight, Route, buildItinerary, formatDuration, dateShort, stopsLabel,
+  baggageShortLabel, carryOnShortLabel, serviceLevelLabel, dimensionsSummary,
+} from "../../data/flights";
 import { useSettings } from "../../context/settings";
+import AirlineLogo from "./AirlineLogo";
 
 interface Props {
   flight: Flight;
@@ -10,7 +14,11 @@ interface Props {
   dateISO: string;
   paxCount: number;
   onClose: () => void;
+  onSelect?: () => void;
+  isSelected?: boolean;
 }
+
+const FOCUSABLE = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
 
 function IconTakeoff({ className = "" }: { className?: string }) {
   return (
@@ -28,19 +36,57 @@ function IconLanding({ className = "" }: { className?: string }) {
   );
 }
 
-export default function FlightDetailModal({ flight: f, route, dateISO, paxCount, onClose }: Props) {
+// Одна строка в блоке "Условия тарифа": иконка + подпись слева, значение (+доп. строка) справа.
+function ConditionRow({ icon, label, value, sub, tone = "neutral" }: { icon: string; label: string; value: string; sub?: string; tone?: "neutral" | "positive" | "negative" }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2.5">
+      <div className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
+        <span aria-hidden>{icon}</span>{label}
+      </div>
+      <div className="text-right">
+        <div className={`text-[13px] font-medium ${tone === "positive" ? "text-green-600" : tone === "negative" ? "text-[var(--color-text-muted)]" : "text-[var(--color-text)]"}`}>{value}</div>
+        {sub && <div className="text-[11px] text-[var(--color-text-muted)]">{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+export default function FlightDetailModal({ flight: f, route, dateISO, paxCount, onClose, onSelect, isSelected }: Props) {
   const { format, t, lang } = useSettings();
   const { segments, layovers, estimated } = buildItinerary(f, route);
   const total = f.pricePerPax * paxCount;
   const stopsText = lang === "ru" ? stopsLabel(f.stops) : `${f.stops} ${t("card.stops_word")}`;
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
+  // Фокус-ловушка + возврат фокуса на элемент, который открыл модалку.
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onEsc);
+    closeBtnRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+        (el) => el.offsetParent !== null,
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = "";
-      window.removeEventListener("keydown", onEsc);
+      window.removeEventListener("keydown", onKeyDown);
+      opener?.focus?.();
     };
   }, [onClose]);
 
@@ -53,21 +99,29 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
     departTime: f.departTime, arriveTime: f.arriveTime,
     durationMin: String(f.durationMin), stops: String(f.stops),
     dateLabel: dateShort(dateISO), dateISO, pricePerPax: String(f.pricePerPax),
-    paxCount: String(paxCount), total: String(total), baggageLabel: f.baggageLabel,
+    paxCount: String(paxCount), total: String(total), baggageLabel: baggageShortLabel(f.fare.baggage),
     ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
   const targetUrl = f.bookingUrl || `/book?${bookParams.toString()}`;
 
-  const baggageText = f.tariff.baggageKg
-    ? `${t("modal.baggage")}: ${f.tariff.baggageKg} кг`
-    : f.baggageLabel || t("modal.no_baggage");
+  const fareBrand = f.fare.brandName ?? "Эконом";
+  const refundValue = f.fare.refund.allowed === "unknown" ? "Уточняется" : f.fare.refund.allowed === "yes" ? "Разрешён" : "Не разрешён";
+  const refundSub = f.fare.refund.allowed === "yes" ? (f.fare.refund.penalty ? `Штраф: ${format(f.fare.refund.penalty)}` : "Бесплатно") : undefined;
+  const exchangeValue = f.fare.exchange.allowed === "unknown" ? "Уточняется" : f.fare.exchange.allowed === "yes" ? "Разрешён" : "Не разрешён";
+  const exchangeSub = f.fare.exchange.allowed === "yes" ? (f.fare.exchange.penalty ? `Штраф: ${format(f.fare.exchange.penalty)}` : "Бесплатно") : undefined;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+      // z-[70]: выше плавающего ChatWidget (z-[60]) — открытая модалка должна
+      // всегда перекрывать его, иначе кнопка "Выбрать" частично блокируется виджетом чата.
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${route.fromCity} → ${route.toCity}`}
         className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl bg-[var(--color-surface)] shadow-2xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
@@ -83,6 +137,7 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
             </p>
           </div>
           <button
+            ref={closeBtnRef}
             onClick={onClose}
             aria-label="Закрыть"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl leading-none text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-soft)]"
@@ -94,28 +149,21 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
         {/* Тело */}
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
 
+          {/* Авиакомпания + тариф — единый блок независимо от числа сегментов */}
+          <div className="mb-5 flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg-soft)]">
+              <AirlineLogo code={f.airlineCode} name={f.airlineName} size={36} className="rounded-full" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-[var(--color-text)]">{f.airlineName}</div>
+              <div className="text-[12px] text-[var(--color-text-muted)]">Рейс {f.flightNumber}{f.aircraft ? ` · ${f.aircraft}` : ""}</div>
+            </div>
+            <div className="shrink-0 text-right text-[12px] text-[var(--color-text-muted)]">{fareBrand}</div>
+          </div>
+
           {estimated ? (
             /* ── API-рейс с пересадками: аэропорт пересадки неизвестен ── */
             <>
-              {/* Авиакомпания */}
-              <div className="mb-5 flex items-center gap-3">
-                <img
-                  src={`https://images.kiwi.com/airlines/64/${f.airlineCode}.png`}
-                  alt={f.airlineName}
-                  width={36} height={36}
-                  className="h-9 w-9 shrink-0 rounded-full object-contain"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-[var(--color-text)]">{f.airlineName}</div>
-                  <div className="text-[12px] text-[var(--color-text-muted)]">Рейс {f.flightNumber}</div>
-                </div>
-                <div className="shrink-0 text-right text-[12px] leading-relaxed text-[var(--color-text-muted)]">
-                  <div>{t("common.economy")}</div>
-                  <div>{baggageText}</div>
-                </div>
-              </div>
-
               {/* Таймлайн: один от вылета до прилёта */}
               <div className="flex gap-4">
                 <div className="flex w-5 flex-col items-center pt-1">
@@ -171,28 +219,15 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
             <>
               {segments.map((seg, i) => (
                 <div key={i}>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={`https://images.kiwi.com/airlines/64/${seg.airlineCode}.png`}
-                        alt={seg.airlineName}
-                        width={32} height={32}
-                        className="h-8 w-8 shrink-0 rounded-full object-contain"
-                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
-                      />
-                      <div>
-                        <div className="font-semibold text-[var(--color-text)]">{seg.airlineName}</div>
-                        <div className="text-[12px] text-[var(--color-text-muted)]">Рейс {seg.flightNumber}{seg.aircraft ? ` · ${seg.aircraft}` : ""}</div>
-                      </div>
+                  {segments.length > 1 && (
+                    <div className="mb-2 flex items-center gap-2 text-[12px] text-[var(--color-text-muted)]">
+                      <AirlineLogo code={seg.airlineCode} name={seg.airlineName} size={16} className="rounded" />
+                      <span className="font-medium text-[var(--color-text)]">{seg.airlineName}</span>
+                      <span>· Рейс {seg.flightNumber}{seg.aircraft ? ` · ${seg.aircraft}` : ""}</span>
                     </div>
-                    <div className="text-[12px] leading-relaxed text-[var(--color-text-muted)] sm:text-right">
-                      <div>{t("common.economy")}{f.fareClass ? ` (${f.fareClass})` : ""}</div>
-                      {f.tariff.handKg > 0 && <div>{t("modal.hand")}: {f.tariff.handKg} кг</div>}
-                      <div>{baggageText}</div>
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="mt-4 flex gap-3.5">
+                  <div className="flex gap-3.5">
                     <div className="flex w-5 flex-col items-center pt-1">
                       <IconTakeoff className="text-[var(--color-primary)]" />
                       <div className="my-1.5 w-px flex-1 bg-[var(--color-border)]" />
@@ -240,24 +275,26 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
                   )}
                 </div>
               ))}
-
-              {/* Возврат / Обмен — только для рейсов с реальными тарифными данными */}
-              <div className="mt-4 flex justify-end gap-6 text-[13px]">
-                <div>
-                  <span className="text-[var(--color-text-muted)]">{t("modal.refund")}: </span>
-                  <span className={`font-medium ${f.tariff.refundable ? "text-green-600" : "text-red-500"}`}>
-                    {f.tariff.refundable ? (f.tariff.changeFee ? t("modal.yes_fee") : t("modal.yes")) : t("modal.no")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[var(--color-text-muted)]">{t("modal.exchange")}: </span>
-                  <span className={`font-medium ${f.tariff.changeable ? "text-green-600" : "text-red-500"}`}>
-                    {f.tariff.changeable ? t("modal.yes") : t("modal.no")}
-                  </span>
-                </div>
-              </div>
             </>
           )}
+
+          {/* Условия тарифа — единый блок для обеих веток (оценённой и посегментной) */}
+          <div className="mt-5 rounded-xl border border-[var(--color-border)] p-4">
+            <div className="mb-1 text-[11px] font-bold tracking-wide text-[var(--color-text-muted)] uppercase">Условия тарифа</div>
+            <div className="divide-y divide-[var(--color-border)]">
+              <ConditionRow icon="🧳" label="Багаж" value={baggageShortLabel(f.fare.baggage)} sub={dimensionsSummary(f.fare.baggage.dimensionsCm, f.fare.baggage.maxTotalLinearCm)} />
+              <ConditionRow icon="🎒" label="Ручная кладь" value={carryOnShortLabel(f.fare.carryOn)} sub={dimensionsSummary(f.fare.carryOn.dimensionsCm, null)} />
+              <ConditionRow icon="↩" label="Возврат" value={refundValue} sub={refundSub} tone={f.fare.refund.allowed === "yes" ? "positive" : f.fare.refund.allowed === "no" ? "negative" : "neutral"} />
+              <ConditionRow icon="🔄" label="Обмен" value={exchangeValue} sub={exchangeSub} tone={f.fare.exchange.allowed === "yes" ? "positive" : f.fare.exchange.allowed === "no" ? "negative" : "neutral"} />
+              <ConditionRow icon="💺" label="Выбор места" value={serviceLevelLabel(f.fare.seatSelection)} />
+              <ConditionRow icon="🍽" label="Питание" value={serviceLevelLabel(f.fare.meal)} />
+              <ConditionRow icon="⏫" label="Приоритетная посадка" value={serviceLevelLabel(f.fare.priorityBoarding)} />
+              <ConditionRow icon="🛋" label="Доступ в лаунж" value={serviceLevelLabel(f.fare.lounge)} />
+              <ConditionRow icon="✈" label="Начисление миль" value={serviceLevelLabel(f.fare.mileageAccrual)} />
+              <ConditionRow icon="📱" label="Онлайн-регистрация" value={serviceLevelLabel(f.fare.onlineCheckin)} />
+              <ConditionRow icon="⏱" label="No-show" value={f.fare.noShow ?? "Не указано поставщиком"} />
+            </div>
+          </div>
 
           {/* Местное время */}
           <div className="mt-4 rounded-xl bg-[var(--color-bg-soft)] px-4 py-2.5 text-[12px] text-[var(--color-text-muted)]">
@@ -271,14 +308,26 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
             <div className="text-xl font-bold text-[var(--color-text)] sm:text-2xl">{format(total)}</div>
             <div className="text-[12px] text-[var(--color-text-muted)]">{t("card.per_all")}</div>
           </div>
-          <a
-            href={targetUrl}
-            target={f.bookingUrl ? "_blank" : undefined}
-            rel={f.bookingUrl ? "noopener noreferrer" : undefined}
-            className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${f.bookingUrl ? "bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]" : "bg-green-600 hover:bg-green-700"}`}
-          >
-            {f.bookingUrl ? "Купить на Aviasales →" : `${t("card.select")} · ${format(total)}`}
-          </a>
+          {onSelect ? (
+            // Тот же выбор ноги туда/обратно, что и кнопка "Выбрать" на карточке —
+            // логика не дублируется, просто переиспользуется тот же колбэк.
+            <button
+              type="button"
+              onClick={() => { onSelect(); onClose(); }}
+              className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${isSelected ? "bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)]" : "bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]"}`}
+            >
+              {isSelected ? "✓ Выбран" : `${t("card.select")} · ${format(total)}`}
+            </button>
+          ) : (
+            <a
+              href={targetUrl}
+              target={f.bookingUrl ? "_blank" : undefined}
+              rel={f.bookingUrl ? "noopener noreferrer" : undefined}
+              className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${f.bookingUrl ? "bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]" : "bg-green-600 hover:bg-green-700"}`}
+            >
+              {f.bookingUrl ? "Купить на Aviasales →" : `${t("card.select")} · ${format(total)}`}
+            </a>
+          )}
         </div>
       </div>
     </div>

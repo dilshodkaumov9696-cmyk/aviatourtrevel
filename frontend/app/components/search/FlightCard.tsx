@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flight, formatDuration, stopsLabel, BadgeTone } from "../../data/flights";
+import { Flight, formatDuration, stopsLabel, BadgeTone, baggageShortLabel, carryOnShortLabel, refundExchangeLabel } from "../../data/flights";
 import { IconPlane } from "../icons";
 import FlightDetailModal from "./FlightDetailModal";
+import AirlineLogo from "./AirlineLogo";
 import AnimatedNumber from "../AnimatedNumber";
 import { useSettings } from "../../context/settings";
 
@@ -38,38 +39,44 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
   const router = useRouter();
   const priceRef = useRef<HTMLSpanElement>(null);
 
-  const baggageLabelDefault = "Ручная кладь включена";
-  const baggageLabelParam = baggageAdded
-    ? f.tariff.baggageKg
-      ? `Багаж ${f.tariff.baggageKg} кг`
-      : f.baggageLabel || "Багаж"
-    : baggageLabelDefault;
+  // Докупить багаж можно только если источник реально даёт цену докупки — иначе
+  // пришлось бы выдумывать стоимость там, где её никто не сообщал.
+  const canBuyBaggage = f.fare.baggage.status !== "included" && f.fare.baggage.extraPrice != null;
+  const baggagePillText = baggageAdded && canBuyBaggage
+    ? (f.fare.baggage.pieces && f.fare.baggage.weightPerPieceKg
+        ? `${f.fare.baggage.pieces} × ${f.fare.baggage.weightPerPieceKg} кг`
+        : "Багаж добавлен")
+    : baggageShortLabel(f.fare.baggage);
+  const baggageIncludedNow = f.fare.baggage.status === "included" || (baggageAdded && canBuyBaggage);
 
-  const baggageChip = (
-    <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${baggageAdded || f.hasBaggage ? "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400" : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"}`}>
-      {f.hasBaggage ? (f.tariff.baggageKg ? `Багаж ${f.tariff.baggageKg} кг` : f.baggageLabel || "Багаж") : baggageAdded ? baggageLabelParam : baggageLabelDefault}
-    </span>
-  );
-
-  // Возвратность тарифа — раньше была видна только в модалке деталей,
-  // а это как раз то, что нужно для сравнения тарифов между карточками.
-  const refundChip = (
+  const conditionPill = (text: string, tone: "neutral" | "positive" | "negative" = "neutral") => (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${
-        f.tariff.refundable
+      className={`inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium ${
+        tone === "positive"
           ? "bg-[var(--color-accent)]/15 text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A]"
-          : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
+          : tone === "negative"
+          ? "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
+          : "bg-[var(--color-bg-soft)] text-[var(--color-text)]"
       }`}
     >
-      {f.tariff.refundable ? "Возврат разрешён" : "Невозвратный"}
+      {text}
     </span>
   );
 
-  // Переключатель "Добавить багаж" — как на референсе: подпись + тумблер вкл/выкл,
-  // а не отдельная кнопка-пилюля.
-  const addBaggageToggle = !f.hasBaggage && (
+  const conditionPills = (
+    <>
+      {conditionPill(`🎒 ${carryOnShortLabel(f.fare.carryOn)}`)}
+      {conditionPill(`🧳 ${baggagePillText}`, baggageIncludedNow ? "positive" : "neutral")}
+      {conditionPill(`↩ ${refundExchangeLabel(f.fare.refund, "refund")}`, f.fare.refund.allowed === "yes" ? "positive" : "negative")}
+      {conditionPill(`🔄 ${refundExchangeLabel(f.fare.exchange, "exchange")}`, f.fare.exchange.allowed === "yes" ? "positive" : "negative")}
+    </>
+  );
+
+  // Переключатель "Добавить багаж" — показываем только когда известна реальная
+  // цена докупки, иначе честно нечего предлагать.
+  const addBaggageToggle = canBuyBaggage && (
     <label className="inline-flex w-fit cursor-pointer items-center gap-2">
-      <span className="text-[12px] text-[var(--color-text-muted)]">Добавить багаж</span>
+      <span className="text-[12px] text-[var(--color-text-muted)]">Добавить багаж · {format(f.fare.baggage.extraPrice ?? 0)}</span>
       <button
         type="button"
         role="switch"
@@ -115,8 +122,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
       ? f.airlineName
       : `Авиакомпания ${f.airlineCode}`;
 
-  const baggageExtra = baggageAdded ? 2500 : 0;
+  const baggageExtra = baggageAdded && canBuyBaggage ? (f.fare.baggage.extraPrice ?? 0) : 0;
   const total = (f.pricePerPax + baggageExtra) * paxCount;
+  const fareBrand = f.fare.brandName ?? "Эконом";
 
   const bookParams = new URLSearchParams({
     flightId: f.id,
@@ -126,7 +134,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
     departTime: f.departTime, arriveTime: f.arriveTime,
     durationMin: String(f.durationMin), stops: String(f.stops),
     dateLabel, dateISO, pricePerPax: String(f.pricePerPax + baggageExtra),
-    paxCount: String(paxCount), total: String(total), baggageLabel: baggageLabelParam,
+    paxCount: String(paxCount), total: String(total), baggageLabel: baggagePillText,
     ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
 
@@ -157,37 +165,30 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
         <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-2.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[var(--color-surface)] ring-1 ring-[var(--color-border)]">
-              <img
-                src={`https://images.kiwi.com/airlines/64/${f.airlineCode}.png`}
-                alt={airlineDisplayName}
-                width={20}
-                height={20}
-                className="h-5 w-5 rounded object-contain"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }}
-              />
+              <AirlineLogo code={f.airlineCode} name={airlineDisplayName} size={20} className="rounded" />
             </span>
-            <span className="truncate text-sm font-semibold text-[var(--color-text)]">{airlineDisplayName}</span>
-            <span className="hidden shrink-0 text-[12px] text-[var(--color-text-muted)] sm:inline">· {f.flightNumber}</span>
-            {f.bookingUrl && (
-              <span className="shrink-0 rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-[11px] font-medium text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A]">
-                Aviasales
+            <span className="min-w-0">
+              <span className="flex min-w-0 items-baseline gap-1.5">
+                <span className="truncate text-sm font-semibold text-[var(--color-text)]">{airlineDisplayName}</span>
+                <span className="shrink-0 text-[12px] text-[var(--color-text-muted)]">· {f.flightNumber}</span>
+                {f.bookingUrl && (
+                  <span className="hidden shrink-0 rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-[11px] font-medium text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A] sm:inline-block">
+                    Aviasales
+                  </span>
+                )}
               </span>
-            )}
+              <span className="block truncate text-[11px] text-[var(--color-text-muted)]">{fareBrand}</span>
+            </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            {isBest && (
+            {isBest ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A]">
                 ★ Лучший выбор
               </span>
-            )}
-            {f.badges.length > 0 && (
-              <div className="hidden items-center gap-1.5 sm:flex">
-                {f.badges.slice(0, isBest ? 1 : 2).map((b) => (
-                  <span key={b.label} className={`rounded-full px-2 py-0.5 text-[11px] ${TONE_CLASS[b.tone]}`}>
-                    {b.label}
-                  </span>
-                ))}
-              </div>
+            ) : f.badges.length > 0 && (
+              <span className={`hidden rounded-full px-2 py-0.5 text-[11px] sm:inline-block ${TONE_CLASS[f.badges[0].tone]}`}>
+                {f.badges[0].label}
+              </span>
             )}
           </div>
         </div>
@@ -243,10 +244,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
             </div>
           </div>
 
-          {/* Условия тарифа: багаж + возврат + переключатель "Добавить багаж" */}
-          <div className="flex flex-row flex-wrap items-center gap-1.5 text-[12px] lg:w-44 lg:shrink-0 lg:flex-col lg:items-start lg:border-l lg:border-[var(--color-border)] lg:pl-6" onClick={(e) => e.stopPropagation()}>
-            {baggageChip}
-            {refundChip}
+          {/* Условия тарифа: ручная кладь + багаж + возврат + обмен + докупка багажа */}
+          <div className="flex flex-row flex-wrap items-center gap-1.5 text-[12px] lg:w-48 lg:shrink-0 lg:flex-col lg:items-start lg:border-l lg:border-[var(--color-border)] lg:pl-6" onClick={(e) => e.stopPropagation()}>
+            {conditionPills}
             {addBaggageToggle}
           </div>
 
@@ -264,7 +264,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
           <button
             type="button"
             onClick={() => setShowDetail(true)}
-            className="hidden shrink-0 rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] sm:inline-flex sm:items-center"
+            className="inline-flex shrink-0 items-center rounded-xl border border-[var(--color-border)] px-3 py-3 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] sm:px-4"
           >
             {t("card.details")}
           </button>
@@ -304,6 +304,8 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
           dateISO={dateISO}
           paxCount={paxCount}
           onClose={() => setShowDetail(false)}
+          onSelect={onSelect}
+          isSelected={isSelected}
         />
       )}
     </>

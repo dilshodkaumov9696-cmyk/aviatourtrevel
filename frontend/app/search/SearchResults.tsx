@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Flight, getFlights } from "../data/flights";
+import { Flight, baggageIncluded } from "../data/flights";
+import { getDemoFlights } from "../data/flights.demo";
 import { searchFlights, buildAviasalesUrl, createPriceAlert } from "../lib/api";
 import FlightCard from "../components/search/FlightCard";
 import FlightCardSkeleton from "../components/search/FlightCardSkeleton";
 import FlightLoader from "../components/search/FlightLoader";
 import PriceCalendar from "../components/search/PriceCalendar";
-import FiltersPanel, { countActiveFilters, FilterState, TimePeriod } from "../components/search/FiltersPanel";
+import FiltersPanel, { countActiveFilters, FilterState, StopsBucket, TimePeriod } from "../components/search/FiltersPanel";
 import { IconPlane, IconPin, IconCalendar, IconUser, IconSwap } from "../components/icons";
 import SettingsSwitcher from "../components/SettingsSwitcher";
 import { useSettings } from "../context/settings";
@@ -17,14 +18,15 @@ import { useSettings } from "../context/settings";
 const MONTHS_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 const WD = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
 
-type Sort = "best" | "price" | "duration" | "baggage";
+type Sort = "best" | "price" | "duration" | "departEarly" | "departLate";
 const SORT_KEY: Record<Sort, string> = {
   best: "search.sort_best",
   price: "search.sort_price",
   duration: "search.sort_duration",
-  baggage: "search.sort_baggage",
+  departEarly: "search.sort_depart_early",
+  departLate: "search.sort_depart_late",
 };
-const SORT_CYCLE: Sort[] = ["best", "price", "duration", "baggage"];
+const SORT_ORDER: Sort[] = ["best", "price", "duration", "departEarly", "departLate"];
 
 // Чип свёрнутой формы поиска в шапке. flex-auto (а не flex-1) растягивает строку на всю
 // ширину, отталкиваясь от естественной ширины содержимого: длинная дата получает больше
@@ -59,6 +61,11 @@ function getTimePeriod(time: string): TimePeriod {
   return "night";
 }
 
+function departMinutes(f: Flight): number {
+  const [h, m] = f.departTime.split(":").map(Number);
+  return h * 60 + m;
+}
+
 export default function SearchResults() {
   const { t, format } = useSettings();
   const sp = useSearchParams();
@@ -83,6 +90,9 @@ export default function SearchResults() {
   const urlReturnDate = sp.get("returnDate") || "";
 
   const isRoundTrip = Boolean(urlReturnDate);
+  // ?demo=1 — детерминированный показ demo fixtures для ручной проверки интерфейса,
+  // в обход реального запроса к Aviasales. Без этого параметра поведение не меняется.
+  const forceDemo = sp.get("demo") === "1";
 
   /* Туда-обратно: фаза и выбранные рейсы */
   const [phase, setPhase] = useState<"outbound" | "return">("outbound");
@@ -124,7 +134,7 @@ export default function SearchResults() {
   const [priceAlertSending, setPriceAlertSending] = useState(false);
   const [priceAlertError, setPriceAlertError] = useState("");
   const [filters, setFilters] = useState<FilterState>({
-    stopsMax: null,
+    stops: new Set(),
     priceMin: 0,
     priceMax: 100000,
     durationMax: 1440,
@@ -157,7 +167,7 @@ export default function SearchResults() {
     const newDurMax = newFlights.length ? Math.max(...newFlights.map((f) => f.durationMin)) : 1440;
     setSort("best");
     setFilters({
-      stopsMax: null,
+      stops: new Set(),
       priceMin: newMin,
       priceMax: newMax,
       durationMax: newDurMax,
@@ -172,13 +182,21 @@ export default function SearchResults() {
 
   useEffect(() => {
     let cancelled = false;
-    const fallbackFlights = () => getFlights(
+    const fallbackFlights = () => getDemoFlights(
       departAirportList.map((a) => a.iata),
       arriveAirportList.map((a) => a.iata),
     );
     setIsLoading(true);
     setApiError(false);
     setDataNotice(null);
+    if (forceDemo) {
+      const nextFlights = fallbackFlights();
+      setFlights(nextFlights);
+      resetFilters(nextFlights);
+      setDataNotice("Demo-режим (?demo=1): показаны тестовые фикстуры, а не реальные данные Aviasales.");
+      setIsLoading(false);
+      return;
+    }
     searchFlights({
       origin: fromIata,
       destination: toIata,
@@ -207,7 +225,7 @@ export default function SearchResults() {
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromIata, toIata, date, returnDate, adults, retryTick]);
+  }, [fromIata, toIata, date, returnDate, adults, retryTick, forceDemo]);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -218,12 +236,17 @@ export default function SearchResults() {
 
   const results = useMemo(() => {
     let list = flights.filter((f) => {
-      if (filters.stopsMax !== null && f.stops > filters.stopsMax) return false;
+      if (filters.stops.size > 0) {
+        const bucket = Math.min(f.stops, 2) as StopsBucket; // 2 = "2 и больше"
+        if (!filters.stops.has(bucket)) return false;
+      }
       if (totalOf(f) < filters.priceMin) return false;
       if (totalOf(f) > filters.priceMax) return false;
       if (f.durationMin > filters.durationMax) return false;
-      if (filters.baggageMode === "with" && !f.hasBaggage) return false;
-      if (filters.baggageMode === "without" && f.hasBaggage) return false;
+      // "С багажом" = реально included; "Без багажа" = реально not_included (не "unknown" —
+      // для рейсов без данных о багаже честнее не утверждать ни то, ни другое).
+      if (filters.baggageMode === "with" && !baggageIncluded(f)) return false;
+      if (filters.baggageMode === "without" && f.fare.baggage.status !== "not_included") return false;
       if (!filters.airlines.has(f.airlineCode)) return false;
       if (filters.timePeriods.size > 0 && !filters.timePeriods.has(getTimePeriod(f.departTime))) return false;
       if (filters.fastestOnly && f.durationMin !== minDuration) return false;
@@ -234,7 +257,8 @@ export default function SearchResults() {
     list = [...list].sort((a, b) => {
       if (sort === "price") return totalOf(a) - totalOf(b);
       if (sort === "duration") return a.durationMin - b.durationMin;
-      if (sort === "baggage") return Number(b.hasBaggage) - Number(a.hasBaggage) || totalOf(a) - totalOf(b);
+      if (sort === "departEarly") return departMinutes(a) - departMinutes(b);
+      if (sort === "departLate") return departMinutes(b) - departMinutes(a);
       const score = (f: Flight) => totalOf(f) + f.stops * 4000 + f.durationMin * 8;
       return score(a) - score(b);
     });
@@ -278,6 +302,18 @@ export default function SearchResults() {
     ? (outboundFlight.pricePerPax + returnFlight.pricePerPax) * paxCount
     : 0;
 
+  // "Изменить" должно открывать форму поиска УЖЕ заполненной текущим маршрутом,
+  // а не пустой — иначе пользователь теряет параметры поиска (Москва → Стамбул,
+  // 8 сентября, 1 пассажир…) при каждом уточнении запроса.
+  const changeSearchParams = new URLSearchParams({
+    fromCity, fromIata, toCity, toIata,
+    date,
+    adults: String(adults), children: String(children), infants: String(infants),
+    cabin: sp.get("cabin") ?? "economy",
+  });
+  if (isRoundTrip) changeSearchParams.set("returnDate", returnDate);
+  const changeHref = `/?${changeSearchParams.toString()}`;
+
   return (
     <div className="min-h-screen bg-[var(--color-bg-soft)]">
       {/* Хедер */}
@@ -296,7 +332,7 @@ export default function SearchResults() {
 
             {/* Свёрнутая форма поиска. flex-1 на каждом чипе — строка занимает всю ширину
                 от логотипа до «Изменить», без пустоты справа. */}
-            <Link href="/" className="flex min-w-0 flex-1 flex-wrap items-center gap-2" title="Изменить поиск">
+            <Link href={changeHref} className="flex min-w-0 flex-1 flex-wrap items-center gap-2" title="Изменить поиск">
               <span className={searchChip}>
                 <IconPlane size={15} className="shrink-0 text-[var(--color-primary)]" />
                 <span className="truncate">{fromCity}</span>
@@ -325,7 +361,7 @@ export default function SearchResults() {
             </div>
 
             <Link
-              href="/"
+              href={changeHref}
               className="shrink-0 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-[1.06]"
             >
               {t("common.change")}
@@ -527,10 +563,11 @@ export default function SearchResults() {
 
         {/* Чипсы быстрых фильтров */}
         <div className="my-4 flex flex-wrap items-center gap-2">
-          <Chip onClick={() => setSort(SORT_CYCLE[(SORT_CYCLE.indexOf(sort) + 1) % SORT_CYCLE.length])}>
-            {t(SORT_KEY[sort])} <span className="text-xs">▾</span>
-          </Chip>
-          <Chip active={filters.stopsMax === 0} onClick={() => setF({ stopsMax: filters.stopsMax === 0 ? null : 0 })}>
+          <SortMenu sort={sort} setSort={setSort} t={t} />
+          <Chip
+            active={filters.stops.size === 1 && filters.stops.has(0)}
+            onClick={() => setF({ stops: filters.stops.size === 1 && filters.stops.has(0) ? new Set() : new Set([0]) })}
+          >
             {t("search.nonstop")}
           </Chip>
           <Chip active={filters.baggageMode === "with"} onClick={() => setF({ baggageMode: filters.baggageMode === "with" ? "all" : "with" })}>
@@ -794,6 +831,26 @@ export default function SearchResults() {
         </div>
       )}
     </div>
+  );
+}
+
+// Настоящий выпадающий список из 5 вариантов сортировки (не просто кликом по кругу),
+// нативный <select> даёт клавиатурную доступность бесплатно.
+function SortMenu({ sort, setSort, t }: { sort: Sort; setSort: (s: Sort) => void; t: (key: string) => string }) {
+  return (
+    <span className="relative inline-flex items-center">
+      <select
+        value={sort}
+        onChange={(e) => setSort(e.target.value as Sort)}
+        aria-label={t("search.sort_best")}
+        className="cursor-pointer appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pl-3.5 pr-7 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+      >
+        {SORT_ORDER.map((s) => (
+          <option key={s} value={s}>{t(SORT_KEY[s])}</option>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute right-2.5 text-xs text-[var(--color-text-muted)]">▾</span>
+    </span>
   );
 }
 
