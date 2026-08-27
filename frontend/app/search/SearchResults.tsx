@@ -712,6 +712,9 @@ export default function SearchResults() {
                       dateLabel={phase === "return" ? dateLabel(returnDate) : dLabel}
                       dateISO={phase === "return" ? returnDate : date}
                       paxCount={paxCount}
+                      adults={adults}
+                      childrenCount={children}
+                      infants={infants}
                       onSelect={isRoundTrip ? (
                         phase === "outbound"
                           ? () => handleSelectOutbound(f)

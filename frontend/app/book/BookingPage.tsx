@@ -36,6 +36,17 @@ const EMPTY_PAX: Passenger = {
   docNumber: "", docExpiry: "",
 };
 
+// Тип пассажира — раньше анкеты вообще не различали взрослых/детей/младенцев
+// (одинаковые "Пассажир N", а младенцы вообще не получали анкету: paxCount
+// считал только тех, кто занимает место). Паспорт для билета нужен всем,
+// включая младенца на руках — просто он не платит за тариф.
+type PaxCategory = "adult" | "child" | "infant";
+const PAX_CATEGORY_LABEL: Record<PaxCategory, string> = {
+  adult: "Взрослый",
+  child: "Ребёнок · 2–11 лет",
+  infant: "Младенец · до 2 лет, без места",
+};
+
 function toPassenger(p: SavedPassenger): Passenger {
   return {
     firstName: p.first_name,
@@ -188,6 +199,7 @@ function SeatPicker({
 
 function PassengerForm({
   index,
+  category,
   pax,
   onChange,
   savedPassengers,
@@ -195,6 +207,7 @@ function PassengerForm({
   onSave,
 }: {
   index: number;
+  category: PaxCategory;
   pax: Passenger;
   onChange: (p: Passenger) => void;
   savedPassengers: SavedPassenger[];
@@ -239,8 +252,17 @@ function PassengerForm({
   return (
     <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-[var(--color-text)]">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-[var(--color-text)]">
           Пассажир {index + 1}
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              category === "adult"
+                ? "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
+                : "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+            }`}
+          >
+            {PAX_CATEGORY_LABEL[category]}
+          </span>
         </h3>
         <div className="flex flex-wrap items-center gap-2">
           <PassportScanButton onConfirm={onScanned} />
@@ -364,7 +386,21 @@ export default function BookingPage() {
   const stops = Number(sp.get("stops") || 0);
   const dateLabel = sp.get("dateLabel") || "";
   const dateISO = sp.get("dateISO") || "";
+  // paxCount — сколько тарифов оплачивается (взрослые + дети, без младенцев без места):
+  // вся денежная математика ниже (тарифы, багаж, место) считается по нему, как и раньше.
   const paxCount = Number(sp.get("paxCount") || 1);
+  // А вот анкеты нужны на каждого человека, включая младенца — у него тоже проверяют
+  // паспорт на посадке. Если ссылка старая и adults/children/infants в ней нет,
+  // считаем всех взрослыми на paxCount — прежнее поведение не ломается.
+  const adultsCount = sp.has("adults") ? Number(sp.get("adults")) : paxCount;
+  const childrenCount = Number(sp.get("children") || 0);
+  const infantsCount = Number(sp.get("infants") || 0);
+  const paxCategories: PaxCategory[] = [
+    ...Array(Math.max(0, adultsCount)).fill("adult" as const),
+    ...Array(Math.max(0, childrenCount)).fill("child" as const),
+    ...Array(Math.max(0, infantsCount)).fill("infant" as const),
+  ];
+  if (paxCategories.length === 0) paxCategories.push("adult");
   const total = Number(sp.get("total") || 0);
   const baggageLabel = sp.get("baggageLabel") || "";
   const airlineCode = sp.get("airlineCode") || "";
@@ -376,12 +412,12 @@ export default function BookingPage() {
         : "Авиакомпания";
   const externalBookingUrl = sp.get("bookingUrl") || (
     fromIata && toIata && dateISO
-      ? buildAviasalesUrl({ origin: fromIata, destination: toIata, departDate: dateISO, adults: paxCount })
+      ? buildAviasalesUrl({ origin: fromIata, destination: toIata, departDate: dateISO, adults: adultsCount || paxCount })
       : null
   );
 
   const [passengers, setPassengers] = useState<Passenger[]>(
-    Array.from({ length: paxCount }, () => ({ ...EMPTY_PAX }))
+    paxCategories.map(() => ({ ...EMPTY_PAX }))
   );
   const { user } = useAuth();
   const [savedPassengers, setSavedPassengers] = useState<SavedPassenger[]>([]);
@@ -709,6 +745,7 @@ export default function BookingPage() {
               <PassengerForm
                 key={i}
                 index={i}
+                category={paxCategories[i] ?? "adult"}
                 pax={pax}
                 onChange={(p) => setPassengers((prev) => prev.map((x, j) => (j === i ? p : x)))}
                 savedPassengers={savedPassengers}

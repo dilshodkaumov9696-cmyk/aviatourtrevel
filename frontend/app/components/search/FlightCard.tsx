@@ -27,12 +27,22 @@ interface Props {
   dateLabel: string;
   dateISO: string;
   paxCount: number;
+  // Разбивка по типам пассажиров — нужна на /book, чтобы завести анкету на
+  // каждого человека (включая младенцев, которых paxCount не считает: у них
+  // нет своего тарифа, но паспортные данные для билета всё равно нужны).
+  adults?: number;
+  childrenCount?: number;
+  infants?: number;
   onSelect?: () => void;
   isSelected?: boolean;
   isBest?: boolean;
 }
 
-export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount, onSelect, isSelected, isBest }: Props) {
+export default function FlightCard({
+  flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount,
+  adults = paxCount, childrenCount = 0, infants = 0,
+  onSelect, isSelected, isBest,
+}: Props) {
   const [showDetail, setShowDetail] = useState(false);
   const [baggageAdded, setBaggageAdded] = useState(false);
   const { format, t, lang } = useSettings();
@@ -136,6 +146,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
     durationMin: String(f.durationMin), stops: String(f.stops),
     dateLabel, dateISO, pricePerPax: String(f.pricePerPax + baggageExtra),
     paxCount: String(paxCount), total: String(total), baggageLabel: baggagePillText,
+    adults: String(adults), children: String(childrenCount), infants: String(infants),
     ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
 
@@ -305,6 +316,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
           route={{ fromCity, fromIata, toCity, toIata }}
           dateISO={dateISO}
           paxCount={paxCount}
+          adults={adults}
+          childrenCount={childrenCount}
+          infants={infants}
           onClose={() => setShowDetail(false)}
           onSelect={onSelect}
           isSelected={isSelected}

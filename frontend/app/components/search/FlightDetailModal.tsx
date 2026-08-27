@@ -17,6 +17,9 @@ interface Props {
   route: Route;
   dateISO: string;
   paxCount: number;
+  adults?: number;
+  childrenCount?: number;
+  infants?: number;
   onClose: () => void;
   onSelect?: () => void;
   isSelected?: boolean;
@@ -55,7 +58,10 @@ function ConditionRow({ icon, label, value, sub, tone = "neutral" }: { icon: Rea
   );
 }
 
-export default function FlightDetailModal({ flight: f, route, dateISO, paxCount, onClose, onSelect, isSelected }: Props) {
+export default function FlightDetailModal({
+  flight: f, route, dateISO, paxCount, adults = paxCount, childrenCount: numChildren = 0, infants = 0,
+  onClose, onSelect, isSelected,
+}: Props) {
   const { format, t, lang } = useSettings();
   const { segments, layovers, estimated } = buildItinerary(f, route);
   const total = f.pricePerPax * paxCount;
@@ -104,6 +110,7 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
     durationMin: String(f.durationMin), stops: String(f.stops),
     dateLabel: dateShort(dateISO), dateISO, pricePerPax: String(f.pricePerPax),
     paxCount: String(paxCount), total: String(total), baggageLabel: baggageShortLabel(f.fare.baggage),
+    adults: String(adults), children: String(numChildren), infants: String(infants),
     ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
   const targetUrl = f.bookingUrl || `/book?${bookParams.toString()}`;
