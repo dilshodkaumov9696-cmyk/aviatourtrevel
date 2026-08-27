@@ -595,7 +595,12 @@ export default function Home() {
             "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
         }}
       >
-        <div className="absolute inset-0 z-0">
+        {/* На мобильных обёртка (hero + статистика + WhyUs) вытягивается на 2500-2800px —
+            если тянуть канву глобуса на всю эту высоту, сфера на таком узком и длинном холсте
+            становится крошечной, а вокруг остаётся пустой тёмный фон (проверили вживую).
+            Поэтому канва ограничена высотой хедера, а ниже — тот же фон, но уже статичным
+            градиентом секции, без WebGL. На десктопе (md+) канва по-прежнему на всю высоту. */}
+        <div className="absolute inset-x-0 top-0 z-0 h-[680px] sm:h-[780px] md:h-full">
           <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
         </div>
 
