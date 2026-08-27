@@ -7,6 +7,10 @@ import {
 } from "../../data/flights";
 import { useSettings } from "../../context/settings";
 import AirlineLogo from "./AirlineLogo";
+import {
+  IconSuitcase, IconBackpack, IconUndo, IconSwap, IconSeat, IconMeal,
+  IconPriority, IconLounge, IconPlane, IconCheckin, IconClock,
+} from "../icons";
 
 interface Props {
   flight: Flight;
@@ -37,11 +41,11 @@ function IconLanding({ className = "" }: { className?: string }) {
 }
 
 // Одна строка в блоке "Условия тарифа": иконка + подпись слева, значение (+доп. строка) справа.
-function ConditionRow({ icon, label, value, sub, tone = "neutral" }: { icon: string; label: string; value: string; sub?: string; tone?: "neutral" | "positive" | "negative" }) {
+function ConditionRow({ icon, label, value, sub, tone = "neutral" }: { icon: React.ReactNode; label: string; value: string; sub?: string; tone?: "neutral" | "positive" | "negative" }) {
   return (
     <div className="flex items-start justify-between gap-3 py-2.5">
       <div className="flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-        <span aria-hidden>{icon}</span>{label}
+        <span aria-hidden className="opacity-70">{icon}</span>{label}
       </div>
       <div className="text-right">
         <div className={`text-[13px] font-medium ${tone === "positive" ? "text-green-600" : tone === "negative" ? "text-[var(--color-text-muted)]" : "text-[var(--color-text)]"}`}>{value}</div>
@@ -282,17 +286,17 @@ export default function FlightDetailModal({ flight: f, route, dateISO, paxCount,
           <div className="mt-5 rounded-xl border border-[var(--color-border)] p-4">
             <div className="mb-1 text-[11px] font-bold tracking-wide text-[var(--color-text-muted)] uppercase">Условия тарифа</div>
             <div className="divide-y divide-[var(--color-border)]">
-              <ConditionRow icon="🧳" label="Багаж" value={baggageShortLabel(f.fare.baggage)} sub={dimensionsSummary(f.fare.baggage.dimensionsCm, f.fare.baggage.maxTotalLinearCm)} />
-              <ConditionRow icon="🎒" label="Ручная кладь" value={carryOnShortLabel(f.fare.carryOn)} sub={dimensionsSummary(f.fare.carryOn.dimensionsCm, null)} />
-              <ConditionRow icon="↩" label="Возврат" value={refundValue} sub={refundSub} tone={f.fare.refund.allowed === "yes" ? "positive" : f.fare.refund.allowed === "no" ? "negative" : "neutral"} />
-              <ConditionRow icon="🔄" label="Обмен" value={exchangeValue} sub={exchangeSub} tone={f.fare.exchange.allowed === "yes" ? "positive" : f.fare.exchange.allowed === "no" ? "negative" : "neutral"} />
-              <ConditionRow icon="💺" label="Выбор места" value={serviceLevelLabel(f.fare.seatSelection)} />
-              <ConditionRow icon="🍽" label="Питание" value={serviceLevelLabel(f.fare.meal)} />
-              <ConditionRow icon="⏫" label="Приоритетная посадка" value={serviceLevelLabel(f.fare.priorityBoarding)} />
-              <ConditionRow icon="🛋" label="Доступ в лаунж" value={serviceLevelLabel(f.fare.lounge)} />
-              <ConditionRow icon="✈" label="Начисление миль" value={serviceLevelLabel(f.fare.mileageAccrual)} />
-              <ConditionRow icon="📱" label="Онлайн-регистрация" value={serviceLevelLabel(f.fare.onlineCheckin)} />
-              <ConditionRow icon="⏱" label="No-show" value={f.fare.noShow ?? "Не указано поставщиком"} />
+              <ConditionRow icon={<IconSuitcase size={15} />} label="Багаж" value={baggageShortLabel(f.fare.baggage)} sub={dimensionsSummary(f.fare.baggage.dimensionsCm, f.fare.baggage.maxTotalLinearCm)} />
+              <ConditionRow icon={<IconBackpack size={15} />} label="Ручная кладь" value={carryOnShortLabel(f.fare.carryOn)} sub={dimensionsSummary(f.fare.carryOn.dimensionsCm, null)} />
+              <ConditionRow icon={<IconUndo size={15} />} label="Возврат" value={refundValue} sub={refundSub} tone={f.fare.refund.allowed === "yes" ? "positive" : f.fare.refund.allowed === "no" ? "negative" : "neutral"} />
+              <ConditionRow icon={<IconSwap size={15} />} label="Обмен" value={exchangeValue} sub={exchangeSub} tone={f.fare.exchange.allowed === "yes" ? "positive" : f.fare.exchange.allowed === "no" ? "negative" : "neutral"} />
+              <ConditionRow icon={<IconSeat size={15} />} label="Выбор места" value={serviceLevelLabel(f.fare.seatSelection)} />
+              <ConditionRow icon={<IconMeal size={15} />} label="Питание" value={serviceLevelLabel(f.fare.meal)} />
+              <ConditionRow icon={<IconPriority size={15} />} label="Приоритетная посадка" value={serviceLevelLabel(f.fare.priorityBoarding)} />
+              <ConditionRow icon={<IconLounge size={15} />} label="Доступ в лаунж" value={serviceLevelLabel(f.fare.lounge)} />
+              <ConditionRow icon={<IconPlane size={15} />} label="Начисление миль" value={serviceLevelLabel(f.fare.mileageAccrual)} />
+              <ConditionRow icon={<IconCheckin size={15} />} label="Онлайн-регистрация" value={serviceLevelLabel(f.fare.onlineCheckin)} />
+              <ConditionRow icon={<IconClock size={15} />} label="No-show" value={f.fare.noShow ?? "Не указано поставщиком"} />
             </div>
           </div>
 

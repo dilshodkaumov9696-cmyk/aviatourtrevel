@@ -157,6 +157,62 @@ export function IconStarFilled({ className = "", size = 18 }: IconProps) {
   );
 }
 
+export function IconSeat({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M6 4v9a2 2 0 0 0 2 2h8" />
+      <path d="M6 13H5a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2h13" />
+      <path d="M16 15v5M20 20v-4a1 1 0 0 0-1-1h-1" />
+    </svg>
+  );
+}
+
+export function IconMeal({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M6 3v7a2 2 0 0 0 4 0V3M8 10v11M6 3v4M8 3v4" />
+      <path d="M17 3c-1.5 0-2.5 1.5-2.5 4s1 4 2.5 4v10" />
+    </svg>
+  );
+}
+
+export function IconPriority({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M6 16l6-6 6 6" />
+      <path d="M6 21l6-6 6 6" />
+    </svg>
+  );
+}
+
+export function IconLounge({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M4 12v6M20 12v6M4 15h16" />
+      <path d="M5 15v-3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" />
+      <path d="M4 21v-2M20 21v-2" />
+    </svg>
+  );
+}
+
+export function IconCheckin({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <rect x="6" y="2" width="12" height="20" rx="2" />
+      <path d="M9.5 12.5l1.8 1.8L15 10.5" />
+    </svg>
+  );
+}
+
+export function IconClock({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </svg>
+  );
+}
+
 export function IconCar({ className = "", size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
