@@ -11,15 +11,43 @@ import "maplibre-gl/dist/maplibre-gl.css";
  * дефолтных точек, но который должен уметь подсветиться при выборе).
  */
 export const CITY_COORDS: Record<string, { city: string; lat: number; lon: number }> = {
+  // СНГ и Центральная Азия — основной рынок, точек намеренно больше, чем в остальных регионах.
   MOW: { city: "Москва", lat: 55.7558, lon: 37.6173 },
-  IST: { city: "Стамбул", lat: 41.0, lon: 28.95 },
+  LED: { city: "Санкт-Петербург", lat: 59.8, lon: 30.26 },
+  SVX: { city: "Екатеринбург", lat: 56.74, lon: 60.8 },
+  OVB: { city: "Новосибирск", lat: 55.0, lon: 82.65 },
   DYU: { city: "Душанбе", lat: 38.5598, lon: 68.787 },
   TAS: { city: "Ташкент", lat: 41.2995, lon: 69.2401 },
-  DXB: { city: "Дубай", lat: 25.25, lon: 55.36 },
-  BKK: { city: "Бангкок", lat: 13.69, lon: 100.75 },
-  LON: { city: "Лондон", lat: 51.5074, lon: -0.1278 },
-  CAI: { city: "Каир", lat: 30.0444, lon: 31.2357 },
+  ALA: { city: "Алматы", lat: 43.35, lon: 77.04 },
+  FRU: { city: "Бишкек", lat: 43.06, lon: 74.48 },
+  NQZ: { city: "Астана", lat: 51.13, lon: 71.47 },
   GYD: { city: "Баку", lat: 40.4093, lon: 49.8671 },
+  EVN: { city: "Ереван", lat: 40.15, lon: 44.4 },
+  TBS: { city: "Тбилиси", lat: 41.67, lon: 44.95 },
+  MSQ: { city: "Минск", lat: 53.9, lon: 27.54 },
+  // Ближний Восток и Турция
+  IST: { city: "Стамбул", lat: 41.0, lon: 28.95 },
+  DXB: { city: "Дубай", lat: 25.25, lon: 55.36 },
+  // Европа
+  LON: { city: "Лондон", lat: 51.5074, lon: -0.1278 },
+  PAR: { city: "Париж", lat: 49.0, lon: 2.55 },
+  // Африка
+  CAI: { city: "Каир", lat: 30.0444, lon: 31.2357 },
+  JNB: { city: "Йоханнесбург", lat: -26.13, lon: 28.24 },
+  // Азия и Океания
+  BKK: { city: "Бангкок", lat: 13.69, lon: 100.75 },
+  SIN: { city: "Сингапур", lat: 1.35, lon: 103.99 },
+  NRT: { city: "Токио", lat: 35.76, lon: 140.39 },
+  PEK: { city: "Пекин", lat: 40.08, lon: 116.58 },
+  SYD: { city: "Сидней", lat: -33.95, lon: 151.18 },
+  // Америка — раньше не было ни одной точки на этой стороне глобуса.
+  JFK: { city: "Нью-Йорк", lat: 40.64, lon: -73.78 },
+  LAX: { city: "Лос-Анджелес", lat: 33.94, lon: -118.41 },
+  MIA: { city: "Майами", lat: 25.79, lon: -80.29 },
+  YYZ: { city: "Торонто", lat: 43.68, lon: -79.63 },
+  MEX: { city: "Мехико", lat: 19.44, lon: -99.07 },
+  GRU: { city: "Сан-Паулу", lat: -23.43, lon: -46.47 },
+  EZE: { city: "Буэнос-Айрес", lat: -34.82, lon: -58.54 },
 };
 
 export interface GlobeCitySelection {
@@ -93,8 +121,8 @@ function darkenLiberty(map: MaplibreMap) {
   if (!style?.layers) return;
 
   const RECOLOR: Record<string, { prop: "background-color" | "fill-color"; color: string }> = {
-    background: { prop: "background-color", color: "#0d1f3d" },
-    water: { prop: "fill-color", color: "#050b18" },
+    background: { prop: "background-color", color: "#1a3a6b" },
+    water: { prop: "fill-color", color: "#0d1f42" },
   };
   const FAINT_LINES = new Set(["boundary_2"]);
 

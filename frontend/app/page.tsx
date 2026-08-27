@@ -507,8 +507,14 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       {/* Header */}
       <header
-        className={`sticky top-0 z-40 border-b border-[var(--color-ink-border)] transition-all duration-300 ${isScrolled ? "shadow-xl shadow-black/20" : ""}`}
-        style={{ background: "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)" }}
+        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-all duration-300 ${
+          isScrolled ? "border-[var(--color-ink-border)] shadow-xl shadow-black/20" : "border-transparent"
+        }`}
+        style={{
+          background: isScrolled
+            ? "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)"
+            : "linear-gradient(180deg, rgba(10,27,56,0.3) 0%, rgba(10,27,56,0.08) 60%, rgba(10,27,56,0) 100%)",
+        }}
       >
         <div className={`mx-auto flex max-w-[1400px] items-center justify-between px-6 transition-all duration-200 sm:px-8 ${isScrolled ? "py-2.5" : "py-4"}`}>
           <a href="#search" className="flex items-center gap-2.5">
@@ -581,19 +587,12 @@ export default function Home() {
       {/* Hero */}
       <section
         id="search"
-        className="relative overflow-hidden px-4 py-14 text-white md:py-16"
+        className="relative overflow-hidden px-4 pb-24 pt-14 text-white md:pb-28 md:pt-16"
         style={{
           background:
             "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
         }}
       >
-        {/* Декоративные пятна — просто цветовые акценты, без глобуса на весь фон
-            (глобус теперь отдельный ограниченный блок ниже, а не подложка секции). */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute -top-8 right-10 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
-        </div>
-
         {/* Свернуть/развернуть форму поиска */}
         <button
           type="button"
@@ -617,23 +616,24 @@ export default function Home() {
 
         {!formCollapsed && (
           <>
-            {/* Живой глобус маршрутов + Популярные направления рядом с ним (десктоп).
-                Один state с формой: клик по точке/панели двигает originAirport/destAirport,
-                а форма отражает то же самое — никакой второй системы поиска. */}
-            <div className="animate-fade-in-down relative z-10 mx-auto mt-8 grid w-full max-w-[1440px] gap-3 px-4 lg:grid-cols-[1fr_300px]">
-              <div className="relative h-[300px] overflow-hidden rounded-3xl border border-white/10 sm:h-[360px] md:h-[420px]">
-                <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
-              </div>
-              <div className="hidden lg:block">
-                <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
-              </div>
+            {/* Живой глобус — теперь полноширинный фон всей hero-секции, без рамки-карточки:
+                виден сквозь прозрачный хедер сверху и продолжается ниже формы поиска, которая
+                floats поверх него примерно посередине. Высота задаётся отступом формы ниже,
+                а не явным размером — секция сама вытягивается под контент. */}
+            <div className="absolute inset-0 z-0">
+              <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
+            </div>
+
+            {/* Популярные направления — плавают поверх глобуса в углу (десктоп), больше не делят с ним ширину. */}
+            <div className="absolute right-4 top-20 z-10 hidden w-[300px] lg:block md:right-6 md:top-24">
+              <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
             </div>
 
             {/* Search card */}
             <form
               onSubmit={handleSearch}
               noValidate
-              className="animate-fade-in-down relative z-10 mx-auto mt-10 w-full max-w-[1440px] overflow-visible text-left"
+              className="animate-fade-in-down relative z-10 mx-auto mt-[150px] w-full max-w-[1440px] overflow-visible text-left sm:mt-[180px] md:mt-[210px]"
             >
             {/* Верхняя строка: переключатель сложного маршрута */}
             <div className="px-5 pt-4 flex justify-end">
