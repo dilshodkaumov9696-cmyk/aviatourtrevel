@@ -62,6 +62,8 @@ export default function PassengersPicker({
   align = "right", className = "", variant = "standalone",
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [blockedMsg, setBlockedMsg] = useState<string | null>(null);
+  const blockedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -84,13 +86,43 @@ export default function PassengersPicker({
     return true;
   }
 
+  function flashBlocked(msg: string) {
+    setBlockedMsg(msg);
+    if (blockedTimer.current) clearTimeout(blockedTimer.current);
+    blockedTimer.current = setTimeout(() => setBlockedMsg(null), 3000);
+  }
+
+  // Кнопка "+" не делаем нативно disabled: тогда клик по ней ничего не даёт
+  // сделать, а на потолке (9 пассажиров, младенцев не больше взрослых) это
+  // читалось как "не добавляется", а не как осознанное ограничение — просили
+  // объяснять словами, а не молчать.
   function change(key: keyof Passengers, delta: number) {
-    if (delta > 0 && !canIncrement(key)) return;
+    if (delta > 0) {
+      if (total >= MAX_TOTAL_PAX) {
+        flashBlocked(`Максимум ${MAX_TOTAL_PAX} пассажиров в одной заявке.`);
+        return;
+      }
+      if (key === "infants" && passengers.infants >= passengers.adults) {
+        flashBlocked(
+          passengers.adults === 1
+            ? "У вас 1 взрослый — младенец летит у него на руках. Добавьте ещё взрослого, чтобы добавить второго младенца."
+            : `У вас ${passengers.adults} взрослых — столько же младенцев максимум. Добавьте ещё взрослого.`,
+        );
+        return;
+      }
+    }
     const next = { ...passengers, [key]: Math.max(0, passengers[key] + delta) };
     if (next.adults < 1) next.adults = 1;
     // Убрали взрослого — лишние младенцы (без своего взрослого) снимаются вместе с ним.
     if (next.infants > next.adults) next.infants = next.adults;
     onPassengers(next);
+    setBlockedMsg(null);
+  }
+
+  function reset() {
+    onPassengers({ adults: 1, children: 0, infants: 0 });
+    onCabin("economy");
+    setBlockedMsg(null);
   }
 
   return (
@@ -132,21 +164,23 @@ export default function PassengersPicker({
                 <button
                   type="button"
                   onClick={() => change(key, 1)}
-                  disabled={!canIncrement(key)}
-                  title={
-                    key === "infants" && passengers.infants >= passengers.adults
-                      ? "Младенец летит на руках у взрослого — добавьте ещё взрослого"
-                      : total >= MAX_TOTAL_PAX
-                      ? `Максимум ${MAX_TOTAL_PAX} пассажиров в одной заявке`
-                      : undefined
-                  }
-                  className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition text-xl leading-none"
+                  className={`w-8 h-8 rounded-full border flex items-center justify-center transition text-xl leading-none ${
+                    canIncrement(key)
+                      ? "border-[var(--color-border)] text-[var(--color-primary)] hover:border-[var(--color-primary)]"
+                      : "border-[var(--color-border)] text-[var(--color-text-muted)] opacity-40"
+                  }`}
                 >
                   +
                 </button>
               </div>
             </div>
           ))}
+
+          {blockedMsg && (
+            <div className="animate-fade-in-down mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs leading-snug text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+              {blockedMsg}
+            </div>
+          )}
 
           <div className="mt-4">
             <div className="text-xs text-[var(--color-text-muted)] mb-2">Класс</div>
@@ -168,13 +202,24 @@ export default function PassengersPicker({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="mt-4 w-full rounded-lg bg-[var(--color-primary)] text-white py-2 text-sm font-medium hover:bg-[var(--color-primary-dark)] transition"
-          >
-            Готово
-          </button>
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={reset}
+              disabled={total === 1 && cabin === "economy"}
+              title="Сбросить до 1 взрослого, эконом-класс"
+              className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Сбросить
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="flex-1 rounded-lg bg-[var(--color-primary)] text-white py-2 text-sm font-medium hover:bg-[var(--color-primary-dark)] transition"
+            >
+              Готово
+            </button>
+          </div>
         </div>
       )}
     </div>
