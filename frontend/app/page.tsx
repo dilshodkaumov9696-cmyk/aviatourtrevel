@@ -64,12 +64,6 @@ function futureDateISO(daysAhead: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-const MONTHS_SHORT_RU = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
-function formatShortDate(iso: string): string {
-  const [, m, d] = iso.split("-");
-  return `${parseInt(d, 10)} ${MONTHS_SHORT_RU[parseInt(m, 10) - 1]}`;
-}
-
 // Хабы, из которых летает сервис — используются для smart-default «ближайший город вылета».
 const DEPARTURE_HUBS = [
   { iata: "MOW", lat: 55.7558, lon: 37.6173 },
@@ -154,7 +148,7 @@ const ORIGIN_DEALS = {
 export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
-  const { items: recentSearches, add: addRecentSearch } = useRecentSearches();
+  const { add: addRecentSearch } = useRecentSearches();
   // Режим формы: обычный (туда + опц. обратно) или сложный маршрут
   const [mode, setMode] = useState<"simple" | "multi">("simple");
 
@@ -851,35 +845,6 @@ export default function Home() {
             <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
           </div>
 
-          {recentSearches.length > 0 && (
-            <div className="relative z-10 mx-auto mt-4 flex w-full max-w-[1440px] gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
-              {recentSearches.map((s) => (
-                <button
-                  key={`${s.fromIata}-${s.toIata}`}
-                  type="button"
-                  onClick={() => {
-                    const params = new URLSearchParams({
-                      fromCity: s.fromCity,
-                      fromIata: s.fromIata,
-                      toCity: s.toCity,
-                      toIata: s.toIata,
-                      date: s.date,
-                      adults: String(s.adults),
-                    });
-                    if (s.returnDate) params.set("returnDate", s.returnDate);
-                    router.push(`/search?${params.toString()}`);
-                  }}
-                  className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/25 bg-white/10 px-3.5 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  <span className="font-mono text-[13px]">{s.fromIata}</span>
-                  <IconPlane size={11} className="rotate-90 opacity-70" />
-                  <span className="font-mono text-[13px]">{s.toIata}</span>
-                  <span className="opacity-60">·</span>
-                  <span className="opacity-90">{formatShortDate(s.date)}</span>
-                </button>
-              ))}
-            </div>
-          )}
             </>
           )}
         </section>
