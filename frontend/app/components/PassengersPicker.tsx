@@ -5,6 +5,8 @@ import { IconUser } from "./icons";
 
 export type CabinClass = "economy" | "business" | "first";
 
+const MAX_TOTAL_PAX = 9;
+
 export interface Passengers {
   adults: number;
   children: number;
@@ -70,9 +72,23 @@ export default function PassengersPicker({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // 9 пассажиров в сумме — тот же потолок, что и на бэкенде при оформлении заявки
+  // (см. PassengerIn в orders.py, max_length=9): нет смысла давать в форме поиска
+  // больше, чем реально можно будет оформить.
+  const total = passengers.adults + passengers.children + passengers.infants;
+
+  function canIncrement(key: keyof Passengers): boolean {
+    if (total >= MAX_TOTAL_PAX) return false;
+    // Младенец летит на руках у взрослого — их не может быть больше, чем взрослых.
+    if (key === "infants" && passengers.infants >= passengers.adults) return false;
+    return true;
+  }
+
   function change(key: keyof Passengers, delta: number) {
+    if (delta > 0 && !canIncrement(key)) return;
     const next = { ...passengers, [key]: Math.max(0, passengers[key] + delta) };
     if (next.adults < 1) next.adults = 1;
+    // Убрали взрослого — лишние младенцы (без своего взрослого) снимаются вместе с ним.
     if (next.infants > next.adults) next.infants = next.adults;
     onPassengers(next);
   }
@@ -116,7 +132,15 @@ export default function PassengersPicker({
                 <button
                   type="button"
                   onClick={() => change(key, 1)}
-                  className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] transition text-xl leading-none"
+                  disabled={!canIncrement(key)}
+                  title={
+                    key === "infants" && passengers.infants >= passengers.adults
+                      ? "Младенец летит на руках у взрослого — добавьте ещё взрослого"
+                      : total >= MAX_TOTAL_PAX
+                      ? `Максимум ${MAX_TOTAL_PAX} пассажиров в одной заявке`
+                      : undefined
+                  }
+                  className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-30 disabled:cursor-not-allowed transition text-xl leading-none"
                 >
                   +
                 </button>
