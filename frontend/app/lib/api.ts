@@ -161,6 +161,10 @@ export async function createOrder(params: {
 }): Promise<CreatedOrder> {
   const res = await fetch(`${API_URL}/api/v1/orders`, {
     method: "POST",
+    // Без этого кука сессии не уезжает на другой origin (:8000) — бэкенд
+    // никогда не видит залогиненного пользователя, и заявка молча уходит
+    // гостевой (user_id=null), даже если человек вошёл в аккаунт.
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contact_email: params.email,
