@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 const GlobeHero = dynamic(() => import("./components/GlobeHero"), { ssr: false });
 import type { GlobeCitySelection } from "./components/GlobeHero";
 import PopularDirectionsPanel from "./components/PopularDirectionsPanel";
-import QuickRoutes from "./components/QuickRoutes";
 import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import { useRecentSearches } from "./hooks/useRecentSearches";
 import AirportInput from "./components/AirportInput";
@@ -513,7 +512,7 @@ export default function Home() {
         style={{
           background: isScrolled
             ? "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)"
-            : "linear-gradient(180deg, rgba(10,27,56,0.3) 0%, rgba(10,27,56,0.08) 60%, rgba(10,27,56,0) 100%)",
+            : "linear-gradient(180deg, rgba(10,27,56,0.16) 0%, rgba(10,27,56,0.04) 60%, rgba(10,27,56,0) 100%)",
         }}
       >
         <div className={`mx-auto flex max-w-[1400px] items-center justify-between px-6 transition-all duration-200 sm:px-8 ${isScrolled ? "py-2.5" : "py-4"}`}>
@@ -683,7 +682,7 @@ export default function Home() {
                     type="button"
                     onClick={swap}
                     title="Поменять местами"
-                    className="absolute z-10 top-1/2 -translate-y-1/2 right-3 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm hover:bg-[var(--color-primary-light)] hover:shadow-md transition"
+                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-md hover:bg-[var(--color-primary-light)] hover:shadow-lg transition"
                   >
                     <IconSwap size={15} className="rotate-90 sm:rotate-0 hover:rotate-180 transition-transform duration-300" />
                   </button>
@@ -831,21 +830,6 @@ export default function Home() {
               </>
             )}
           </form>
-
-          {/* Быстрые маршруты — рабочие шорткаты (не декор), заполняют Откуда/Куда и
-              синхронизируют глобус. Показываем только пока нет истории поиска — она
-              для тех же целей и полезнее (свои реальные маршруты), не дублируем оба ряда. */}
-          {recentSearches.length === 0 && originAirport && (
-            <div className="relative z-10 mx-auto mt-4 w-full max-w-[1440px] overflow-x-auto scrollbar-hide">
-              <QuickRoutes
-                originCity={originAirport.city}
-                originIata={originAirport.iata}
-                destinations={POPULAR_DESTS}
-                prices={popularPrices}
-                onSelect={selectDestination}
-              />
-            </div>
-          )}
 
           {/* Популярные направления — компактный вариант для мобильных/планшетов, где
               боковой панели рядом с глобусом нет места (см. `hidden lg:block` выше). */}
