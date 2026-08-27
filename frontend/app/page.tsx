@@ -621,7 +621,7 @@ export default function Home() {
                 Один state с формой: клик по точке/панели двигает originAirport/destAirport,
                 а форма отражает то же самое — никакой второй системы поиска. */}
             <div className="animate-fade-in-down relative z-10 mx-auto mt-8 grid w-full max-w-[1440px] gap-3 px-4 lg:grid-cols-[1fr_300px]">
-              <div className="relative h-[300px] sm:h-[360px] md:h-[420px]">
+              <div className="relative h-[300px] overflow-hidden rounded-3xl border border-white/10 sm:h-[360px] md:h-[420px]">
                 <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
               </div>
               <div className="hidden lg:block">

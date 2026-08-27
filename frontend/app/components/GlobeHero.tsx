@@ -120,6 +120,7 @@ function darkenLiberty(map: MaplibreMap) {
 export default function GlobeHero({ origin = null, destination = null, onCityClick = () => {} }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const maplibreglRef = useRef<MaplibreModule | null>(null);
   const markersRef = useRef<Record<string, MaplibreMarker>>({});
   const planeMarkerRef = useRef<MaplibreMarker | null>(null);
@@ -160,6 +161,13 @@ export default function GlobeHero({ origin = null, destination = null, onCityCli
         dragRotate: true,
       });
       mapRef.current = map;
+
+      // Подстраховка: если контейнер меняет размер уже после того, как карта
+      // измерила его при создании (например, ещё грузится веб-шрифт и сдвигает
+      // разметку, или контейнер получает финальную высоту на кадр позже канваса),
+      // maplibre не всегда успевает это заметить сам — приходится resize() руками.
+      resizeObserverRef.current = new ResizeObserver(() => map.resize());
+      resizeObserverRef.current.observe(containerRef.current);
 
       map.on("style.load", () => {
         map.setProjection({ type: "globe" });
@@ -222,6 +230,8 @@ export default function GlobeHero({ origin = null, destination = null, onCityCli
     return () => {
       disposed = true;
       cancelAnimationFrame(planeRafRef.current);
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
       setMapReady(false);
