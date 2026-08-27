@@ -52,7 +52,7 @@ function AnimatedNumber({ target, suffix, inView }: { target: number; suffix: st
   }
 
   return (
-    <span className="font-mono text-4xl font-bold text-[var(--color-primary)]">
+    <span className="font-mono text-4xl font-bold text-[var(--color-gold)]">
       {format(current)}{suffix}
     </span>
   );
@@ -72,11 +72,11 @@ export default function Counters() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {COUNTERS.map((counter) => (
             <div key={counter.label} className="text-center">
-              <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+              <div className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/60">
                 {counter.label}
               </div>
               <AnimatedNumber target={counter.value} suffix={counter.suffix} inView={isInView} />
-              <div className="mt-2 text-sm text-[var(--color-text-muted)]">{counter.description}</div>
+              <div className="mt-2 text-sm text-white/50">{counter.description}</div>
             </div>
           ))}
         </div>

@@ -60,21 +60,21 @@ export default function WhyUs() {
     >
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold text-[var(--color-text)]">Почему выбирают нас</h2>
-          <p className="mt-2 text-[var(--color-text-muted)]">Надёжный сервис для поиска и покупки авиабилетов</p>
+          <h2 className="font-heading text-3xl font-bold text-white">Почему выбирают нас</h2>
+          <p className="mt-2 text-white/60">Надёжный сервис для поиска и покупки авиабилетов</p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {ITEMS.map((it) => (
             <div
               key={it.title}
-              className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition duration-300 hover:-translate-y-1 hover:border-[var(--color-primary)] hover:shadow-md"
+              className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-[var(--color-gold)] hover:bg-white/[0.07]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-primary-light)] text-[var(--color-primary)]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-[var(--color-gold)]">
                 {it.icon}
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-[var(--color-text)]">{it.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">{it.text}</p>
+              <h3 className="mt-4 text-lg font-semibold text-white">{it.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-white/60">{it.text}</p>
             </div>
           ))}
         </div>

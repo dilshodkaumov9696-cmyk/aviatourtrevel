@@ -584,50 +584,50 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section
-        id="search"
-        className="relative overflow-hidden px-4 pb-24 pt-14 text-white md:pb-28 md:pt-16"
+      {/* Глобус теперь фон не только hero, а всего этого блока: hero + статистика + "Почему
+          выбирают нас" сидят на одном непрерывном полотне карты, без переключения на белый фон
+          между ними — попросили, чтобы глобус было видно и за карточками ниже, а не только
+          в самом верху. */}
+      <div
+        className="relative overflow-hidden text-white"
         style={{
           background:
             "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
         }}
       >
-        {/* Свернуть/развернуть форму поиска */}
-        <button
-          type="button"
-          onClick={() => setFormCollapsed((v) => !v)}
-          className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 md:right-6 md:top-6"
-        >
-          {formCollapsed ? (
-            <>
-              <IconSearch size={14} className="shrink-0" />
-              Поиск
-            </>
-          ) : (
-            <>
-              Свернуть
-              <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </>
-          )}
-        </button>
+        <div className="absolute inset-0 z-0">
+          <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
+        </div>
 
-        {!formCollapsed && (
-          <>
-            {/* Живой глобус — теперь полноширинный фон всей hero-секции, без рамки-карточки:
-                виден сквозь прозрачный хедер сверху и продолжается ниже формы поиска, которая
-                floats поверх него примерно посередине. Высота задаётся отступом формы ниже,
-                а не явным размером — секция сама вытягивается под контент. */}
-            <div className="absolute inset-0 z-0">
-              <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
-            </div>
+        {/* Hero */}
+        <section id="search" className="relative z-10 px-4 pb-24 pt-14 md:pb-28 md:pt-16">
+          {/* Свернуть/развернуть форму поиска */}
+          <button
+            type="button"
+            onClick={() => setFormCollapsed((v) => !v)}
+            className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 md:right-6 md:top-6"
+          >
+            {formCollapsed ? (
+              <>
+                <IconSearch size={14} className="shrink-0" />
+                Поиск
+              </>
+            ) : (
+              <>
+                Свернуть
+                <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </>
+            )}
+          </button>
 
-            {/* Популярные направления — плавают поверх глобуса в углу (десктоп), больше не делят с ним ширину. */}
-            <div className="absolute right-4 top-20 z-10 hidden w-[300px] lg:block md:right-6 md:top-24">
-              <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
-            </div>
+          {!formCollapsed && (
+            <>
+              {/* Популярные направления — плавают поверх глобуса в углу (десктоп), больше не делят с ним ширину. */}
+              <div className="absolute right-4 top-20 z-10 hidden w-[300px] lg:block md:right-6 md:top-24">
+                <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
+              </div>
 
             {/* Search card */}
             <form
@@ -877,15 +877,20 @@ export default function Home() {
               ))}
             </div>
           )}
-          </>
-        )}
-      </section>
+            </>
+          )}
+        </section>
 
-      {/* Counters — статистика */}
-      <Counters />
+        {/* Counters — статистика, на том же фоне глобуса */}
+        <div className="relative z-10">
+          <Counters />
+        </div>
 
-      {/* Почему выбирают нас */}
-      <WhyUs />
+        {/* Почему выбирают нас — тоже на фоне глобуса */}
+        <div className="relative z-10">
+          <WhyUs />
+        </div>
+      </div>
 
       {/* Карусель направлений */}
       <DirectionsCarousel />
