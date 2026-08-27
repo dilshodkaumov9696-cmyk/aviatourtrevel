@@ -9,6 +9,7 @@ import { useAuth } from "../context/auth";
 import PaymentStep from "../components/booking/PaymentStep";
 import { buildAviasalesUrl, cabinetData, createOrder, type SavedPassenger } from "../lib/api";
 import PassportScanButton from "../components/PassportScanButton";
+import LogoMark from "../components/Logo";
 import { nationalityToRussian, type ScannedPassport } from "../lib/passportScan";
 
 const GENDERS = [
@@ -571,13 +572,13 @@ export default function BookingPage() {
     <div className="min-h-screen bg-[var(--color-bg-soft)]">
       {/* Хедер */}
       <header
-        className="sticky top-0 z-30 text-white"
-        style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))" }}
+        className="sticky top-0 z-30 border-b border-[var(--color-ink-border)] text-white"
+        style={{ background: "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)" }}
       >
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white font-bold text-[var(--color-primary)]">A</div>
-            <span className="text-lg font-bold">Aviator</span>
+            <LogoMark size={34} />
+            <span className="font-heading text-lg font-bold">Aviator</span>
           </Link>
           <div className="text-sm opacity-80">
             {fromCity} → {toCity} · {dateLabel}

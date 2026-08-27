@@ -21,6 +21,7 @@ import PassengersPicker, { Passengers, CabinClass } from "./components/Passenger
 import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
 
 import ThemeToggle from "./components/ThemeToggle";
+import LogoMark from "./components/Logo";
 import AuthModal from "./components/AuthModal";
 import { useAuth } from "./context/auth";
 import SettingsSwitcher from "./components/SettingsSwitcher";
@@ -506,19 +507,18 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       {/* Header */}
       <header
-        className={`sticky top-0 z-40 border-b border-slate-200 bg-[#E6F0FF] transition-all duration-300 ${isScrolled ? "shadow-xl shadow-black/5" : ""}`}
+        className={`sticky top-0 z-40 border-b border-[var(--color-ink-border)] transition-all duration-300 ${isScrolled ? "shadow-xl shadow-black/20" : ""}`}
+        style={{ background: "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)" }}
       >
-        <div className={`mx-auto flex max-w-7xl items-center justify-between px-6 transition-all duration-200 ${isScrolled ? "py-2" : "py-3.5"}`}>
+        <div className={`mx-auto flex max-w-[1400px] items-center justify-between px-6 transition-all duration-200 sm:px-8 ${isScrolled ? "py-2.5" : "py-4"}`}>
           <a href="#search" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--color-accent)] bg-[var(--color-primary)] font-bold text-white shadow-sm">
-              A
-            </div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">Aviator</span>
+            <LogoMark size={38} />
+            <span className="font-heading text-xl font-bold tracking-tight text-white">Aviator</span>
           </a>
-          <nav className="hidden lg:flex items-center gap-5 text-[13px] font-medium text-slate-700 xl:gap-6">
+          <nav className="hidden lg:flex items-center gap-5 text-[13px] font-medium text-white/70 xl:gap-6">
             <a
               href="#search"
-              className={`whitespace-nowrap transition-colors hover:text-[var(--color-primary)] ${activeSection === "search" ? "text-[var(--color-primary)]" : ""}`}
+              className={`whitespace-nowrap transition-colors hover:text-white ${activeSection === "search" ? "text-[var(--color-gold)]" : ""}`}
             >
               Авиабилеты
             </a>
@@ -527,19 +527,29 @@ export default function Home() {
               <button
                 key={label}
                 type="button"
-                className="whitespace-nowrap text-slate-500 transition-colors hover:text-[var(--color-primary)]"
+                className="whitespace-nowrap text-white/50 transition-colors hover:text-white"
               >
                 {label}
               </button>
             ))}
             <a
               href="#deals"
-              className={`whitespace-nowrap transition-colors hover:text-[var(--color-primary)] ${activeSection === "deals" ? "text-[var(--color-primary)]" : ""}`}
+              className={`whitespace-nowrap transition-colors hover:text-white ${activeSection === "deals" ? "text-[var(--color-gold)]" : ""}`}
             >
               Акции
             </a>
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <a
+              href="tel:+78005550199"
+              className="mr-1 hidden items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-[12px] font-medium text-white/80 transition hover:border-[var(--color-gold)] hover:text-white xl:inline-flex"
+            >
+              <span aria-hidden className="text-[var(--color-gold)]">☎</span>
+              <span>
+                Поддержка 24/7<br />
+                <span className="font-mono text-[11px] font-semibold text-white">+7 800 555-01-99</span>
+              </span>
+            </a>
             <ThemeToggle />
             <div className="hidden items-center lg:flex">
               <SettingsSwitcher variant="dark" />
@@ -547,9 +557,9 @@ export default function Home() {
             {user ? (
               <Link
                 href="/account"
-                className="ml-1 hidden items-center gap-1.5 rounded-xl border border-[var(--color-border)] px-4 py-2 text-[13px] font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] lg:inline-flex"
+                className="ml-1 hidden items-center gap-1.5 rounded-xl border border-white/15 px-4 py-2 text-[13px] font-semibold text-white transition hover:border-[var(--color-gold)] lg:inline-flex"
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-primary)] text-[10px] font-bold text-white">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-gold)] text-[10px] font-bold text-[var(--color-ink)]">
                   {(user.fullName || user.email)[0]?.toUpperCase()}
                 </span>
                 {user.fullName || user.email.split("@")[0]}
@@ -558,7 +568,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="ml-1 hidden rounded-xl border border-transparent bg-[var(--color-accent)] px-4 py-2 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:bg-[var(--color-accent-dark)] lg:inline-block"
+                className="ml-1 hidden rounded-xl border border-transparent bg-[var(--color-gold)] px-4 py-2 text-[13px] font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-gold-dark)] lg:inline-block"
               >
                 Войти
               </button>
@@ -582,15 +592,6 @@ export default function Home() {
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="absolute -top-8 right-10 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-4xl w-full text-center">
-          <h1 className="text-3xl font-bold leading-tight md:text-5xl">
-            Открывайте мир<br className="hidden sm:block" /> с лучшими билетами
-          </h1>
-          <p className="mx-auto mt-3 max-w-xl text-[15px] text-white/70 md:text-base">
-            Сравниваем цены сотен авиакомпаний и находим лучшее предложение для вас.
-          </p>
         </div>
 
         {/* Свернуть/развернуть форму поиска */}
@@ -620,7 +621,7 @@ export default function Home() {
                 Один state с формой: клик по точке/панели двигает originAirport/destAirport,
                 а форма отражает то же самое — никакой второй системы поиска. */}
             <div className="animate-fade-in-down relative z-10 mx-auto mt-8 grid w-full max-w-[1440px] gap-3 px-4 lg:grid-cols-[1fr_300px]">
-              <div className="relative h-[300px] overflow-hidden rounded-3xl border border-white/10 sm:h-[360px] md:h-[420px]">
+              <div className="relative h-[300px] sm:h-[360px] md:h-[420px]">
                 <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
               </div>
               <div className="hidden lg:block">
@@ -878,24 +879,6 @@ export default function Home() {
           )}
           </>
         )}
-      </section>
-
-      {/* Компактная строка преимуществ — сразу под hero, не путать с более крупным
-          блоком "Почему выбирают нас" (WhyUs) ниже по странице, его не трогаем. */}
-      <section className="border-b border-[var(--color-border)] bg-[var(--color-surface)] py-5">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 sm:grid-cols-4">
-          {[
-            { title: "Надёжно", text: "Проверенные партнёры и защита данных" },
-            { title: "Выгодно", text: "Находим лучшие цены" },
-            { title: "Удобно", text: "Быстрый поиск и понятные условия" },
-            { title: "Поддержка 24/7", text: "Мы готовы помочь" },
-          ].map((b) => (
-            <div key={b.title} className="min-w-0">
-              <div className="text-sm font-bold text-[var(--color-text)]">{b.title}</div>
-              <div className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]" title={b.text}>{b.text}</div>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Counters — статистика */}

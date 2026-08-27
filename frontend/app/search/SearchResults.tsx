@@ -13,6 +13,7 @@ import PriceCalendar from "../components/search/PriceCalendar";
 import FiltersPanel, { countActiveFilters, FilterState, StopsBucket, TimePeriod } from "../components/search/FiltersPanel";
 import { IconPlane, IconPin, IconCalendar, IconUser, IconSwap } from "../components/icons";
 import SettingsSwitcher from "../components/SettingsSwitcher";
+import LogoMark from "../components/Logo";
 import { useSettings } from "../context/settings";
 
 const MONTHS_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
@@ -318,16 +319,14 @@ export default function SearchResults() {
     <div className="min-h-screen bg-[var(--color-bg-soft)]">
       {/* Хедер */}
       <header
-        className="sticky top-0 z-30 text-white"
-        style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))" }}
+        className="sticky top-0 z-30 border-b border-[var(--color-ink-border)] text-white"
+        style={{ background: "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 py-3">
+        <div className="mx-auto max-w-[1400px] px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex shrink-0 items-center gap-2">
-              {/* Знак как на главной: 36px, squircle, салатовое кольцо. Заливка инвертирована —
-                  на синей шапке синий фон знака слился бы с градиентом. */}
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-[var(--color-accent)] bg-white font-bold text-[var(--color-primary)] shadow-sm">A</div>
-              <span className="hidden text-lg font-bold lg:block">Aviator</span>
+              <LogoMark size={36} />
+              <span className="hidden font-heading text-lg font-bold lg:block">Aviator</span>
             </Link>
 
             {/* Свёрнутая форма поиска. flex-1 на каждом чипе — строка занимает всю ширину

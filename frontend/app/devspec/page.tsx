@@ -6,9 +6,9 @@ import SpecPages from "../components/devspec/SpecPages";
 import ScreenshotGallery, { screenshots as pageScreenshots } from "../components/devspec/ScreenshotGallery";
 
 const typography = [
-  { role: "Heading", family: "Syne", weight: "700 (Bold)", usage: "Все заголовки, заголовок героя, названия карточек", token: "--font-heading" },
+  { role: "Heading", family: "Golos Text", weight: "700 (Bold)", usage: "Все заголовки, заголовок героя, названия карточек", token: "--font-heading" },
   { role: "Body", family: "Inter", weight: "400 / 500", usage: "Основной текст, описания, формы", token: "--font-body" },
-  { role: "Display", family: "Syne", weight: "700", usage: "Декоративные заголовки", token: "--font-display" },
+  { role: "Display", family: "Golos Text", weight: "900", usage: "Декоративные заголовки", token: "--font-display" },
   { role: "Mono", family: "JetBrains Mono", weight: "400 / 700", usage: "Лейблы, числа, коды аэропортов, технические данные", token: "--font-mono" },
 ];
 

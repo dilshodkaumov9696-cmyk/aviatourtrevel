@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import LogoMark from "./Logo";
+import SettingsSwitcher from "./SettingsSwitcher";
 
 const SECTIONS = [
   {
@@ -105,14 +107,14 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 
   if (isExternal) {
     return (
-      <a href={href} className="text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
+      <a href={href} className="text-sm text-white/60 transition hover:text-white">
         {label}
       </a>
     );
   }
 
   return (
-    <Link href={href} className="text-sm text-[var(--color-text-muted)] transition hover:text-[var(--color-primary)]">
+    <Link href={href} className="text-sm text-white/60 transition hover:text-white">
       {label}
     </Link>
   );
@@ -121,13 +123,13 @@ function FooterLink({ href, label }: { href: string; label: string }) {
 function PaymentIcon({ name }: { name: string }) {
   if (name === "visa") return (
     <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Visa">
-      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <rect width="44" height="28" rx="4" fill="#EEF2F8" />
       <text x="8" y="19" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="12" fill="#1A1F71">VISA</text>
     </svg>
   );
   if (name === "mc") return (
     <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Mastercard">
-      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <rect width="44" height="28" rx="4" fill="#EEF2F8" />
       <circle cx="17" cy="14" r="8" fill="#EB001B" />
       <circle cx="27" cy="14" r="8" fill="#F79E1B" />
       <path d="M22 8.3a8 8 0 010 11.4A8 8 0 0122 8.3z" fill="#FF5F00" />
@@ -135,13 +137,13 @@ function PaymentIcon({ name }: { name: string }) {
   );
   if (name === "mir") return (
     <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="МИР">
-      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <rect width="44" height="28" rx="4" fill="#EEF2F8" />
       <text x="7" y="19" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="11" fill="#00884B">МИР</text>
     </svg>
   );
   if (name === "sbp") return (
     <svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="СБП">
-      <rect width="44" height="28" rx="4" fill="var(--color-bg-soft)" />
+      <rect width="44" height="28" rx="4" fill="#EEF2F8" />
       <text x="8" y="19" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="11" fill="#1E5C80">СБП</text>
     </svg>
   );
@@ -152,32 +154,33 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-[var(--color-surface)] border-t border-[var(--color-border)] mt-20">
-      <div className="mx-auto max-w-7xl px-6 py-16">
+    <footer
+      className="mt-20 border-t border-[var(--color-ink-border)] text-white"
+      style={{ background: "linear-gradient(180deg, var(--color-ink-soft) 0%, var(--color-ink) 100%)" }}
+    >
+      <div className="mx-auto max-w-[1400px] px-6 py-16 sm:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] mb-10">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white font-bold shadow-sm">
-                A
-              </div>
-              <span className="text-lg font-bold text-[var(--color-primary)]">Aviatour.travel</span>
+              <LogoMark size={36} />
+              <span className="font-heading text-lg font-bold text-white">Aviatour.travel</span>
             </div>
-            <p className="text-sm text-[var(--color-text-muted)] mb-5 leading-relaxed">
+            <p className="text-sm text-white/60 mb-5 leading-relaxed">
               Ваш персональный навигатор в мире авиаперелётов. Лучшие цены, проверенные авиакомпании и безупречный сервис.
             </p>
 
-            <div className="mb-5 space-y-2 text-xs text-[var(--color-text-muted)]">
+            <div className="mb-5 space-y-2 text-xs text-white/60">
               <div className="flex items-center gap-2">
-                <span className="text-[var(--color-primary)]">✉</span>
-                <a href="mailto:hello@aviatour.travel" className="transition hover:text-[var(--color-primary)]">hello@aviatour.travel</a>
+                <span className="text-[var(--color-gold)]">✉</span>
+                <a href="mailto:hello@aviatour.travel" className="transition hover:text-white">hello@aviatour.travel</a>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[var(--color-primary)]">☎</span>
-                <a href="tel:+78005550199" className="transition hover:text-[var(--color-primary)]">+7 (800) 555-01-99</a>
+                <span className="text-[var(--color-gold)]">☎</span>
+                <a href="tel:+78005550199" className="transition hover:text-white">+7 (800) 555-01-99</a>
                 <span className="text-[10px] opacity-60">круглосуточно</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[var(--color-primary)]">⏰</span>
+                <span className="text-[var(--color-gold)]">⏰</span>
                 <span>Пн–Вс, 24/7</span>
               </div>
             </div>
@@ -190,7 +193,7 @@ export default function Footer() {
                   title={s.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-light)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-[var(--color-gold)] hover:text-white hover:bg-white/5"
                 >
                   <SocialIcon icon={s.icon} />
                 </a>
@@ -200,7 +203,7 @@ export default function Footer() {
 
           {SECTIONS.map((section) => (
             <div key={section.title}>
-              <h3 className="mb-4 text-sm font-semibold text-[var(--color-text)]">{section.title}</h3>
+              <h3 className="mb-4 text-sm font-semibold text-white">{section.title}</h3>
               <ul className="space-y-2.5">
                 {section.links.map((link) => (
                   <li key={link.label}>
@@ -212,27 +215,35 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-6">
-          <span className="text-xs text-[var(--color-text-muted)]">Принимаем к оплате:</span>
+        <div className="mb-6 flex flex-wrap items-center gap-4 border-t border-white/10 pt-6">
+          <span className="text-xs text-white/50">Принимаем к оплате:</span>
           <div className="flex flex-wrap items-center gap-2">
             {["visa", "mc", "mir", "sbp"].map((p) => (
               <PaymentIcon key={p} name={p} />
             ))}
           </div>
-          <div className="ml-auto hidden sm:flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
-            <span className="text-green-600">🔒</span>
+          <div className="flex items-center gap-2 text-xs text-white/50 sm:ml-2">
+            <span className="text-[var(--color-accent)]">🔒</span>
             Защищённое соединение SSL/TLS
+          </div>
+          <div className="ml-auto flex items-center gap-3">
+            <SettingsSwitcher variant="dark" align="right" />
           </div>
         </div>
 
-        <div className="border-t border-[var(--color-border)] pt-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[var(--color-text-muted)]">
-            <div>© {year} Aviatour.travel. Все права защищены. Сайт является агрегатором авиабилетов.</div>
-            <div className="flex items-center gap-1 opacity-70">
-              <span>🔒</span>
-              Поиск билетов — быстро и безопасно
-            </div>
+        <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-6">
+          <div className="flex flex-col sm:flex-row items-center gap-x-3 gap-y-1 text-xs text-white/50">
+            <span>© {year} Aviatour.travel. Все права защищены. Сайт является агрегатором авиабилетов.</span>
           </div>
+          <a
+            href="#top"
+            aria-label="Наверх"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-[var(--color-gold)] hover:text-white"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </a>
         </div>
       </div>
     </footer>

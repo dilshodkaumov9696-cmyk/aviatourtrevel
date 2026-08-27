@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Syne } from "next/font/google";
+import { Golos_Text, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SettingsProvider } from "./context/settings";
 import { AuthProvider } from "./context/auth";
@@ -9,9 +9,9 @@ import CookieConsent from "./components/CookieConsent";
 
 // next/font сам хостит файлы и убирает внешний запрос к fonts.googleapis.com:
 // нет блокирующей загрузки и нет скачка вёрстки при подмене шрифта.
-// Кириллица нужна Inter и JetBrains Mono — сайт русскоязычный. Syne
-// латинский, для заголовков кириллица подставится системным шрифтом,
-// как это и было до перехода.
+// Кириллица нужна везде — сайт русскоязычный. Golos Text пришёл на смену
+// Syne: у Syne нет кириллицы вообще, и заголовки на русском тихо падали на
+// системный шрифт — по факту бренд-шрифт для них не работал.
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   weight: ["300", "400", "500", "600", "700"],
@@ -19,10 +19,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const syne = Syne({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-syne",
+const golosText = Golos_Text({
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "600", "700", "900"],
+  variable: "--font-golos",
   display: "swap",
 });
 
@@ -89,7 +89,7 @@ export default function RootLayout({
     // намеренно, иначе он ругается на прыжки при переходах между маршрутами.
     <html
       lang="ru"
-      className={`h-full antialiased ${inter.variable} ${syne.variable} ${jetbrainsMono.variable}`}
+      className={`h-full antialiased ${inter.variable} ${golosText.variable} ${jetbrainsMono.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >

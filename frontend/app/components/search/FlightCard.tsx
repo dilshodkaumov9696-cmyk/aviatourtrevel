@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Flight, formatDuration, stopsLabel, BadgeTone, baggageShortLabel, carryOnShortLabel, refundExchangeLabel } from "../../data/flights";
-import { IconPlane } from "../icons";
+import { IconPlane, IconBackpack, IconSuitcase, IconUndo, IconSwap, IconStarFilled } from "../icons";
 import FlightDetailModal from "./FlightDetailModal";
 import AirlineLogo from "./AirlineLogo";
 import AnimatedNumber from "../AnimatedNumber";
@@ -49,9 +49,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
     : baggageShortLabel(f.fare.baggage);
   const baggageIncludedNow = f.fare.baggage.status === "included" || (baggageAdded && canBuyBaggage);
 
-  const conditionPill = (text: string, tone: "neutral" | "positive" | "negative" = "neutral") => (
+  const conditionPill = (icon: React.ReactNode, text: string, tone: "neutral" | "positive" | "negative" = "neutral") => (
     <span
-      className={`inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-medium ${
+      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium ${
         tone === "positive"
           ? "bg-[var(--color-accent)]/15 text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A]"
           : tone === "negative"
@@ -59,16 +59,17 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
           : "bg-[var(--color-bg-soft)] text-[var(--color-text)]"
       }`}
     >
+      <span className="shrink-0 opacity-70">{icon}</span>
       {text}
     </span>
   );
 
   const conditionPills = (
     <>
-      {conditionPill(`🎒 ${carryOnShortLabel(f.fare.carryOn)}`)}
-      {conditionPill(`🧳 ${baggagePillText}`, baggageIncludedNow ? "positive" : "neutral")}
-      {conditionPill(`↩ ${refundExchangeLabel(f.fare.refund, "refund")}`, f.fare.refund.allowed === "yes" ? "positive" : "negative")}
-      {conditionPill(`🔄 ${refundExchangeLabel(f.fare.exchange, "exchange")}`, f.fare.exchange.allowed === "yes" ? "positive" : "negative")}
+      {conditionPill(<IconBackpack size={13} />, carryOnShortLabel(f.fare.carryOn))}
+      {conditionPill(<IconSuitcase size={13} />, baggagePillText, baggageIncludedNow ? "positive" : "neutral")}
+      {conditionPill(<IconUndo size={13} />, refundExchangeLabel(f.fare.refund, "refund"), f.fare.refund.allowed === "yes" ? "positive" : "negative")}
+      {conditionPill(<IconSwap size={13} />, refundExchangeLabel(f.fare.exchange, "exchange"), f.fare.exchange.allowed === "yes" ? "positive" : "negative")}
     </>
   );
 
@@ -157,7 +158,7 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
           isSelected
             ? "border-green-500 bg-green-50/50 ring-1 ring-green-500/40 dark:bg-green-950/20"
             : isBest
-            ? "border-[var(--color-accent-dark)] bg-[var(--color-surface)]"
+            ? "border-[var(--color-gold)] bg-[var(--color-surface)]"
             : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]"
         }`}
       >
@@ -182,8 +183,9 @@ export default function FlightCard({ flight: f, fromCity, fromIata, toCity, toIa
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {isBest ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A]">
-                ★ Лучший выбор
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-gold)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-gold-dark)] dark:text-[var(--color-gold)]">
+                <IconStarFilled size={11} />
+                Лучший выбор
               </span>
             ) : f.badges.length > 0 && (
               <span className={`hidden rounded-full px-2 py-0.5 text-[11px] sm:inline-block ${TONE_CLASS[f.badges[0].tone]}`}>

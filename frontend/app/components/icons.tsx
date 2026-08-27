@@ -120,6 +120,43 @@ export function IconTrain({ className = "", size = 18 }: IconProps) {
   );
 }
 
+export function IconBackpack({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M7 9V6a5 5 0 0 1 10 0v3" />
+      <path d="M6 9h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z" />
+      <path d="M9 13h6M9 17h6" />
+    </svg>
+  );
+}
+
+export function IconSuitcase({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <rect x="3" y="8" width="18" height="12" rx="2" />
+      <path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+      <path d="M3 13h18" />
+    </svg>
+  );
+}
+
+export function IconUndo({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M4 10h9a5 5 0 0 1 0 10h-2" />
+      <path d="M8 5 4 10l4 5" />
+    </svg>
+  );
+}
+
+export function IconStarFilled({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 2.5l2.9 6.3 6.8.8-5 4.7 1.3 6.8-6-3.4-6 3.4 1.3-6.8-5-4.7 6.8-.8L12 2.5z" />
+    </svg>
+  );
+}
+
 export function IconCar({ className = "", size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
