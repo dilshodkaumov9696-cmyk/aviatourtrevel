@@ -45,7 +45,7 @@ function fmtDate(d: string): string {
 // Ячейка единой строки поиска: без собственной рамки и фона — их даёт контейнер-бар,
 // поля стыкуются вплотную и разделяются только 1px-дивайдерами.
 const boxBase =
-  "relative flex min-h-[60px] items-center gap-2.5 px-4 py-2 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)]";
+  "relative flex min-h-[76px] items-center gap-3 px-5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)]";
 
 // Фото города по ключевому слову (временно — позже заменим на свои/лицензионные)
 const cityPhoto = (kw: string, lock: number) =>
@@ -645,7 +645,7 @@ export default function Home() {
             <form
               onSubmit={handleSearch}
               noValidate
-              className="animate-fade-in-down relative z-10 mx-auto mt-[150px] w-full max-w-[1440px] overflow-visible text-left sm:mt-[180px] md:mt-[210px]"
+              className="animate-fade-in-down relative z-10 mx-auto mt-[150px] w-full max-w-[1640px] overflow-visible text-left sm:mt-[180px] md:mt-[210px]"
             >
             {/* Верхняя строка: переключатель сложного маршрута */}
             <div className="px-5 pt-4 flex justify-end">
@@ -789,7 +789,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={searching}
-                  className="relative flex min-h-[60px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-8 font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default xl:w-auto xl:rounded-bl-none xl:rounded-tr-2xl"
+                  className="relative flex min-h-[76px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-10 font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default xl:w-auto xl:rounded-bl-none xl:rounded-tr-2xl"
                 >
                   {searching ? (
                     <>

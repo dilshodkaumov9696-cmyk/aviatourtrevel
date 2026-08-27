@@ -82,7 +82,7 @@ export default function PassengersPicker({
       <div
         className={
           variant === "bar"
-            ? "flex h-full w-full min-h-[60px] items-center gap-2.5 px-4 py-2 cursor-pointer transition-colors duration-200 hover:bg-[var(--color-surface)]"
+            ? "flex h-full w-full min-h-[76px] items-center gap-3 px-5 py-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--color-surface)]"
             : "flex w-full items-center gap-2.5 min-h-[52px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-3.5 py-1.5 cursor-pointer hover:border-[var(--color-primary)] transition"
         }
         onClick={() => setOpen((v) => !v)}
