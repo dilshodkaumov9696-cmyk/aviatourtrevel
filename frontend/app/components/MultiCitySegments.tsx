@@ -120,6 +120,8 @@ export default function MultiCitySegments({
                   onDepartChange={(d) => onUpdate(seg.id, { date: d })}
                   onReturnChange={() => {}}
                   onClose={() => setOpenDateId(null)}
+                  originIata={seg.from?.iata}
+                  destinationIata={seg.to?.iata}
                 />
               </div>
             )}

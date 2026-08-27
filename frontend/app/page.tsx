@@ -44,6 +44,16 @@ function fmtDate(d: string): string {
 
 // Ячейка единой строки поиска: без собственной рамки и фона — их даёт контейнер-бар,
 // поля стыкуются вплотную и разделяются только 1px-дивайдерами.
+const ROUTE_TOGGLE_LABEL = "Сложный маршрут";
+
+function flightsWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "перелёт";
+  if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return "перелёта";
+  return "перелётов";
+}
+
 const boxBase =
   "relative flex min-h-[76px] items-center gap-3 px-5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)]";
 
@@ -174,6 +184,12 @@ export default function Home() {
     { id: 2, from: null, to: null, date: "" },
   ]);
   const segIdRef = useRef(3);
+  // Итог по сложному маршруту: список перелётов со своей ссылкой на Aviasales для
+  // каждого. Раньше кнопка «Найти билеты» открывала Aviasales только по первому
+  // перелёту, а остальные сегменты молча терялись — нет ни объединённого мультигорода
+  // у Aviasales, который мы могли бы честно построить, ни своего поиска на несколько
+  // городов. Так хотя бы ни один введённый перелёт не пропадает.
+  const [multiRoutePlan, setMultiRoutePlan] = useState<MultiSegment[] | null>(null);
 
   // Календарь
   const [datepickerOpen, setDatepickerOpen] = useState(false);
@@ -190,6 +206,27 @@ export default function Home() {
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
+
+  // Печатающийся по буквам заголовок «Сложный маршрут» при наведении на переключатель.
+  const [routeTypedLen, setRouteTypedLen] = useState(ROUTE_TOGGLE_LABEL.length);
+  const routeTypeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  function startRouteTypeIn() {
+    if (routeTypeTimer.current) clearInterval(routeTypeTimer.current);
+    setRouteTypedLen(0);
+    routeTypeTimer.current = setInterval(() => {
+      setRouteTypedLen((n) => {
+        if (n >= ROUTE_TOGGLE_LABEL.length) {
+          if (routeTypeTimer.current) clearInterval(routeTypeTimer.current);
+          return n;
+        }
+        return n + 1;
+      });
+    }, 35);
+  }
+  function endRouteTypeIn() {
+    if (routeTypeTimer.current) clearInterval(routeTypeTimer.current);
+    setRouteTypedLen(ROUTE_TOGGLE_LABEL.length);
+  }
   const [activeSection, setActiveSection] = useState<"search" | "directions" | "deals" | "help">("search");
 
   // Анимации при скролле для основных секций
@@ -405,6 +442,8 @@ export default function Home() {
   }
 
   // --- Сложный маршрут ---
+  // Правки после «Найти билеты» гасят показанный план — иначе он молча разойдётся
+  // с тем, что сейчас в форме.
   function updateSegment(id: number, patch: Partial<MultiSegment>) {
     setSegments((s) => s.map((seg) => (seg.id === id ? { ...seg, ...patch } : seg)));
     setErrors((p) => {
@@ -412,15 +451,19 @@ export default function Home() {
       Object.keys(patch).forEach((k) => delete next[`${k}${id}`]);
       return next;
     });
+    setMultiRoutePlan(null);
   }
   function swapSegment(id: number) {
     setSegments((s) => s.map((seg) => (seg.id === id ? { ...seg, from: seg.to, to: seg.from } : seg)));
+    setMultiRoutePlan(null);
   }
   function addSegment() {
     setSegments((s) => (s.length >= 6 ? s : [...s, { id: segIdRef.current++, from: null, to: null, date: "" }]));
+    setMultiRoutePlan(null);
   }
   function removeSegment(id: number) {
     setSegments((s) => (s.length <= 2 ? s : s.filter((seg) => seg.id !== id)));
+    setMultiRoutePlan(null);
   }
 
   function validate(): boolean {
@@ -446,17 +489,13 @@ export default function Home() {
     if (!validate()) return;
 
     if (mode === "multi") {
-      // Сложный маршрут → открываем первый сегмент на Aviasales
-      const first = segments[0];
-      if (first?.from && first?.to && first?.date) {
-        const url = buildAviasalesUrl({
-          origin: first.from.iata,
-          destination: first.to.iata,
-          departDate: first.date,
-          adults: passengers.adults,
-        });
-        window.open(url, "_blank", "noopener,noreferrer");
-      }
+      // Сложный маршрут: у Aviasales нет единого мультигородского поиска, который
+      // мы могли бы честно собрать в одну ссылку, а свой поиск такое не считает —
+      // поэтому показываем маршрут целиком и даём ссылку на Aviasales по каждому
+      // перелёту отдельно, вместо того чтобы открывать только первый и терять
+      // остальные (так было раньше).
+      setMultiRoutePlan(segments);
+      document.getElementById("multi-route-plan")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
@@ -647,20 +686,42 @@ export default function Home() {
               noValidate
               className="animate-fade-in-down relative z-10 mx-auto mt-[150px] w-full max-w-[1640px] overflow-visible text-left sm:mt-[180px] md:mt-[210px]"
             >
-            {/* Верхняя строка: переключатель сложного маршрута */}
+            {/* Верхняя строка: переключатель сложного маршрута. При наведении (когда ещё
+                не включён) заголовок печатается по буквам, а иконка загорается золотым —
+                просили сделать значок «красивенько», а не просто статичную кнопку. */}
             <div className="px-5 pt-4 flex justify-end">
               <button
                 type="button"
-                onClick={() => setMode(mode === "multi" ? "simple" : "multi")}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                onClick={() => {
+                  setMode(mode === "multi" ? "simple" : "multi");
+                  setMultiRoutePlan(null);
+                }}
+                onMouseEnter={startRouteTypeIn}
+                onMouseLeave={endRouteTypeIn}
+                className={`group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-300 ${
                   mode === "multi"
                     ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg-soft)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
                 }`}
                 title="Перелёты с пересадками в нескольких городах"
               >
-                <IconRoute size={16} />
-                {mode === "multi" ? "Обычный поиск" : "Сложный маршрут"}
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300 ${
+                    mode === "multi"
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-gold)]/15 group-hover:text-[var(--color-gold)] group-hover:rotate-12"
+                  }`}
+                >
+                  <IconRoute size={14} />
+                </span>
+                {mode === "multi" ? (
+                  "Обычный поиск"
+                ) : (
+                  <span className="inline-block min-w-[104px] text-left">
+                    {ROUTE_TOGGLE_LABEL.slice(0, routeTypedLen)}
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">|</span>
+                  </span>
+                )}
               </button>
             </div>
 
@@ -835,6 +896,57 @@ export default function Home() {
                     Найти билеты
                   </button>
                 </div>
+
+                {/* Итог по маршруту: своей ссылки Aviasales на несколько городов сразу нет,
+                    поэтому честно даём отдельную ссылку на каждый перелёт вместо того чтобы
+                    молча искать только первый. */}
+                {multiRoutePlan && (
+                  <div id="multi-route-plan" className="mx-4 mb-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-4">
+                    <div className="mb-1 text-sm font-semibold text-[var(--color-text)]">
+                      Ваш маршрут — {multiRoutePlan.length} {flightsWord(multiRoutePlan.length)}
+                    </div>
+                    <p className="mb-3 text-xs text-[var(--color-text-muted)]">
+                      Единого поиска на несколько городов у нас пока нет — откройте Aviasales отдельно по каждому перелёту.
+                    </p>
+                    <ul className="space-y-2">
+                      {multiRoutePlan.map((seg, i) =>
+                        seg.from && seg.to && seg.date ? (
+                          <li
+                            key={seg.id}
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-light)] text-xs font-bold text-[var(--color-primary)]">
+                                {i + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-semibold text-[var(--color-text)]">
+                                  {seg.from.city} → {seg.to.city}
+                                </div>
+                                <div className="text-xs text-[var(--color-text-muted)]">
+                                  {new Date(seg.date).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                                </div>
+                              </div>
+                            </div>
+                            <a
+                              href={buildAviasalesUrl({
+                                origin: seg.from.iata,
+                                destination: seg.to.iata,
+                                departDate: seg.date,
+                                adults: passengers.adults,
+                              })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
+                            >
+                              Открыть на Aviasales →
+                            </a>
+                          </li>
+                        ) : null,
+                      )}
+                    </ul>
+                  </div>
+                )}
               </>
             )}
           </form>
