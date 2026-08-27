@@ -266,53 +266,54 @@ textarea:focus-visible {
   .animate-bounce { animation: none; }
 }
 
-/* ===== Глобус MapLibre ===== */
+/* ===== Глобус MapLibre («живой глобус маршрутов») ===== */
 .globe-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .globe-canvas .maplibregl-canvas { outline: none; }
 .globe-canvas .maplibregl-ctrl-attrib { display: none; }
 
-/* Карточка направления на глобусе */
-.globe-card {
-  display: flex; align-items: center; gap: 8px;
-  padding: 5px 12px 5px 5px;
-  background: #fff; border-radius: 999px;
-  box-shadow: 0 6px 20px rgba(8, 22, 34, 0.28);
-  cursor: pointer; user-select: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-  white-space: nowrap; position: relative;
+/* Точка города — небольшая, спокойная, без постоянной пульсации по умолчанию. */
+.globe-dot {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; user-select: none; pointer-events: auto;
 }
-.globe-card:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 10px 28px rgba(8, 22, 34, 0.36); z-index: 5; }
-.globe-card__img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.globe-card__body { display: flex; flex-direction: column; gap: 1px; padding-right: 4px; }
-.globe-card__city { font-size: 14px; font-weight: 700; color: #15425C; line-height: 1.1; }
-.globe-card__meta { display: flex; align-items: center; gap: 5px; font-size: 12px; line-height: 1.1; }
-.globe-card__temp { color: #C65300; font-weight: 600; font-family: var(--font-mono); }
-.globe-card__w { font-size: 11px; }
-.globe-card__price { color: #1D9E55; font-weight: 700; font-family: var(--font-mono); }
-/* «Хвостик» карточки к точке города */
-.globe-card__pin {
-  position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-  width: 9px; height: 9px; background: #E24B4A; border: 2px solid #fff; border-radius: 50%;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+.globe-dot__core {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #8fb4ff; box-shadow: 0 0 6px 1px rgba(143, 180, 255, 0.55);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
+.globe-dot__label {
+  font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap; opacity: 0; transform: translateY(-2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.globe-dot:hover .globe-dot__label,
+.globe-dot--origin .globe-dot__label,
+.globe-dot--destination .globe-dot__label { opacity: 1; transform: translateY(0); }
+.globe-dot:hover .globe-dot__core { transform: scale(1.3); }
 
-/* Хаб (Душанбе) */
-.globe-hub { display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-.globe-hub__dot {
-  width: 14px; height: 14px; border-radius: 50%;
-  background: #FFD700; border: 2px solid #fff;
-  box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.6);
-  animation: globe-pulse 2s infinite;
-}
-.globe-hub__label {
-  margin-top: 3px; font-size: 13px; font-weight: 700; color: #fff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+/* Выбранные точки — подсветка цветом маршрута, лёгкая пульсация (только у активных). */
+.globe-dot--origin .globe-dot__core,
+.globe-dot--destination .globe-dot__core {
+  background: #2FD98A; box-shadow: 0 0 0 0 rgba(47, 217, 138, 0.55);
+  animation: globe-pulse 2.2s infinite;
+  width: 9px; height: 9px;
 }
 @keyframes globe-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.55); }
-  70%  { box-shadow: 0 0 0 14px rgba(255, 215, 0, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(47, 217, 138, 0.5); }
+  70%  { box-shadow: 0 0 0 10px rgba(47, 217, 138, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(47, 217, 138, 0); }
 }
+
+/* Маленький самолёт, летящий вдоль дуги маршрута. */
+.globe-plane { pointer-events: none; }
+.globe-plane__icon {
+  display: block; font-size: 15px; line-height: 1;
+  color: #EAFFF4; text-shadow: 0 0 6px rgba(47, 217, 138, 0.9), 0 1px 2px rgba(0,0,0,0.6);
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .globe-hub__dot { animation: none; }
+  .globe-dot--origin .globe-dot__core,
+  .globe-dot--destination .globe-dot__core { animation: none; }
 }

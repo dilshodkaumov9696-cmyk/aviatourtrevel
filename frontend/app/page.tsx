@@ -1,24 +1,24 @@
-
-
-
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { buildAviasalesUrl } from "./lib/api";
+import { buildAviasalesUrl, searchFlights } from "./lib/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// Глобус только на клиенте (MapLibre обращается к window/WebGL)
+// Глобус только на клиенте (MapLibre обращается к window/WebGL) — не блокирует
+// первый рендер страницы, грузится отдельным чанком уже после монтирования.
 const GlobeHero = dynamic(() => import("./components/GlobeHero"), { ssr: false });
+import type { GlobeCitySelection } from "./components/GlobeHero";
+import PopularDirectionsPanel from "./components/PopularDirectionsPanel";
+import QuickRoutes from "./components/QuickRoutes";
 import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import { useRecentSearches } from "./hooks/useRecentSearches";
 import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
 import PassengersPicker, { Passengers, CabinClass } from "./components/PassengersPicker";
-import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHotel, IconTour, IconSim, IconShield, IconTrain, IconCar } from "./components/icons";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
 
 import ThemeToggle from "./components/ThemeToggle";
 import AuthModal from "./components/AuthModal";
@@ -32,7 +32,7 @@ import DirectionsCarousel from "./components/DirectionsCarousel";
 import AirlinesMarquee from "./components/AirlinesMarquee";
 import Reviews from "./components/Reviews";
 import Subscribe from "./components/Subscribe";
-import { Airport, POPULAR_AIRPORTS, loadAirports } from "./data/airports";
+import { Airport, loadAirports } from "./data/airports";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
 
@@ -47,36 +47,10 @@ function fmtDate(d: string): string {
 const boxBase =
   "relative flex min-h-[60px] items-center gap-2.5 px-4 py-2 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)]";
 
-// Категории услуг над формой поиска (как на Aviasales). Активна — «Авиабилеты».
-const CATEGORIES = [
-  { label: "Авиабилеты", icon: IconPlane, active: true },
-  { label: "Отели", icon: IconHotel, active: false },
-  { label: "Туры", icon: IconTour, active: false },
-  { label: "E-SIM", icon: IconSim, active: false },
-  { label: "Страхование", icon: IconShield, active: false },
-  { label: "Билеты на поезд", icon: IconTrain, active: false },
-  { label: "Трансферы", icon: IconCar, active: false },
-];
-
 // Фото города по ключевому слову (временно — позже заменим на свои/лицензионные)
 const cityPhoto = (kw: string, lock: number) =>
   `https://loremflickr.com/640/480/${kw}?lock=${lock}`;
 
-// Английские ключевые слова для фото-стоков (русские названия города/IATA → keyword).
-const CITY_KEYWORDS: Record<string, string> = {
-  DYU: "dushanbe", LBD: "khujand", IST: "istanbul,city", DXB: "dubai,skyline",
-  TAS: "tashkent", ALA: "almaty", SKD: "samarkand", MOW: "moscow,kremlin",
-  SVO: "moscow", DME: "moscow", VKO: "moscow", GYD: "baku", OVB: "novosibirsk",
-  MSQ: "minsk", ESB: "ankara", SAW: "istanbul", BKK: "bangkok", AYT: "antalya",
-  NHA: "nhatrang,beach", PEK: "beijing", DEL: "delhi", DPS: "bali",
-};
-// Большое фото города для hero-фона (по выбранному назначению).
-const cityHeroPhoto = (iata: string, city: string) => {
-  const kw = CITY_KEYWORDS[iata] ?? `${city},city`;
-  return `https://loremflickr.com/1600/900/${encodeURIComponent(kw)}?lock=${
-    iata.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
-  }`;
-};
 // Если loremflickr не ответит — подменяем на гарантированное фото
 function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) {
   const img = e.currentTarget;
@@ -101,6 +75,17 @@ const DEPARTURE_HUBS = [
   { iata: "MOW", lat: 55.7558, lon: 37.6173 },
   { iata: "DYU", lat: 38.5598, lon: 68.7870 },
   { iata: "TAS", lat: 41.2995, lon: 69.2401 },
+];
+
+// Единственный источник направлений для панели «Популярные направления» и «Быстрых
+// маршрутов» под формой — оба берут отсюда города и делят один и тот же кэш цен
+// (см. popularPrices), чтобы не заводить две параллельные системы данных.
+const POPULAR_DESTS = [
+  { city: "Стамбул", country: "Турция", iata: "IST" },
+  { city: "Душанбе", country: "Таджикистан", iata: "DYU" },
+  { city: "Дубай", country: "ОАЭ", iata: "DXB" },
+  { city: "Ташкент", country: "Узбекистан", iata: "TAS" },
+  { city: "Баку", country: "Азербайджан", iata: "GYD" },
 ];
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -184,17 +169,6 @@ export default function Home() {
   // Свернуть форму поиска в маленькую кнопку — открывает больше вида на глобус
   const [formCollapsed, setFormCollapsed] = useState(false);
 
-  // Интерактивная карта цен
-
-  // Hero-фон под выбранный/набираемый город назначения
-  const [typedDest, setTypedDest] = useState("");
-  const heroCity: Airport | null =
-    destAirport ??
-    (typedDest.trim().length >= 3
-      ? POPULAR_AIRPORTS.find((a) =>
-          a.city.toLowerCase().startsWith(typedDest.trim().toLowerCase()),
-        ) ?? null
-      : null);
 
   // Пассажиры / класс
   const [cabin, setCabin] = useState<CabinClass>("economy");
@@ -330,6 +304,83 @@ export default function Home() {
     }
   }, []);
 
+  // Цены для «Популярные направления» + «Быстрые маршруты»: реальный поиск (тот же
+  // searchFlights, что и на /search) от текущего города вылета к каждому из POPULAR_DESTS,
+  // параллельно, не блокируя рендер. ?demo=1 — тестовые фикстуры вместо реального API.
+  // Ничего не выдумываем: пока цена не пришла или запрос не удался — null → "Цена уточняется".
+  const [popularPrices, setPopularPrices] = useState<Record<string, number | null>>({});
+  useEffect(() => {
+    const originIata = originAirport?.iata || "MOW";
+    const date = departDate || futureDateISO(14);
+    const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+    let cancelled = false;
+    setPopularPrices({});
+
+    if (isDemo) {
+      import("./data/flights.demo").then(({ getDemoFlights }) => {
+        if (cancelled) return;
+        const next: Record<string, number | null> = {};
+        for (const d of POPULAR_DESTS) {
+          if (d.iata === originIata) continue;
+          const flights = getDemoFlights([originIata], [d.iata]);
+          next[d.iata] = flights.length ? Math.min(...flights.map((f) => f.pricePerPax)) : null;
+        }
+        setPopularPrices(next);
+      });
+      return () => { cancelled = true; };
+    }
+
+    for (const d of POPULAR_DESTS) {
+      if (d.iata === originIata) continue;
+      searchFlights({ origin: originIata, destination: d.iata, departDate: date, adults: 1 })
+        .then((flights) => {
+          if (cancelled) return;
+          const min = flights.length ? Math.min(...flights.map((f) => f.pricePerPax)) : null;
+          setPopularPrices((prev) => ({ ...prev, [d.iata]: min }));
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPopularPrices((prev) => ({ ...prev, [d.iata]: null }));
+        });
+    }
+    return () => { cancelled = true; };
+  }, [originAirport?.iata, departDate]);
+
+  // Куда прилетает клик по городу — единая точка входа для панели «Популярные направления»,
+  // «Быстрых маршрутов» и клика по точке на глобусе (см. ниже) — весь поиск городов идёт
+  // через уже существующий loadAirports(), никакой второй системы состояния не заводим.
+  function resolveAirport(iata: string, cityFallback: string, countryFallback = ""): Promise<Airport> {
+    return loadAirports()
+      .then((all) => all.find((a) => a.iata === iata) ?? { iata, city: cityFallback, name: cityFallback, country: countryFallback })
+      .catch(() => ({ iata, city: cityFallback, name: cityFallback, country: countryFallback }));
+  }
+
+  // Клик по «Популярным направлениям» / «Быстрым маршрутам»: всегда заполняет именно Куда
+  // (см. ТЗ) — Откуда остаётся тем, что уже выбрано (или smart-default).
+  function selectDestination(city: string, iata: string, country: string) {
+    resolveAirport(iata, city, country).then((a) => {
+      setDestAirport(a);
+      setErrors((p) => ({ ...p, destination: "" }));
+    });
+  }
+
+  // Клик по точке на глобусе: если Откуда ещё не выбрано — становится Откуда (ТЗ п.7);
+  // иначе (и это не текущее Откуда) — становится Куда. Один state с формой, отдельного
+  // состояния для глобуса не создаём.
+  function handleGlobeCityClick(city: string, iata: string) {
+    if (!originAirport) {
+      resolveAirport(iata, city).then((a) => {
+        setOriginAirport(a);
+        setErrors((p) => ({ ...p, origin: "" }));
+      });
+    } else if (originAirport.iata !== iata) {
+      selectDestination(city, iata, "");
+    }
+  }
+
+  const globeOrigin: GlobeCitySelection | null = originAirport ? { iata: originAirport.iata, city: originAirport.city } : null;
+  const globeDestination: GlobeCitySelection | null = destAirport ? { iata: destAirport.iata, city: destAirport.city } : null;
+
   useEffect(() => {
     function onScroll() {
       setIsScrolled(window.scrollY > 10);
@@ -464,30 +515,28 @@ export default function Home() {
             </div>
             <span className="text-xl font-bold text-slate-900 tracking-tight">Aviator</span>
           </a>
-          <nav className="hidden lg:flex items-center gap-8 text-[13px] font-medium text-slate-700">
+          <nav className="hidden lg:flex items-center gap-5 text-[13px] font-medium text-slate-700 xl:gap-6">
             <a
               href="#search"
-              className={`transition-colors hover:text-[var(--color-primary)] ${activeSection === "search" ? "text-[var(--color-primary)]" : ""}`}
+              className={`whitespace-nowrap transition-colors hover:text-[var(--color-primary)] ${activeSection === "search" ? "text-[var(--color-primary)]" : ""}`}
             >
               Авиабилеты
             </a>
-            <a
-              href="#directions"
-              className={`transition-colors hover:text-[var(--color-primary)] ${activeSection === "directions" ? "text-[var(--color-primary)]" : ""}`}
-            >
-              Направления
-            </a>
+            {/* Остальные вертикали пока не реализованы — заглушки без перехода, как и раньше в пилюлях под hero. */}
+            {["Отели", "Туры", "eSIM", "Страхование", "Билеты на поезд", "Трансферы"].map((label) => (
+              <button
+                key={label}
+                type="button"
+                className="whitespace-nowrap text-slate-500 transition-colors hover:text-[var(--color-primary)]"
+              >
+                {label}
+              </button>
+            ))}
             <a
               href="#deals"
-              className={`transition-colors hover:text-[var(--color-primary)] ${activeSection === "deals" ? "text-[var(--color-primary)]" : ""}`}
+              className={`whitespace-nowrap transition-colors hover:text-[var(--color-primary)] ${activeSection === "deals" ? "text-[var(--color-primary)]" : ""}`}
             >
               Акции
-            </a>
-            <a
-              href="#help"
-              className={`transition-colors hover:text-[var(--color-primary)] ${activeSection === "help" ? "text-[var(--color-primary)]" : ""}`}
-            >
-              Помощь
             </a>
           </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -522,61 +571,25 @@ export default function Home() {
       {/* Hero */}
       <section
         id="search"
-        className="relative flex min-h-[560px] flex-col items-center justify-center px-4 py-20 text-white transition-all duration-1000 md:min-h-[640px]"
+        className="relative overflow-hidden px-4 py-14 text-white md:py-16"
         style={{
           background:
-            "radial-gradient(circle at 18% 22%, rgba(56, 189, 248, 0.18) 0%, rgba(56, 189, 248, 0) 28%), linear-gradient(135deg, #eaf4ff 0%, #cfe4fb 45%, #b7d6f0 100%)",
+            "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
         }}
       >
-        {/* Фон */}
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_32%)]" />
-          <div aria-hidden className="absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div aria-hidden className="absolute -top-8 right-10 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
-          <div aria-hidden className="absolute bottom-0 left-10 h-80 w-80 rounded-full bg-[var(--color-accent)]/10 blur-3xl" />
-          {/* Интерактивный 3D-глобус — скрывается при выборе города */}
-          <div
-            aria-hidden
-            className="absolute inset-0 transition-opacity duration-700"
-            style={{ opacity: heroCity ? 0 : 1, pointerEvents: heroCity ? "none" : "auto" }}
-          >
-            <GlobeHero />
-          </div>
-
-          {/* Фото выбранного города — появляется поверх глобуса */}
-          {heroCity && (
-            <img
-              key={heroCity.iata}
-              src={cityHeroPhoto(heroCity.iata, heroCity.city)}
-              alt=""
-              onError={(e) => photoFallback(e, heroCity.iata)}
-              className="hero-fade absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-
-          {/* Затемнение для читаемости текста (не перехватывает клики по глобусу) */}
-          <div
-            aria-hidden
-            className="absolute inset-0 transition-opacity duration-700"
-            style={{
-              pointerEvents: "none",
-              background: heroCity
-                ? "linear-gradient(135deg, rgba(7,19,26,0.82) 0%, rgba(9,28,38,0.88) 45%, rgba(10,37,50,0.9) 100%)"
-                : "linear-gradient(180deg, rgba(5,14,20,0.58) 0%, rgba(8,22,30,0.36) 35%, rgba(10,34,44,0.42) 100%)",
-            }}
-          />
+        {/* Декоративные пятна — просто цветовые акценты, без глобуса на весь фон
+            (глобус теперь отдельный ограниченный блок ниже, а не подложка секции). */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 left-1/4 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute -top-8 right-10 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-4xl w-full text-center">
-          {heroCity && (
-            <h1 className="text-4xl md:text-6xl font-bold leading-tight drop-shadow-sm">
-              Летим в {heroCity.city}<span className="text-[var(--color-accent)]">?</span>
-            </h1>
-          )}
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80 md:text-xl">
-            {heroCity
-              ? "Лучшие цены на этот маршрут — сравниваем за секунды"
-              : ""}
+          <h1 className="text-3xl font-bold leading-tight md:text-5xl">
+            Открывайте мир<br className="hidden sm:block" /> с лучшими билетами
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-[15px] text-white/70 md:text-base">
+            Сравниваем цены сотен авиакомпаний и находим лучшее предложение для вас.
           </p>
         </div>
 
@@ -603,25 +616,16 @@ export default function Home() {
 
         {!formCollapsed && (
           <>
-            {/* Категории услуг */}
-            <div className="animate-fade-in-down relative z-10 w-full max-w-[1440px] mt-7 flex flex-nowrap justify-start overflow-x-auto scrollbar-hide gap-2 px-4 sm:flex-wrap sm:justify-center">
-              {CATEGORIES.map((c) => {
-                const Icon = c.icon;
-                return (
-                  <button
-                    key={c.label}
-                    type="button"
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold uppercase tracking-wider transition-all duration-200 ${
-                      c.active
-                        ? "bg-white text-[var(--color-primary-dark)] shadow-md ring-2 ring-[var(--color-accent)]"
-                        : "bg-white/15 text-white backdrop-blur-sm hover:bg-white/25 hover:-translate-y-0.5"
-                    }`}
-                  >
-                    <Icon size={14} className="shrink-0" />
-                    {c.label}
-                  </button>
-                );
-              })}
+            {/* Живой глобус маршрутов + Популярные направления рядом с ним (десктоп).
+                Один state с формой: клик по точке/панели двигает originAirport/destAirport,
+                а форма отражает то же самое — никакой второй системы поиска. */}
+            <div className="animate-fade-in-down relative z-10 mx-auto mt-8 grid w-full max-w-[1440px] gap-3 px-4 lg:grid-cols-[1fr_300px]">
+              <div className="relative h-[300px] overflow-hidden rounded-3xl border border-white/10 sm:h-[360px] md:h-[420px]">
+                <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
+              </div>
+              <div className="hidden lg:block">
+                <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
+              </div>
             </div>
 
             {/* Search card */}
@@ -685,10 +689,8 @@ export default function Home() {
                       airport={destAirport}
                       onChange={(a) => {
                         setDestAirport(a);
-                        if (a) setTypedDest("");
                         setErrors((p) => ({ ...p, destination: "" }));
                       }}
-                      onQueryChange={setTypedDest}
                       label=""
                       placeholder={errors.destination || "Куда"}
                       excludeIata={originAirport?.iata}
@@ -824,6 +826,27 @@ export default function Home() {
             )}
           </form>
 
+          {/* Быстрые маршруты — рабочие шорткаты (не декор), заполняют Откуда/Куда и
+              синхронизируют глобус. Показываем только пока нет истории поиска — она
+              для тех же целей и полезнее (свои реальные маршруты), не дублируем оба ряда. */}
+          {recentSearches.length === 0 && originAirport && (
+            <div className="relative z-10 mx-auto mt-4 w-full max-w-[1440px] overflow-x-auto scrollbar-hide">
+              <QuickRoutes
+                originCity={originAirport.city}
+                originIata={originAirport.iata}
+                destinations={POPULAR_DESTS}
+                prices={popularPrices}
+                onSelect={selectDestination}
+              />
+            </div>
+          )}
+
+          {/* Популярные направления — компактный вариант для мобильных/планшетов, где
+              боковой панели рядом с глобусом нет места (см. `hidden lg:block` выше). */}
+          <div className="relative z-10 mx-auto mt-3 w-full max-w-[1440px] lg:hidden">
+            <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
+          </div>
+
           {recentSearches.length > 0 && (
             <div className="relative z-10 mx-auto mt-4 flex w-full max-w-[1440px] gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
               {recentSearches.map((s) => (
@@ -855,6 +878,24 @@ export default function Home() {
           )}
           </>
         )}
+      </section>
+
+      {/* Компактная строка преимуществ — сразу под hero, не путать с более крупным
+          блоком "Почему выбирают нас" (WhyUs) ниже по странице, его не трогаем. */}
+      <section className="border-b border-[var(--color-border)] bg-[var(--color-surface)] py-5">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 sm:grid-cols-4">
+          {[
+            { title: "Надёжно", text: "Проверенные партнёры и защита данных" },
+            { title: "Выгодно", text: "Находим лучшие цены" },
+            { title: "Удобно", text: "Быстрый поиск и понятные условия" },
+            { title: "Поддержка 24/7", text: "Мы готовы помочь" },
+          ].map((b) => (
+            <div key={b.title} className="min-w-0">
+              <div className="text-sm font-bold text-[var(--color-text)]">{b.title}</div>
+              <div className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]" title={b.text}>{b.text}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Counters — статистика */}
