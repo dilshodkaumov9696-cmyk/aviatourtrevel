@@ -195,6 +195,7 @@ export default function Home() {
 
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
+  const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<"search" | "directions" | "deals" | "help">("search");
 
   // Анимации при скролле для основных секций
@@ -527,15 +528,28 @@ export default function Home() {
             >
               Авиабилеты
             </a>
-            {/* Остальные вертикали пока не реализованы — заглушки без перехода, как и раньше в пилюлях под hero. */}
+            {/* Остальные вертикали пока не реализованы. Клик не молчит в пустоту — коротко
+                подсвечивает кнопку и показывает «скоро», чтобы не выглядело сломанным. */}
             {["Отели", "Туры", "eSIM", "Страхование", "Билеты на поезд", "Трансферы"].map((label) => (
-              <button
-                key={label}
-                type="button"
-                className="whitespace-nowrap text-white/50 transition-colors hover:text-white"
-              >
-                {label}
-              </button>
+              <div key={label} className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComingSoon(label);
+                    window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
+                  }}
+                  className={`whitespace-nowrap transition-colors hover:text-white ${
+                    comingSoon === label ? "animate-bounce text-[var(--color-gold)]" : "text-white/50"
+                  }`}
+                >
+                  {label}
+                </button>
+                {comingSoon === label && (
+                  <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-gold)] shadow-lg ring-1 ring-white/10">
+                    Скоро запустим ✈️
+                  </span>
+                )}
+              </div>
             ))}
             <a
               href="#deals"
