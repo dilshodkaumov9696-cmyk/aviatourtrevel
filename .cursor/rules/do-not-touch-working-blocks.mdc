@@ -1,0 +1,13 @@
+---
+description: Do not touch a working block just to fix another element
+alwaysApply: true
+---
+
+# Don't disturb working blocks
+
+If a layout or UI fix for one element would require changing another block that already works, do not change that other block. Leave it as it is.
+
+- Fix only the element that is actually broken or requested.
+- Do not restyle, wrap, or rewire a working form, globe, popular destinations panel, search, or backend path as a side effect.
+- Shared components (calendar, city input) may be reused as they are; do not change them just because a neighbouring screen needs a different look — adjust only the local layout of the requested block.
+- Prefer a local wrapper or props on the requested screen over editing a shared, already-correct block.

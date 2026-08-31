@@ -1,36 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { cityPhotoFallback, cityPhotoUrl } from "../data/cityPhotos";
 
-interface Direction {
-  city: string;
-  country: string;
-  iata: string;
-  price: number;
-  photo: string;
-  keyword: string;
-  lock: number;
-}
-
-const DIRECTIONS: Direction[] = [
-  { city: "Стамбул", country: "Турция", iata: "IST", price: 4500, photo: "istanbul,city", keyword: "istanbul,city", lock: 1 },
-  { city: "Дубай", country: "ОАЭ", iata: "DXB", price: 9900, photo: "dubai,skyline", keyword: "dubai,skyline", lock: 2 },
-  { city: "Анталья", country: "Турция", iata: "AYT", price: 6200, photo: "antalya,beach", keyword: "antalya,beach", lock: 3 },
-  { city: "Ереван", country: "Армения", iata: "EVN", price: 3800, photo: "yerevan,armenia", keyword: "yerevan,armenia", lock: 4 },
-  { city: "Тбилиси", country: "Грузия", iata: "TBS", price: 4100, photo: "tbilisi,city", keyword: "tbilisi,city", lock: 5 },
-  { city: "Бангкок", country: "Таиланд", iata: "BKK", price: 28500, photo: "bangkok,temple", keyword: "bangkok,temple", lock: 6 },
-  { city: "Алматы", country: "Казахстан", iata: "ALA", price: 7300, photo: "almaty,mountains", keyword: "almaty,mountains", lock: 7 },
-  { city: "Сочи", country: "Россия", iata: "AER", price: 3200, photo: "sochi,sea", keyword: "sochi,sea", lock: 8 },
+const DIRECTIONS = [
+  { city: "Стамбул", country: "Турция", iata: "IST" },
+  { city: "Дубай", country: "ОАЭ", iata: "DXB" },
+  { city: "Анталья", country: "Турция", iata: "AYT" },
+  { city: "Ереван", country: "Армения", iata: "EVN" },
+  { city: "Тбилиси", country: "Грузия", iata: "TBS" },
+  { city: "Бангкок", country: "Таиланд", iata: "BKK" },
+  { city: "Алматы", country: "Казахстан", iata: "ALA" },
+  { city: "Сочи", country: "Россия", iata: "AER" },
 ];
-
-const cityPhoto = (kw: string, lock: number) =>
-  `https://loremflickr.com/640/480/${kw}?lock=${lock}`;
-
-function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) {
-  const img = e.currentTarget;
-  img.onerror = null;
-  img.src = `https://picsum.photos/seed/${seed}/640/480`;
-}
 
 export default function DirectionsCarousel() {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -116,8 +98,8 @@ export default function DirectionsCarousel() {
                 className="carousel-card group flex-shrink-0 relative w-48 h-48 rounded-xl overflow-hidden shadow-md transition hover:shadow-lg"
               >
                 <img
-                  src={cityPhoto(dir.keyword, dir.lock)}
-                  onError={(e) => photoFallback(e, dir.city)}
+                  src={cityPhotoUrl(dir.iata)}
+                  onError={cityPhotoFallback}
                   alt={dir.city}
                   className="absolute inset-0 w-full h-full object-cover transition group-hover:scale-105"
                 />
@@ -131,7 +113,6 @@ export default function DirectionsCarousel() {
                 <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                   <div className="text-lg font-bold">{dir.city}</div>
                   <div className="text-sm text-white/80">{dir.country}</div>
-                  <div className="mt-2 text-base font-bold text-[var(--color-accent)]">от {dir.price.toLocaleString('ru-RU')} ₽</div>
                 </div>
               </a>
             ))}

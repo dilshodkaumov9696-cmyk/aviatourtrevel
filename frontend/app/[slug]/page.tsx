@@ -34,8 +34,7 @@ const PAGES: Record<string, { title: string; description: string; body: string[]
     description: "Свяжитесь с нами по вопросам поиска, бронирования и поддержки.",
     body: [
       "Электронная почта: hello@aviatour.travel",
-      "Телефон: +7 (800) 555-01-99",
-      "Поддержка доступна 24/7.",
+      "Поддержка доступна 24/7 через чат на сайте.",
     ],
   },
   "flight-status": {

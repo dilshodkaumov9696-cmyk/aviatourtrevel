@@ -78,6 +78,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -85,6 +86,9 @@ body {
   color: var(--color-text);
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: clip;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .dark body {
@@ -117,6 +121,7 @@ input,
 select,
 textarea {
   transition: all 180ms ease;
+  touch-action: manipulation;
 }
 
 button:focus-visible,
@@ -280,7 +285,17 @@ textarea:focus-visible {
 }
 
 /* ===== Глобус MapLibre («живой глобус маршрутов») ===== */
-.globe-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.globe-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.78;
+  pointer-events: none;
+}
+.globe-canvas .globe-dot { pointer-events: auto; }
+.globe-canvas .globe-plane,
+.globe-canvas .maplibregl-marker.globe-plane { pointer-events: none !important; }
 .globe-canvas .maplibregl-canvas { outline: none; }
 .globe-canvas .maplibregl-ctrl-attrib { display: none; }
 
@@ -308,22 +323,33 @@ textarea:focus-visible {
 /* Выбранные точки — подсветка цветом маршрута, лёгкая пульсация (только у активных). */
 .globe-dot--origin .globe-dot__core,
 .globe-dot--destination .globe-dot__core {
-  background: #2FD98A; box-shadow: 0 0 0 0 rgba(47, 217, 138, 0.55);
+  background: #E8B84A; box-shadow: 0 0 0 0 rgba(232, 184, 74, 0.55);
   animation: globe-pulse 2.2s infinite;
   width: 9px; height: 9px;
 }
 @keyframes globe-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(47, 217, 138, 0.5); }
-  70%  { box-shadow: 0 0 0 10px rgba(47, 217, 138, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(47, 217, 138, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(232, 184, 74, 0.5); }
+  70%  { box-shadow: 0 0 0 10px rgba(232, 184, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 184, 74, 0); }
 }
 
-/* Маленький самолёт, летящий вдоль дуги маршрута. */
-.globe-plane { pointer-events: none; }
+/* Один самолёт вдоль дуги: декоративный, клики/тапы сквозь него на форму. */
+.globe-plane {
+  width: 34px; height: 34px;
+  pointer-events: none !important;
+  touch-action: none;
+}
 .globe-plane__icon {
-  display: block; font-size: 15px; line-height: 1;
-  color: #EAFFF4; text-shadow: 0 0 6px rgba(47, 217, 138, 0.9), 0 1px 2px rgba(0,0,0,0.6);
-  transform-origin: center;
+  display: block; width: 32px; height: 32px;
+  color: #FFE9A3;
+  filter: drop-shadow(0 0 6px rgba(232, 184, 74, 0.95)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+  transform-origin: 50% 50%;
+  transform-box: fill-box;
+  pointer-events: none !important;
+}
+@media (max-width: 640px) {
+  .globe-plane { width: 28px; height: 28px; }
+  .globe-plane__icon { width: 26px; height: 26px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

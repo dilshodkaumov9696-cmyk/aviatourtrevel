@@ -194,7 +194,7 @@ export default function Home() {
 
   // Пассажиры / класс
   const [cabin, setCabin] = useState<CabinClass>("economy");
-  const [passengers, setPassengers] = useState<Passengers>({ adults: 1, children: 0, infants: 0 });
+  const [passengers, setPassengers] = useState<Passengers>({ adults: 1, children: 0, infants: 0, infantsSeat: 0 });
 
   // Сложный маршрут
   const [segments, setSegments] = useState<MultiSegment[]>([

@@ -78,8 +78,10 @@ export default function Reviews() {
     >
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold text-[var(--color-text)]">Отзывы клиентов</h2>
-          <p className="mt-2 text-[var(--color-text-muted)]">Более 2.5 млн человек уже сэкономили с Aviator</p>
+          <h2 className="text-3xl font-bold text-[var(--color-text)]">Истории путешественников</h2>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
+            Иллюстративные истории. Это не верифицированные отзывы клиентов.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

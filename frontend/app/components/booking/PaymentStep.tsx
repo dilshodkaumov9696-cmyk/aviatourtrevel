@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useSettings } from "../../context/settings";
+import { startOrderPayment } from "../../lib/api";
 
 type PaymentMethod = "card" | "sbp" | "installment";
 
 interface Props {
   total: number;
+  orderRef: string;
+  email: string;
   onBack: () => void;
-  onSuccess: () => void;
+  onComplete: (status?: string) => void;
 }
 
 /* ── SVG-логотипы платёжных систем ── */
@@ -93,22 +96,37 @@ function detectCard(num: string): "visa" | "mc" | "mir" | "up" | null {
   return null;
 }
 
-export default function PaymentStep({ total, onBack, onSuccess }: Props) {
+export default function PaymentStep({ total, orderRef, email, onBack, onComplete }: Props) {
   const { format, t } = useSettings();
   const [method, setMethod] = useState<PaymentMethod>("card");
-  const [cardNumber, setCardNumber] = useState("4111 1111 1111 1111");
-  const [cardHolder, setCardHolder] = useState("JOHN DOE");
-  const [expiry, setExpiry] = useState("12/25");
-  const [cvc, setCvc] = useState("···");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState("");
 
   const cardType = detectCard(cardNumber);
 
   const handlePay = async () => {
     setProcessing(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    setProcessing(false);
-    onSuccess();
+    setError("");
+    try {
+      const result = await startOrderPayment({
+        ref: orderRef,
+        email,
+        returnUrl: `${window.location.origin}/order/${encodeURIComponent(orderRef)}?email=${encodeURIComponent(email)}`,
+      });
+      if (result.confirmationUrl) {
+        window.location.href = result.confirmationUrl;
+        return;
+      }
+      onComplete(result.status);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Не удалось начать оплату");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   /* маскируем номер для превью */
@@ -320,8 +338,14 @@ export default function PaymentStep({ total, onBack, onSuccess }: Props) {
         <LogoYookassa h={16} />
       </div>
 
+      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      <p className="mb-3 text-xs text-[var(--color-text-muted)]">
+        Данные карты на сайте Aviator не сохраняются. Кнопка создаёт платёж в ЮKassa или фиксирует заявку без списания.
+      </p>
+      <p className="mb-3 font-mono text-xs text-[var(--color-text-muted)]">Заявка {orderRef}</p>
+
       {/* Кнопки */}
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           onClick={onBack}

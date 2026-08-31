@@ -7,13 +7,13 @@ import { IconPin, IconPlane } from "./icons";
 interface Props {
   airport: Airport | null;
   onChange: (airport: Airport | null) => void;
-  label: string;
+  label?: string;
   placeholder: string;
   excludeIata?: string;
   onQueryChange?: (query: string) => void;
 }
 
-export default function AirportInput({ airport, onChange, label, placeholder, excludeIata, onQueryChange }: Props) {
+export default function AirportInput({ airport, onChange, label = "", placeholder, excludeIata, onQueryChange }: Props) {
   const [query, setQuery] = useState(airport?.city ?? "");
   const [all, setAll] = useState<Airport[]>([]);
   const [results, setResults] = useState<AirportSearchResult[]>([]);
@@ -56,19 +56,17 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
     setHighlighted(0);
   }, [query, all, excludeIata, focused]);
 
-  function getTypedHint(text: string) {
-    if (text.includes("Куда")) return "Введите город назначения";
-    if (text.includes("Откуда")) return "Введите город вылета";
-    return "Введите город";
+  function getTypedHint(label: string, placeholder: string) {
+    return placeholder || label || "City";
   }
 
   useEffect(() => {
-    if (!focused || query.trim().length > 0 || airport) {
+    if (!label || !focused || query.trim().length > 0 || airport) {
       setTypedHint("");
       return;
     }
 
-    const hint = getTypedHint(placeholder);
+    const hint = getTypedHint(label, placeholder);
     setTypedHint("");
     let index = 0;
     const timer = window.setInterval(() => {
@@ -80,7 +78,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
     }, 95);
 
     return () => window.clearInterval(timer);
-  }, [focused, query, airport, placeholder]);
+  }, [focused, query, airport, placeholder, label]);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -130,9 +128,11 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
 
   return (
     <div ref={ref} className="min-w-0 flex-1">
-      <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-0.5">
-        {label}
-      </label>
+      {label ? (
+        <label className="mb-0.5 block text-xs font-semibold text-[var(--color-text-muted)]">
+          {label}
+        </label>
+      ) : null}
       <div className="flex items-center gap-1">
         <input
           ref={inputRef}
@@ -174,7 +174,7 @@ export default function AirportInput({ airport, onChange, label, placeholder, ex
       )}
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 min-w-full w-max max-w-[420px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
+        <div className="absolute left-0 top-full z-[240] mt-2 w-full max-w-[min(420px,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl">
           {showingPopular && (
             <div className="px-4 pb-1 pt-3 text-[12px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">
               Популярные направления

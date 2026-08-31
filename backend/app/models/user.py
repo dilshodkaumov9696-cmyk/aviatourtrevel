@@ -27,6 +27,8 @@ class User(Base, TimestampMixin):
     # аккаунту (см. _claim_orders в cabinet.py): иначе зарегистрировавшись на
     # чужой email можно было бы увидеть чужие заявки и подписки на цену.
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Сотрудник бэк-офиса: доступ к /admin без X-Manager-Key, по cookie-сессии.
+    is_staff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

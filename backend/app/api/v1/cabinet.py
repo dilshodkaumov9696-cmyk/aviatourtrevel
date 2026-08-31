@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_manager_key
 from app.core.config import settings
+from app.core.pii import decrypt_doc, doc_last4, encrypt_doc
 from app.core.security import SESSION_COOKIE, hash_password, verify_password
 from app.db.session import get_session
 from app.models.cabinet import ProfilePassenger, SupportRequest, SupportRequestKind, SupportRequestStatus
@@ -29,6 +30,7 @@ class SupportIn(BaseModel):
     kind: SupportRequestKind; message: str = Field(min_length=8, max_length=2000)
 class SupportOut(BaseModel):
     id: int; kind: SupportRequestKind; status: SupportRequestStatus; message: str
+    operator_reply: str | None = None
     model_config = {"from_attributes": True}
 class MySupportOut(SupportOut):
     order_ref: str; created_at: datetime
@@ -36,6 +38,7 @@ class AdminSupportOut(MySupportOut):
     user_email: str
 class SupportStatusIn(BaseModel):
     status: SupportRequestStatus
+    operator_reply: str | None = Field(None, max_length=4000)
 class ProfileIn(BaseModel):
     full_name: str | None = Field(None, max_length=128)
 class ProfileOut(BaseModel):
@@ -69,7 +72,7 @@ async def my_order(ref: str, user: User = Depends(get_current_user), session: As
     await _claim_orders(session, user)
     order = await session.scalar(select(Order).where(Order.ref == ref.upper(), Order.user_id == user.id))
     if not order: raise HTTPException(404, "Поездка не найдена")
-    return {"ref": order.ref, "status": order.status.value, "status_label": order.status.label, "origin": order.origin, "destination": order.destination, "depart_date": order.depart_date, "return_date": order.return_date, "airline": order.airline, "flight_number": order.flight_number, "depart_at": order.depart_at, "arrive_at": order.arrive_at, "tariff": order.tariff, "seat": order.seat, "total_amount": float(order.total_amount), "currency": order.currency, "pnr": order.pnr, "ticket_numbers": order.ticket_numbers, "paid_at": order.paid_at, "issued_at": order.issued_at, "passengers": [{"name": f"{p.last_name} {p.first_name}", "citizenship": p.citizenship, "document": f"•••• {p.doc_number[-4:]}"} for p in order.passengers]}
+    return {"ref": order.ref, "status": order.status.value, "status_label": order.status.label, "origin": order.origin, "destination": order.destination, "depart_date": order.depart_date, "return_date": order.return_date, "airline": order.airline, "flight_number": order.flight_number, "depart_at": order.depart_at, "arrive_at": order.arrive_at, "tariff": order.tariff, "seat": order.seat, "total_amount": float(order.total_amount), "currency": order.currency, "pnr": order.pnr, "ticket_numbers": order.ticket_numbers, "paid_at": order.paid_at, "issued_at": order.issued_at, "passengers": [{"name": f"{p.last_name} {p.first_name}", "citizenship": p.citizenship, "document": f"•••• {doc_last4(p.doc_number)}"} for p in order.passengers]}
 
 @router.post("/cabinet/orders/{ref}/resend")
 async def resend(ref: str, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)) -> dict:
@@ -78,11 +81,40 @@ async def resend(ref: str, user: User = Depends(get_current_user), session: Asyn
     await send_email(user.email, f"Маршрутная квитанция {order.ref}", f"Заявка {order.ref}: {order.origin} → {order.destination}. Статус: {order.status.label}.")
     return {"ok": True}
 
+def _saved_passenger_out(item: ProfilePassenger) -> SavedPassengerOut:
+    return SavedPassengerOut(
+        id=item.id,
+        first_name=item.first_name,
+        last_name=item.last_name,
+        middle_name=item.middle_name,
+        dob=item.dob,
+        gender=item.gender,
+        citizenship=item.citizenship,
+        doc_number=decrypt_doc(item.doc_number),
+        doc_expiry=item.doc_expiry,
+    )
+
+
 @router.get("/cabinet/passengers", response_model=list[SavedPassengerOut])
-async def passengers(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)): return list(await session.scalars(select(ProfilePassenger).where(ProfilePassenger.user_id == user.id).order_by(ProfilePassenger.created_at.desc())))
+async def passengers(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    items = await session.scalars(select(ProfilePassenger).where(ProfilePassenger.user_id == user.id).order_by(ProfilePassenger.created_at.desc()))
+    return [_saved_passenger_out(i) for i in items]
+
 @router.post("/cabinet/passengers", response_model=SavedPassengerOut, status_code=201)
 async def add_passenger(payload: SavedPassengerIn, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
-    item = ProfilePassenger(user_id=user.id, **payload.model_dump()); session.add(item); await session.commit(); await session.refresh(item); return item
+    data = payload.model_dump(); data["doc_number"] = encrypt_doc(data["doc_number"])
+    item = ProfilePassenger(user_id=user.id, **data); session.add(item); await session.commit(); await session.refresh(item)
+    return _saved_passenger_out(item)
+
+@router.patch("/cabinet/passengers/{passenger_id}", response_model=SavedPassengerOut)
+async def update_passenger(passenger_id: int, payload: SavedPassengerIn, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
+    item = await session.get(ProfilePassenger, passenger_id)
+    if not item or item.user_id != user.id: raise HTTPException(404, "Пассажир не найден")
+    data = payload.model_dump(); data["doc_number"] = encrypt_doc(data["doc_number"])
+    for key, value in data.items(): setattr(item, key, value)
+    await session.commit(); await session.refresh(item)
+    return _saved_passenger_out(item)
+
 @router.delete("/cabinet/passengers/{passenger_id}", status_code=204)
 async def delete_passenger(passenger_id: int, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     item = await session.get(ProfilePassenger, passenger_id)
@@ -114,7 +146,7 @@ async def support(ref: str, payload: SupportIn, user: User = Depends(get_current
 @router.get("/cabinet/support", response_model=list[MySupportOut])
 async def my_support(user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
     rows = await session.execute(select(SupportRequest, Order.ref).join(Order, Order.id == SupportRequest.order_id).where(SupportRequest.user_id == user.id).order_by(SupportRequest.created_at.desc()))
-    return [MySupportOut(id=r.id, kind=r.kind, status=r.status, message=r.message, created_at=r.created_at, order_ref=ref) for r, ref in rows]
+    return [MySupportOut(id=r.id, kind=r.kind, status=r.status, message=r.message, operator_reply=r.operator_reply, created_at=r.created_at, order_ref=ref) for r, ref in rows]
 
 @router.patch("/cabinet/profile", response_model=ProfileOut)
 async def update_profile(payload: ProfileIn, user: User = Depends(get_current_user), session: AsyncSession = Depends(get_session)):
@@ -142,14 +174,18 @@ async def admin_support(status: SupportRequestStatus | None = None, session: Asy
     query = select(SupportRequest, Order.ref, User.email).join(Order, Order.id == SupportRequest.order_id).join(User, User.id == SupportRequest.user_id).order_by(SupportRequest.created_at.desc()).limit(200)
     if status is not None: query = query.where(SupportRequest.status == status)
     rows = await session.execute(query)
-    return [AdminSupportOut(id=r.id, kind=r.kind, status=r.status, message=r.message, created_at=r.created_at, order_ref=ref, user_email=email) for r, ref, email in rows]
+    return [AdminSupportOut(id=r.id, kind=r.kind, status=r.status, message=r.message, operator_reply=r.operator_reply, created_at=r.created_at, order_ref=ref, user_email=email) for r, ref, email in rows]
 
 @router.patch("/cabinet/admin/support/{ticket_id}/status", response_model=AdminSupportOut, dependencies=[Depends(require_manager_key)])
 async def admin_support_status(ticket_id: int, payload: SupportStatusIn, session: AsyncSession = Depends(get_session)):
     item = await session.get(SupportRequest, ticket_id)
     if not item: raise HTTPException(404, "Обращение не найдено")
     item.status = payload.status
+    if payload.operator_reply is not None:
+        item.operator_reply = payload.operator_reply
     await session.commit(); await session.refresh(item)
     ref = await session.scalar(select(Order.ref).where(Order.id == item.order_id))
     email = await session.scalar(select(User.email).where(User.id == item.user_id))
-    return AdminSupportOut(id=item.id, kind=item.kind, status=item.status, message=item.message, created_at=item.created_at, order_ref=ref, user_email=email)
+    if payload.operator_reply:
+        await send_email(email, f"Ответ по обращению {ref}", payload.operator_reply)
+    return AdminSupportOut(id=item.id, kind=item.kind, status=item.status, message=item.message, operator_reply=item.operator_reply, created_at=item.created_at, order_ref=ref, user_email=email)

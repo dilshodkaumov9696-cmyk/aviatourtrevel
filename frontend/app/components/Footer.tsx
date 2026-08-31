@@ -163,26 +163,23 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <LogoMark size={36} />
-              <span className="font-heading text-lg font-bold text-white">Aviatour.travel</span>
+              <span className="font-heading text-lg font-bold text-white">Aviator</span>
             </div>
             <p className="text-sm text-white/60 mb-5 leading-relaxed">
-              Ваш персональный навигатор в мире авиаперелётов. Лучшие цены, проверенные авиакомпании и безупречный сервис.
+              Поиск авиабилетов. Сравнение рейсов. Оформление заявки.
             </p>
 
             <div className="mb-5 space-y-2 text-xs text-white/60">
               <div className="flex items-center gap-2">
-                <span className="text-[var(--color-gold)]">✉</span>
                 <a href="mailto:hello@aviatour.travel" className="transition hover:text-white">hello@aviatour.travel</a>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--color-gold)]">☎</span>
-                <a href="tel:+78005550199" className="transition hover:text-white">+7 (800) 555-01-99</a>
-                <span className="text-[10px] opacity-60">круглосуточно</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[var(--color-gold)]">⏰</span>
-                <span>Пн–Вс, 24/7</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
+                className="flex items-center gap-2 text-left transition hover:text-white"
+              >
+                <span className="font-semibold text-white">Поддержка 24/7</span>
+              </button>
             </div>
 
             <div className="flex gap-3">
@@ -223,7 +220,6 @@ export default function Footer() {
             ))}
           </div>
           <div className="flex items-center gap-2 text-xs text-white/50 sm:ml-2">
-            <span className="text-[var(--color-accent)]">🔒</span>
             Защищённое соединение SSL/TLS
           </div>
           <div className="ml-auto flex items-center gap-3">
@@ -233,7 +229,7 @@ export default function Footer() {
 
         <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-6">
           <div className="flex flex-col sm:flex-row items-center gap-x-3 gap-y-1 text-xs text-white/50">
-            <span>© {year} Aviatour.travel. Все права защищены. Сайт является агрегатором авиабилетов.</span>
+            <span>© {year} Aviator. Все права защищены. Сайт является агрегатором авиабилетов.</span>
           </div>
           <a
             href="#top"

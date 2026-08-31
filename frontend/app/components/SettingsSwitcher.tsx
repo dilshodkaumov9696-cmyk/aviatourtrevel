@@ -64,7 +64,7 @@ export default function SettingsSwitcher({
       {/* Объединённый бокс */}
       {open && (
         <div
-          className={`absolute z-50 mt-2 w-[260px] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 shadow-2xl ${
+          className={`absolute z-[260] mt-2 w-[260px] rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2.5 shadow-2xl ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

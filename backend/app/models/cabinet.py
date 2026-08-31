@@ -31,7 +31,7 @@ class ProfilePassenger(Base, TimestampMixin):
     dob: Mapped[object] = mapped_column(Date)
     gender: Mapped[str | None] = mapped_column(String(8), nullable=True)
     citizenship: Mapped[str] = mapped_column(String(64))
-    doc_number: Mapped[str] = mapped_column(String(32))
+    doc_number: Mapped[str] = mapped_column(String(255))
     doc_expiry: Mapped[object | None] = mapped_column(Date, nullable=True)
 
 
@@ -43,4 +43,5 @@ class SupportRequest(Base, TimestampMixin):
     kind: Mapped[SupportRequestKind] = mapped_column(Enum(SupportRequestKind, native_enum=False, length=20))
     status: Mapped[SupportRequestStatus] = mapped_column(Enum(SupportRequestStatus, native_enum=False, length=20), default=SupportRequestStatus.OPEN)
     message: Mapped[str] = mapped_column(Text)
+    operator_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
     __table_args__ = (Index("ix_support_requests_order_status", "order_id", "status"),)

@@ -17,6 +17,7 @@ from sqlalchemy import delete
 from app.core.redis import get_redis
 from app.db.session import async_session_maker
 from app.main import app
+from app.models.order import Order
 from app.models.user import User
 
 TEST_EMAIL_PREFIX = "pytest-"
@@ -36,6 +37,7 @@ async def _cleanup():
     yield
 
     async with async_session_maker() as session:
+        await session.execute(delete(Order).where(Order.contact_email.like(f"{TEST_EMAIL_PREFIX}%")))
         await session.execute(delete(User).where(User.email.like(f"{TEST_EMAIL_PREFIX}%")))
         await session.commit()
 

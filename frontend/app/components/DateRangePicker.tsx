@@ -12,6 +12,8 @@ interface Props {
   onClose: () => void;
   originIata?: string;
   destinationIata?: string;
+  /** Растянуть панель по ширине поля. Только для сложного маршрута — обычный поиск не меняет. */
+  matchField?: boolean;
 }
 
 const MONTHS_RU = [
@@ -70,11 +72,12 @@ interface MonthProps {
   className?: string;
   prices?: Record<string, number>;
   priceRange?: { min: number; max: number };
+  roomy?: boolean;
 }
 
 function MonthGrid({
   year, month, today, departDate, effectiveEnd, isRange,
-  onDayClick, onDayHover, className = "", prices, priceRange,
+  onDayClick, onDayHover, className = "", prices, priceRange, roomy = false,
 }: MonthProps) {
   const offset = firstWeekday(year, month);
   const count = daysInMonth(year, month);
@@ -97,18 +100,18 @@ function MonthGrid({
   ];
 
   return (
-    <div className={`w-[280px] ${className}`}>
-      <div className="text-center text-sm font-semibold text-[var(--color-text)] mb-3">
+    <div className={`w-full min-w-0 ${className}`}>
+      <div className="mb-3 text-center text-[15px] font-semibold text-[var(--color-text)]">
         {MONTHS_RU[month]} {year}
       </div>
       <div className="grid grid-cols-7">
         {DAYS_RU.map((d) => (
-          <div key={d} className="h-8 flex items-center justify-center text-[11px] font-medium text-[var(--color-text-muted)]">
+          <div key={d} className="flex h-9 items-center justify-center text-[12px] font-medium text-[var(--color-text-muted)]">
             {d}
           </div>
         ))}
         {cells.map((d, i) => {
-          if (!d) return <div key={`e${i}`} className="h-10" />;
+          if (!d) return <div key={`e${i}`} className={roomy ? "h-14" : "h-12"} />;
           const state = classify(d);
           const day = parseInt(d.split("-")[2]);
           const isToday = d === today;
@@ -126,11 +129,11 @@ function MonthGrid({
           const heat = price && priceRange && state === "normal" ? priceHeatColor(price, priceRange.min, priceRange.max) : undefined;
 
           return (
-            <div key={d} className="relative h-10 flex items-center justify-center">
+            <div key={d} className={`relative flex items-center justify-center ${roomy ? "h-14" : "h-12"}`}>
               {state === "between" && <span className="absolute inset-y-1 inset-x-0 bg-[var(--color-primary-light)]" />}
               {state === "start" && <span className="absolute inset-y-1 left-1/2 right-0 bg-[var(--color-primary-light)]" />}
               {state === "end" && <span className="absolute inset-y-1 left-0 right-1/2 bg-[var(--color-primary-light)]" />}
-              {heat && <span className="absolute h-9 w-9 rounded-full" style={{ backgroundColor: heat }} />}
+              {heat && <span className={`absolute rounded-full ${roomy ? "h-11 w-11" : "h-10 w-10"}`} style={{ backgroundColor: heat }} />}
 
               <button
                 type="button"
@@ -138,7 +141,7 @@ function MonthGrid({
                 onClick={() => state !== "past" && onDayClick(d)}
                 onMouseEnter={() => state !== "past" && onDayHover(d)}
                 title={price ? `~${price.toLocaleString("ru-RU")} ₽` : undefined}
-                className={`relative z-10 w-9 h-9 flex items-center justify-center text-sm rounded-full transition-colors ${btn}`}
+                className={`relative z-10 flex items-center justify-center rounded-full text-[15px] transition-colors ${roomy ? "h-12 w-12" : "h-11 w-11"} ${btn}`}
               >
                 {day}
               </button>
@@ -157,6 +160,7 @@ export default function DateRangePicker({
   onClose,
   originIata,
   destinationIata,
+  matchField = false,
 }: Props) {
   const isRange = mode === "range";
   const now = new Date();
@@ -260,7 +264,11 @@ export default function DateRangePicker({
   };
 
   return (
-    <div className="animate-fade-in-down bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-2xl p-4 md:p-5 select-none w-[316px] md:w-auto">
+    <div className={
+      matchField
+        ? "animate-fade-in-down w-full min-w-0 select-none overflow-visible rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-2xl"
+        : "animate-fade-in-down w-full max-w-full min-w-0 select-none overflow-x-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-2xl sm:p-4 md:w-auto md:max-w-none md:overflow-visible md:p-5"
+    }>
       {/* Шапка */}
       {isRange ? (
         <div className="flex gap-2 mb-4">
@@ -300,29 +308,29 @@ export default function DateRangePicker({
           type="button"
           onClick={prev}
           disabled={atCurrentMonth}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)] transition text-xl disabled:opacity-25 disabled:cursor-not-allowed"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-25"
         >
           ‹
         </button>
         <button
           type="button"
           onClick={next}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)] transition text-xl"
+          className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)]"
         >
           ›
         </button>
       </div>
 
       {/* Месяцы */}
-      <div className="flex gap-6 justify-center" onMouseLeave={() => setHovered("")}>
-        <MonthGrid year={leftYear} month={leftMonth} {...common} />
+      <div className="flex w-full min-w-0 justify-center gap-4 md:gap-8" onMouseLeave={() => setHovered("")}>
+        <MonthGrid year={leftYear} month={leftMonth} {...common} roomy={matchField} className={matchField ? "w-full min-w-0" : "min-w-0 flex-1 md:w-[20.5rem] md:flex-none"} />
         {isRange && (
-          <MonthGrid year={right.year} month={right.month} {...common} className="hidden md:block" />
+          <MonthGrid year={right.year} month={right.month} {...common} className={matchField ? "hidden" : "hidden md:block md:w-[20.5rem]"} />
         )}
       </div>
 
       {/* Подвал */}
-      <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border)] pt-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3">
         <span className="text-xs text-[var(--color-text-muted)]">
           {isRange
             ? selectingReturn ? "Выберите дату возврата" : "Выберите дату вылета"
@@ -333,7 +341,7 @@ export default function DateRangePicker({
             <button
               type="button"
               onClick={chooseOneWay}
-              className="text-xs font-semibold text-[var(--color-primary)] border border-[var(--color-primary)] rounded-lg px-3 py-1.5 hover:bg-[var(--color-primary-light)] transition"
+              className="min-h-10 rounded-lg border border-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-[var(--color-primary)] transition hover:bg-[var(--color-primary-light)]"
             >
               В одну сторону
             </button>

@@ -27,9 +27,10 @@ export function IconPin({ className = "", size = 18 }: IconProps) {
 
 export function IconCalendar({ className = "", size = 18 }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M3 9h18M8 3v4M16 3v4" />
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2.15} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.2" y="5" width="17.6" height="15.5" rx="2.2" />
+      <path d="M3.2 9.2h17.6M8 3.2v4.2M16 3.2v4.2" />
+      <path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" />
     </svg>
   );
 }
@@ -220,6 +221,49 @@ export function IconCar({ className = "", size = 18 }: IconProps) {
       <path d="M4 17h16M4 17v2M20 17v2" />
       <circle cx="8" cy="17" r="1.5" />
       <circle cx="16" cy="17" r="1.5" />
+    </svg>
+  );
+}
+
+export function IconHeadset({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M4 13a8 8 0 0 1 16 0" />
+      <path d="M4 13v4a2 2 0 0 0 2 2h1v-8H6a2 2 0 0 0-2 2zM20 13v4a2 2 0 0 1-2 2h-1v-8h1a2 2 0 0 1 2 2z" />
+      <path d="M13 19h2a2 2 0 0 1 2 2" />
+    </svg>
+  );
+}
+
+export function IconMinus({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M6 12h12" />
+    </svg>
+  );
+}
+
+export function IconPlus({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M12 6v12M6 12h12" />
+    </svg>
+  );
+}
+
+export function IconClose({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+export function IconTag({ className = "", size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+      <path d="M20 13 11 4H5v6l9 9 6-6z" />
+      <circle cx="7.5" cy="7.5" r="1" fill="currentColor" stroke="none" />
     </svg>
   );
 }

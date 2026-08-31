@@ -48,10 +48,6 @@ GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
-# secure=False здесь допустимо: локально сайт живёт на http://localhost.
-# На проде эти адреса за https, и cookie должна ставиться с Secure — тогда
-# переключить на settings.app_env == "production".
-_COOKIE_SECURE = False
 
 
 class RegisterIn(BaseModel):
@@ -71,6 +67,7 @@ class UserOut(BaseModel):
     full_name: str | None
     avatar_url: str | None
     email_verified: bool
+    is_staff: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -113,7 +110,7 @@ def _set_session_cookie(response: Response, user_id: int) -> None:
         max_age=settings.jwt_expire_minutes * 60,
         httponly=True,
         samesite="lax",
-        secure=_COOKIE_SECURE,
+        secure=settings.cookie_secure,
         path="/",
     )
 

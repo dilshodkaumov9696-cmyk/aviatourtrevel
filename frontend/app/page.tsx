@@ -10,29 +10,31 @@ import { useRouter } from "next/navigation";
 // первый рендер страницы, грузится отдельным чанком уже после монтирования.
 const GlobeHero = dynamic(() => import("./components/GlobeHero"), { ssr: false });
 import type { GlobeCitySelection } from "./components/GlobeHero";
-import PopularDirectionsPanel from "./components/PopularDirectionsPanel";
+import PopularDirectionsPanel, { type PopularRoute } from "./components/PopularDirectionsPanel";
 import { useInViewAnimation } from "./hooks/useInViewAnimation";
 import { useRecentSearches } from "./hooks/useRecentSearches";
 import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
-import PassengersPicker, { Passengers, CabinClass } from "./components/PassengersPicker";
-import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
+import PassengersPicker, { Passengers, CabinClass, EMPTY_PASSENGERS } from "./components/PassengersPicker";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHeadset, IconUser } from "./components/icons";
 
 import ThemeToggle from "./components/ThemeToggle";
 import LogoMark from "./components/Logo";
 import AuthModal from "./components/AuthModal";
 import { useAuth } from "./context/auth";
+import { useSettings } from "./context/settings";
+import { usePublishHomeRoute } from "./context/chatRoute";
 import SettingsSwitcher from "./components/SettingsSwitcher";
 import MobileMenu from "./components/MobileMenu";
 import Footer from "./components/Footer";
-import Counters from "./components/Counters";
 import WhyUs from "./components/WhyUs";
 import DirectionsCarousel from "./components/DirectionsCarousel";
 import AirlinesMarquee from "./components/AirlinesMarquee";
 import Reviews from "./components/Reviews";
 import Subscribe from "./components/Subscribe";
 import { Airport, loadAirports } from "./data/airports";
+import { cityPhotoFallback, cityPhotoUrl } from "./data/cityPhotos";
 
 const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
 
@@ -44,8 +46,6 @@ function fmtDate(d: string): string {
 
 // Ячейка единой строки поиска: без собственной рамки и фона — их даёт контейнер-бар,
 // поля стыкуются вплотную и разделяются только 1px-дивайдерами.
-const ROUTE_TOGGLE_LABEL = "Сложный маршрут";
-
 function flightsWord(n: number): string {
   const mod10 = n % 10;
   const mod100 = n % 100;
@@ -55,18 +55,7 @@ function flightsWord(n: number): string {
 }
 
 const boxBase =
-  "relative flex min-h-[76px] items-center gap-3 px-5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)]";
-
-// Фото города по ключевому слову (временно — позже заменим на свои/лицензионные)
-const cityPhoto = (kw: string, lock: number) =>
-  `https://loremflickr.com/640/480/${kw}?lock=${lock}`;
-
-// Если loremflickr не ответит — подменяем на гарантированное фото
-function photoFallback(e: React.SyntheticEvent<HTMLImageElement>, seed: string) {
-  const img = e.currentTarget;
-  img.onerror = null;
-  img.src = `https://picsum.photos/seed/${seed}/640/480`;
-}
+  "relative flex min-h-[72px] items-center gap-2.5 px-3.5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)] sm:min-h-[76px] sm:gap-3 sm:px-5 xl:min-h-[84px] xl:px-6";
 
 function futureDateISO(daysAhead: number): string {
   const d = new Date();
@@ -74,32 +63,14 @@ function futureDateISO(daysAhead: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-// Хабы, из которых летает сервис — используются для smart-default «ближайший город вылета».
-const DEPARTURE_HUBS = [
-  { iata: "MOW", lat: 55.7558, lon: 37.6173 },
-  { iata: "DYU", lat: 38.5598, lon: 68.7870 },
-  { iata: "TAS", lat: 41.2995, lon: 69.2401 },
-];
-
-// Единственный источник направлений для панели «Популярные направления» и «Быстрых
-// маршрутов» под формой — оба берут отсюда города и делят один и тот же кэш цен
-// (см. popularPrices), чтобы не заводить две параллельные системы данных.
-const POPULAR_DESTS = [
-  { city: "Стамбул", country: "Турция", iata: "IST" },
-  { city: "Душанбе", country: "Таджикистан", iata: "DYU" },
-  { city: "Дубай", country: "ОАЭ", iata: "DXB" },
-  { city: "Ташкент", country: "Узбекистан", iata: "TAS" },
-  { city: "Баку", country: "Азербайджан", iata: "GYD" },
-];
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+const POPULAR_ROUTES = [
+  { fromCity: "Ташкент", fromCountry: "Узбекистан", fromIata: "TAS", toCity: "Лондон", toCountry: "Великобритания", toIata: "LON" },
+  { fromCity: "Душанбе", fromCountry: "Таджикистан", fromIata: "DYU", toCity: "Мюнхен", toCountry: "Германия", toIata: "MUC" },
+  { fromCity: "Ташкент", fromCountry: "Узбекистан", fromIata: "TAS", toCity: "Нью-Йорк", toCountry: "США", toIata: "JFK" },
+  { fromCity: "Душанбе", fromCountry: "Таджикистан", fromIata: "DYU", toCity: "Париж", toCountry: "Франция", toIata: "PAR" },
+  { fromCity: "Ташкент", fromCountry: "Узбекистан", fromIata: "TAS", toCity: "Дубай", toCountry: "ОАЭ", toIata: "DXB" },
+  { fromCity: "Душанбе", fromCountry: "Таджикистан", fromIata: "DYU", toCity: "Стамбул", toCountry: "Турция", toIata: "IST" },
+] as const;
 
 function searchHref(
   toCity: string,
@@ -158,6 +129,7 @@ const ORIGIN_DEALS = {
 export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t, format } = useSettings();
   const { add: addRecentSearch } = useRecentSearches();
   // Режим формы: обычный (туда + опц. обратно) или сложный маршрут
   const [mode, setMode] = useState<"simple" | "multi">("simple");
@@ -176,7 +148,7 @@ export default function Home() {
 
   // Пассажиры / класс
   const [cabin, setCabin] = useState<CabinClass>("economy");
-  const [passengers, setPassengers] = useState<Passengers>({ adults: 1, children: 0, infants: 0 });
+  const [passengers, setPassengers] = useState<Passengers>(EMPTY_PASSENGERS);
 
   // Сложный маршрут
   const [segments, setSegments] = useState<MultiSegment[]>([
@@ -207,26 +179,6 @@ export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
 
-  // Печатающийся по буквам заголовок «Сложный маршрут» при наведении на переключатель.
-  const [routeTypedLen, setRouteTypedLen] = useState(ROUTE_TOGGLE_LABEL.length);
-  const routeTypeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  function startRouteTypeIn() {
-    if (routeTypeTimer.current) clearInterval(routeTypeTimer.current);
-    setRouteTypedLen(0);
-    routeTypeTimer.current = setInterval(() => {
-      setRouteTypedLen((n) => {
-        if (n >= ROUTE_TOGGLE_LABEL.length) {
-          if (routeTypeTimer.current) clearInterval(routeTypeTimer.current);
-          return n;
-        }
-        return n + 1;
-      });
-    }, 35);
-  }
-  function endRouteTypeIn() {
-    if (routeTypeTimer.current) clearInterval(routeTypeTimer.current);
-    setRouteTypedLen(ROUTE_TOGGLE_LABEL.length);
-  }
   const [activeSection, setActiveSection] = useState<"search" | "directions" | "deals" | "help">("search");
 
   // Анимации при скролле для основных секций
@@ -234,6 +186,20 @@ export default function Home() {
   const { ref: dealsRef, isInView: dealsInView } = useInViewAnimation<HTMLElement>();
   const { ref: helpRef, isInView: helpInView } = useInViewAnimation<HTMLElement>();
   const localDeals = ORIGIN_DEALS[localOrigin];
+
+  usePublishHomeRoute({
+    fromCity: originAirport?.city || "",
+    fromIata: originAirport?.iata || "",
+    toCity: destAirport?.city || "",
+    toIata: destAirport?.iata || "",
+    date: departDate,
+    returnDate,
+    adults: passengers.adults,
+    children: passengers.children,
+    infants: passengers.infants,
+    infantsSeat: passengers.infantsSeat,
+    cabin,
+  });
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -243,60 +209,6 @@ export default function Home() {
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Smart defaults: пустая форма — враг конверсии. Подставляем ближайший хаб
-  // вылета (по гео, с фоллбэком на Москву) и дату «через 2 недели на 7 дней».
-  // Направление не трогаем — это должен выбрать сам пользователь.
-  useEffect(() => {
-    if (originAirport || departDate) return;
-
-    function applyDefaults(hubIata: string) {
-      loadAirports()
-        .then((all) => {
-          const hub = all.find((a) => a.iata === hubIata);
-          if (hub) setOriginAirport((cur) => cur ?? hub);
-        })
-        .catch(() => {});
-      setDepartDate((cur) => cur || futureDateISO(14));
-      setReturnDate((cur) => cur || futureDateISO(21));
-    }
-
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      applyDefaults("MOW");
-      return;
-    }
-
-    let done = false;
-    const fallback = window.setTimeout(() => {
-      if (!done) { done = true; applyDefaults("MOW"); }
-    }, 2500);
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (done) return;
-        done = true;
-        window.clearTimeout(fallback);
-        const { latitude, longitude } = pos.coords;
-        let nearest = DEPARTURE_HUBS[0];
-        let best = Infinity;
-        for (const hub of DEPARTURE_HUBS) {
-          const dist = haversineKm(latitude, longitude, hub.lat, hub.lon);
-          if (dist < best) { best = dist; nearest = hub; }
-        }
-        applyDefaults(nearest.iata);
-      },
-      () => {
-        if (done) return;
-        done = true;
-        window.clearTimeout(fallback);
-        applyDefaults("MOW");
-      },
-      { timeout: 2000, maximumAge: 10 * 60 * 1000 }
-    );
-
-    return () => window.clearTimeout(fallback);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // "Изменить" на /search передаёт текущий маршрут через query-параметры
@@ -327,22 +239,20 @@ export default function Home() {
     const qAdults = qs.get("adults");
     const qChildren = qs.get("children");
     const qInfants = qs.get("infants");
-    if (qAdults || qChildren || qInfants) {
+    const qInfantsSeat = qs.get("infantsSeat");
+    if (qAdults || qChildren || qInfants || qInfantsSeat) {
       setPassengers({
         adults: Math.max(1, Number(qAdults) || 1),
         children: Math.max(0, Number(qChildren) || 0),
         infants: Math.max(0, Number(qInfants) || 0),
+        infantsSeat: Math.max(0, Number(qInfantsSeat) || 0),
       });
     }
   }, []);
 
-  // Цены для «Популярные направления» + «Быстрые маршруты»: реальный поиск (тот же
-  // searchFlights, что и на /search) от текущего города вылета к каждому из POPULAR_DESTS,
-  // параллельно, не блокируя рендер. ?demo=1 — тестовые фикстуры вместо реального API.
-  // Ничего не выдумываем: пока цена не пришла или запрос не удался — null → "Цена уточняется".
+  // Цены для «Популярные направления»: реальный поиск по каждой паре маршрута.
   const [popularPrices, setPopularPrices] = useState<Record<string, number | null>>({});
   useEffect(() => {
-    const originIata = originAirport?.iata || "MOW";
     const date = departDate || futureDateISO(14);
     const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
     let cancelled = false;
@@ -352,47 +262,57 @@ export default function Home() {
       import("./data/flights.demo").then(({ getDemoFlights }) => {
         if (cancelled) return;
         const next: Record<string, number | null> = {};
-        for (const d of POPULAR_DESTS) {
-          if (d.iata === originIata) continue;
-          const flights = getDemoFlights([originIata], [d.iata]);
-          next[d.iata] = flights.length ? Math.min(...flights.map((f) => f.pricePerPax)) : null;
+        for (const d of POPULAR_ROUTES) {
+          const key = `${d.fromIata}-${d.toIata}`;
+          const flights = getDemoFlights([d.fromIata], [d.toIata]);
+          next[key] = flights.length ? Math.min(...flights.map((f) => f.pricePerPax)) : null;
         }
         setPopularPrices(next);
       });
       return () => { cancelled = true; };
     }
 
-    for (const d of POPULAR_DESTS) {
-      if (d.iata === originIata) continue;
-      searchFlights({ origin: originIata, destination: d.iata, departDate: date, adults: 1 })
+    for (const d of POPULAR_ROUTES) {
+      const key = `${d.fromIata}-${d.toIata}`;
+      searchFlights({ origin: d.fromIata, destination: d.toIata, departDate: date, adults: 1 })
         .then((flights) => {
           if (cancelled) return;
           const min = flights.length ? Math.min(...flights.map((f) => f.pricePerPax)) : null;
-          setPopularPrices((prev) => ({ ...prev, [d.iata]: min }));
+          setPopularPrices((prev) => ({ ...prev, [key]: min }));
         })
         .catch(() => {
           if (cancelled) return;
-          setPopularPrices((prev) => ({ ...prev, [d.iata]: null }));
+          setPopularPrices((prev) => ({ ...prev, [key]: null }));
         });
     }
     return () => { cancelled = true; };
-  }, [originAirport?.iata, departDate]);
+  }, [departDate]);
 
-  // Куда прилетает клик по городу — единая точка входа для панели «Популярные направления»,
-  // «Быстрых маршрутов» и клика по точке на глобусе (см. ниже) — весь поиск городов идёт
-  // через уже существующий loadAirports(), никакой второй системы состояния не заводим.
   function resolveAirport(iata: string, cityFallback: string, countryFallback = ""): Promise<Airport> {
     return loadAirports()
       .then((all) => all.find((a) => a.iata === iata) ?? { iata, city: cityFallback, name: cityFallback, country: countryFallback })
       .catch(() => ({ iata, city: cityFallback, name: cityFallback, country: countryFallback }));
   }
 
-  // Клик по «Популярным направлениям» / «Быстрым маршрутам»: всегда заполняет именно Куда
-  // (см. ТЗ) — Откуда остаётся тем, что уже выбрано (или smart-default).
   function selectDestination(city: string, iata: string, country: string) {
     resolveAirport(iata, city, country).then((a) => {
       setDestAirport(a);
       setErrors((p) => ({ ...p, destination: "" }));
+    });
+  }
+
+  function selectPopularRoute(route: PopularRoute) {
+    const fromNow: Airport = { iata: route.fromIata, city: route.fromCity, name: route.fromCity, country: route.fromCountry };
+    const toNow: Airport = { iata: route.toIata, city: route.toCity, name: route.toCity, country: route.toCountry };
+    setOriginAirport(fromNow);
+    setDestAirport(toNow);
+    setErrors((p) => ({ ...p, origin: "", destination: "" }));
+    void Promise.all([
+      resolveAirport(route.fromIata, route.fromCity, route.fromCountry),
+      resolveAirport(route.toIata, route.toCity, route.toCountry),
+    ]).then(([from, to]) => {
+      setOriginAirport((cur) => (cur?.iata === from.iata ? from : cur));
+      setDestAirport((cur) => (cur?.iata === to.iata ? to : cur));
     });
   }
 
@@ -508,6 +428,7 @@ export default function Home() {
       adults: String(passengers.adults),
       children: String(passengers.children),
       infants: String(passengers.infants),
+      infantsSeat: String(passengers.infantsSeat),
       cabin,
     });
     if (returnDate) params.set("returnDate", returnDate);
@@ -522,25 +443,15 @@ export default function Home() {
       adults: passengers.adults,
     });
 
-    // Открываем полный поиск Aviasales с маркером
-    const aviasalesUrl = buildAviasalesUrl({
-      origin: originAirport!.iata,
-      destination: destAirport!.iata,
-      departDate,
-      returnDate: returnDate || undefined,
-      adults: passengers.adults,
-    });
-    window.open(aviasalesUrl, "_blank", "noopener,noreferrer");
-
     setSearching(true);
-    setTimeout(() => router.push(`/search?${params.toString()}`), 620);
+    router.push(`/search?${params.toString()}`);
   }
 
   return (
     <div className="flex flex-1 flex-col">
       {/* Header */}
       <header
-        className={`sticky top-0 z-40 border-b backdrop-blur-md transition-all duration-300 ${
+        className={`sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300 ${
           isScrolled ? "border-[var(--color-ink-border)] shadow-xl shadow-black/20" : "border-transparent"
         }`}
         style={{
@@ -549,80 +460,94 @@ export default function Home() {
             : "linear-gradient(180deg, rgba(10,27,56,0.16) 0%, rgba(10,27,56,0.04) 60%, rgba(10,27,56,0) 100%)",
         }}
       >
-        <div className={`mx-auto flex max-w-[1400px] items-center justify-between px-6 transition-all duration-200 sm:px-8 ${isScrolled ? "py-2.5" : "py-4"}`}>
-          <a href="#search" className="flex items-center gap-2.5">
-            <LogoMark size={38} />
-            <span className="font-heading text-xl font-bold tracking-tight text-white">Aviator</span>
+        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-4 xl:px-6 2xl:px-8 ${isScrolled ? "py-2" : "py-3"}`}>
+          <a href="#search" className="flex min-w-0 shrink-0 items-center gap-2">
+            <LogoMark size={34} className="xl:hidden" />
+            <LogoMark size={38} className="hidden xl:block" />
+            <span className="font-heading text-[17px] font-bold tracking-tight text-white sm:text-xl">Aviator</span>
           </a>
-          <nav className="hidden lg:flex items-center gap-5 text-[13px] font-medium text-white/70 xl:gap-6">
-            <a
-              href="#search"
-              className={`whitespace-nowrap transition-colors hover:text-white ${activeSection === "search" ? "text-[var(--color-gold)]" : ""}`}
-            >
-              Авиабилеты
-            </a>
-            {/* Остальные вертикали пока не реализованы. Клик не молчит в пустоту — коротко
-                подсвечивает кнопку и показывает «скоро», чтобы не выглядело сломанным. */}
-            {["Отели", "Туры", "eSIM", "Страхование", "Билеты на поезд", "Трансферы"].map((label) => (
-              <div key={label} className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setComingSoon(label);
-                    window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
-                  }}
-                  className={`whitespace-nowrap transition-colors hover:text-white ${
-                    comingSoon === label ? "animate-bounce text-[var(--color-gold)]" : "text-white/50"
-                  }`}
-                >
-                  {label}
-                </button>
-                {comingSoon === label && (
-                  <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-gold)] shadow-lg ring-1 ring-white/10">
-                    Скоро запустим ✈️
-                  </span>
-                )}
-              </div>
-            ))}
-            <a
-              href="#deals"
-              className={`whitespace-nowrap transition-colors hover:text-white ${activeSection === "deals" ? "text-[var(--color-gold)]" : ""}`}
-            >
-              Акции
-            </a>
+          <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+            <div className="flex max-w-full items-center justify-center gap-0.5 2xl:gap-1">
+              <a
+                href="#search"
+                className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
+                  activeSection === "search" ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {t("nav.flights")}
+              </a>
+              {([
+                ["nav.hotels", t("nav.hotels")],
+                ["nav.tours", t("nav.tours")],
+                ["nav.esim", t("nav.esim")],
+                ["nav.insurance", t("nav.insurance")],
+                ["nav.trains", t("nav.trains")],
+                ["nav.transfers", t("nav.transfers")],
+              ] as const).map(([key, label]) => (
+                <div key={key} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setComingSoon(label);
+                      window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
+                    }}
+                    className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
+                      comingSoon === label ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                  {comingSoon === label && (
+                    <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+                      {t("nav.coming_soon")}
+                    </span>
+                  )}
+                </div>
+              ))}
+              <a
+                href="#deals"
+                className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
+                  activeSection === "deals" ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {t("nav.deals")}
+              </a>
+            </div>
           </nav>
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <a
-              href="tel:+78005550199"
-              className="mr-1 hidden items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-[12px] font-medium text-white/80 transition hover:border-[var(--color-gold)] hover:text-white xl:inline-flex"
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
+              className="hidden items-center gap-2 rounded-xl border border-white/15 px-2.5 py-2 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3"
             >
-              <span aria-hidden className="text-[var(--color-gold)]">☎</span>
-              <span>
-                Поддержка 24/7<br />
-                <span className="font-mono text-[11px] font-semibold text-white">+7 800 555-01-99</span>
+              <IconHeadset size={20} className="shrink-0 text-[var(--color-accent)]" />
+              <span className="leading-tight text-left">
+                <span className="block text-[13px] font-semibold">{t("nav.support")}</span>
+                <span className="block text-[11px] font-bold tracking-wide text-white">{t("nav.support_247")}</span>
               </span>
-            </a>
-            <ThemeToggle />
-            <div className="hidden items-center lg:flex">
+            </button>
+            <ThemeToggle variant="dark" />
+            <div className="hidden items-center xl:flex">
               <SettingsSwitcher variant="dark" />
             </div>
             {user ? (
               <Link
                 href="/account"
-                className="ml-1 hidden items-center gap-1.5 rounded-xl border border-white/15 px-4 py-2 text-[13px] font-semibold text-white transition hover:border-[var(--color-gold)] lg:inline-flex"
+                className="hidden items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
               >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-gold)] text-[10px] font-bold text-[var(--color-ink)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">
                   {(user.fullName || user.email)[0]?.toUpperCase()}
                 </span>
-                {user.fullName || user.email.split("@")[0]}
+                <span className="max-w-[7.5rem] truncate">{user.fullName || user.email.split("@")[0]}</span>
               </Link>
             ) : (
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="ml-1 hidden rounded-xl border border-transparent bg-[var(--color-gold)] px-4 py-2 text-[13px] font-semibold text-[var(--color-ink)] transition hover:bg-[var(--color-gold-dark)] lg:inline-block"
+                className="hidden items-center gap-2 rounded-xl bg-[var(--color-accent)] px-3.5 py-2 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
               >
-                Войти
+                <IconUser size={18} />
+                {t("nav.login")}
               </button>
             )}
             <MobileMenu activeSection={activeSection} onLogin={() => setAuthOpen(true)} />
@@ -635,37 +560,31 @@ export default function Home() {
           между ними — попросили, чтобы глобус было видно и за карточками ниже, а не только
           в самом верху. */}
       <div
-        className="relative overflow-hidden text-white"
+        className="relative text-white"
         style={{
           background:
             "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
         }}
       >
-        {/* На мобильных обёртка (hero + статистика + WhyUs) вытягивается на 2500-2800px —
-            если тянуть канву глобуса на всю эту высоту, сфера на таком узком и длинном холсте
-            становится крошечной, а вокруг остаётся пустой тёмный фон (проверили вживую).
-            Поэтому канва ограничена высотой хедера, а ниже — тот же фон, но уже статичным
-            градиентом секции, без WebGL. На десктопе (md+) канва по-прежнему на всю высоту. */}
-        <div className="absolute inset-x-0 top-0 z-0 h-[680px] sm:h-[780px] md:h-full">
+        <div className="absolute inset-x-0 top-0 z-0 h-[620px] overflow-hidden sm:h-[700px] md:h-full">
           <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
         </div>
 
         {/* Hero */}
-        <section id="search" className="relative z-10 px-4 pb-24 pt-14 md:pb-28 md:pt-16">
-          {/* Свернуть/развернуть форму поиска */}
+        <section id="search" className="relative z-10 overflow-visible px-3 pb-12 pt-6 sm:px-4 sm:pb-16 sm:pt-10 md:px-6 md:pb-20 md:pt-12 lg:px-8">
           <button
             type="button"
             onClick={() => setFormCollapsed((v) => !v)}
-            className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 md:right-6 md:top-6"
+            className="absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
           >
             {formCollapsed ? (
               <>
                 <IconSearch size={14} className="shrink-0" />
-                Поиск
+                {t("form.expand_search")}
               </>
             ) : (
               <>
-                Свернуть
+                {t("form.collapse")}
                 <svg viewBox="0 0 24 24" width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden>
                   <path d="m6 9 6 6 6-6" />
                 </svg>
@@ -675,74 +594,51 @@ export default function Home() {
 
           {!formCollapsed && (
             <>
-              {/* Популярные направления — плавают поверх глобуса в углу (десктоп), больше не делят с ним ширину. */}
-              <div className="absolute right-4 top-20 z-10 hidden w-[300px] lg:block md:right-6 md:top-24">
-                <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
-              </div>
-
-            {/* Search card */}
             <form
               onSubmit={handleSearch}
               noValidate
-              className="animate-fade-in-down relative z-10 mx-auto mt-[150px] w-full max-w-[1640px] overflow-visible text-left sm:mt-[180px] md:mt-[210px]"
+              className="animate-fade-in-down relative z-30 mx-auto mt-6 w-full min-w-0 max-w-[1760px] overflow-visible text-left sm:mt-10"
             >
-            {/* Верхняя строка: переключатель сложного маршрута. При наведении (когда ещё
-                не включён) заголовок печатается по буквам, а иконка загорается золотым —
-                просили сделать значок «красивенько», а не просто статичную кнопку. */}
-            <div className="px-5 pt-4 flex justify-end">
+            <div className="mb-5 max-w-xl pr-20 sm:mb-6 sm:pr-28">
+              <h1 className="font-heading text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-[2.55rem]">
+                {t("hero.title")}
+                <span className="mt-1 block text-white/90">{t("hero.title_line2")}</span>
+              </h1>
+              <p className="mt-3 max-w-md text-[15px] leading-relaxed text-white/70">{t("hero.subtitle")}</p>
+            </div>
+            {mode === "simple" && (
+              <div className="min-w-0">
+              <div className="mb-2 flex min-w-0 items-center">
               <button
                 type="button"
                 onClick={() => {
-                  setMode(mode === "multi" ? "simple" : "multi");
+                  setMode("multi");
                   setMultiRoutePlan(null);
                 }}
-                onMouseEnter={startRouteTypeIn}
-                onMouseLeave={endRouteTypeIn}
-                className={`group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-300 ${
-                  mode === "multi"
-                    ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
-                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                }`}
+                className="group inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] transition-colors duration-300 hover:text-[var(--color-text)]"
                 title="Перелёты с пересадками в нескольких городах"
               >
-                <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-all duration-300 ${
-                    mode === "multi"
-                      ? "bg-[var(--color-primary)] text-white"
-                      : "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] group-hover:bg-[var(--color-gold)]/15 group-hover:text-[var(--color-gold)] group-hover:rotate-12"
-                  }`}
-                >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] transition-all duration-300 group-hover:rotate-12 group-hover:bg-[var(--color-gold)]/15 group-hover:text-[var(--color-gold)]">
                   <IconRoute size={14} />
                 </span>
-                {mode === "multi" ? (
-                  "Обычный поиск"
-                ) : (
-                  <span className="inline-block min-w-[104px] text-left">
-                    {ROUTE_TOGGLE_LABEL.slice(0, routeTypedLen)}
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">|</span>
-                  </span>
-                )}
+                {t("form.complex")}
               </button>
-            </div>
-
-            {/* --- Обычный поиск (карточки-боксы, одна строка) --- */}
-            {mode === "simple" && (
-              <div className="px-4 pb-4">
-                <div className="flex flex-col divide-y divide-[var(--color-border)] rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] xl:flex-row xl:divide-x xl:divide-y-0">
+              </div>
+              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_24px_60px_rgba(10,27,56,0.28)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0 dark:bg-[var(--color-bg-soft)]">
                 {/* Маршрут: Откуда + Куда со свапом */}
-                <div className="relative flex flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 xl:flex-[3] min-w-0">
+                <div className="relative flex min-w-0 flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 xl:min-w-[26rem] xl:flex-[2.6]">
                   {/* Скругления по брейкпоинтам: <sm — верхняя ячейка колонки, sm..xl — левый
                       верхний угол бара, xl+ — левый торец строки. */}
-                  <div className={`relative flex-1 min-w-0 ${boxBase} rounded-t-2xl sm:rounded-tr-none xl:rounded-bl-2xl ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
-                    <IconPlane className="text-[var(--color-primary)] shrink-0" />
+                  <div className={`relative min-w-0 flex-1 ${boxBase} rounded-t-2xl sm:rounded-tr-none xl:rounded-bl-2xl ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                    <IconPlane size={22} className="text-[var(--color-primary)] shrink-0" />
                     <AirportInput
                       airport={originAirport}
                       onChange={(a) => {
                         setOriginAirport(a);
                         setErrors((p) => ({ ...p, origin: "" }));
                       }}
-                      label=""
-                      placeholder={errors.origin || "Откуда"}
+                      label={t("form.from")}
+                      placeholder={errors.origin || t("form.pick_city")}
                       excludeIata={destAirport?.iata}
                     />
                   </div>
@@ -751,29 +647,29 @@ export default function Home() {
                     type="button"
                     onClick={swap}
                     title="Поменять местами"
-                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-md hover:bg-[var(--color-primary-light)] hover:shadow-lg transition"
+                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-md hover:bg-[var(--color-primary-light)] hover:shadow-lg transition"
                   >
                     <IconSwap size={15} className="rotate-90 sm:rotate-0 hover:rotate-180 transition-transform duration-300" />
                   </button>
 
                   {/* sm..xl «Куда» замыкает правый верхний угол бара, на xl+ — рядовая ячейка */}
-                  <div className={`relative flex-1 min-w-0 ${boxBase} sm:rounded-tr-2xl xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
-                    <IconPin className="text-[var(--color-primary)] shrink-0" />
+                  <div className={`relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-2xl xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                    <IconPin size={22} className="text-[var(--color-primary)] shrink-0" />
                     <AirportInput
                       airport={destAirport}
                       onChange={(a) => {
                         setDestAirport(a);
                         setErrors((p) => ({ ...p, destination: "" }));
                       }}
-                      label=""
-                      placeholder={errors.destination || "Куда"}
+                      label={t("form.to")}
+                      placeholder={errors.destination || t("form.pick_city")}
                       excludeIata={originAirport?.iata}
                     />
                   </div>
                 </div>
 
                 {/* Даты */}
-                <div ref={datepickerRef} className="relative flex divide-x divide-[var(--color-border)] xl:flex-[2] min-w-0">
+                <div ref={datepickerRef} className="relative flex min-w-0 divide-x divide-[var(--color-border)] xl:min-w-[18rem] xl:flex-[1.9]">
                   {/* Туда */}
                   <div
                     className={`flex-1 min-w-0 ${boxBase} ${errors.departDate ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}
@@ -781,10 +677,10 @@ export default function Home() {
                   >
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <div className={`text-[15px] truncate ${departDate ? "text-[var(--color-text)] font-medium" : errors.departDate ? "text-red-500 font-medium" : "text-[var(--color-text-muted)]"}`}>
-                        {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : "Дата вылета"}
+                        {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : t("form.depart_date")}
                       </div>
                     </div>
-                    <IconCalendar className="text-[var(--color-primary)] shrink-0" />
+                    <IconCalendar size={22} className="text-[var(--color-primary)] shrink-0" />
                   </div>
 
                   {/* Обратно */}
@@ -795,7 +691,7 @@ export default function Home() {
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <div className="flex items-center gap-1">
                         <span className={`text-[15px] truncate ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
-                          {returnDate ? fmtDate(returnDate) : "Обратно"}
+                          {returnDate ? fmtDate(returnDate) : t("form.pick_return")}
                         </span>
                         {returnDate && (
                           <button
@@ -812,11 +708,18 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    <IconCalendar className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
+                    <IconCalendar size={22} className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
                   </div>
 
                   {datepickerOpen && (
-                    <div className="absolute top-full left-0 mt-2 z-50">
+                    <div className="fixed inset-0 z-[240] flex items-end justify-center p-3 sm:items-center md:absolute md:inset-auto md:top-full md:left-0 md:mt-2 md:block md:p-0">
+                      <button
+                        type="button"
+                        aria-label="Close"
+                        className="absolute inset-0 bg-black/45 md:hidden"
+                        onClick={() => setDatepickerOpen(false)}
+                      />
+                      <div className="relative z-10 w-full max-w-[calc(100vw-1.5rem)] md:max-w-none">
                       <DateRangePicker
                         mode="range"
                         departDate={departDate}
@@ -831,6 +734,7 @@ export default function Home() {
                         originIata={originAirport?.iata}
                         destinationIata={destAirport?.iata}
                       />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -843,34 +747,50 @@ export default function Home() {
                   onCabin={setCabin}
                   align="right"
                   variant="bar"
-                  className="xl:flex-1 min-w-0"
+                  className="xl:min-w-[13.5rem] xl:flex-[1.15] min-w-0"
                 />
 
                 {/* Submit */}
                 <button
                   type="submit"
                   disabled={searching}
-                  className="relative flex min-h-[76px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-10 font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default xl:w-auto xl:rounded-bl-none xl:rounded-tr-2xl"
+                  className="relative flex min-h-[56px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-6 text-[16px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default sm:min-h-[76px] sm:px-10 xl:min-h-[84px] xl:w-[11.5rem] xl:rounded-bl-none xl:rounded-tr-2xl"
                 >
                   {searching ? (
                     <>
                       <IconPlane size={18} className="plane-takeoff" />
-                      Взлетаем…
+                      {t("form.searching")}
                     </>
                   ) : (
                     <>
                       <IconSearch size={18} />
-                      Найти билеты
+                      {t("form.search")}
                     </>
                   )}
                 </button>
-                </div>
+              </div>
               </div>
             )}
 
             {/* --- Сложный маршрут --- */}
             {mode === "multi" && (
-              <>
+              <div className="min-w-0 overflow-visible rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_24px_60px_rgba(10,27,56,0.28)] dark:bg-[var(--color-bg-soft)]">
+                <div className="flex min-w-0 items-center px-4 pt-2.5 sm:px-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("simple");
+                      setMultiRoutePlan(null);
+                    }}
+                    className="group inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary-light)] px-3 py-1.5 text-sm font-medium text-[var(--color-primary)] transition-colors duration-300"
+                    title="Вернуться к обычному поиску"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-primary)] text-white">
+                      <IconRoute size={14} />
+                    </span>
+                    {t("form.simple")}
+                  </button>
+                </div>
                 <MultiCitySegments
                   segments={segments}
                   errors={errors}
@@ -879,21 +799,21 @@ export default function Home() {
                   onAdd={addSegment}
                   onRemove={removeSegment}
                 />
-                <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-2 px-4 pb-4">
+                <div className="flex min-w-0 flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center sm:justify-end sm:px-5">
                   <PassengersPicker
                     passengers={passengers}
                     cabin={cabin}
                     onPassengers={setPassengers}
                     onCabin={setCabin}
-                    align="left"
-                    className="md:w-64"
+                    align="right"
+                    className="w-full min-w-0 sm:w-64"
                   />
                   <button
                     type="submit"
-                    className="flex min-h-[52px] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-8 font-bold text-[var(--color-accent-foreground)] shadow-[0_12px_34px_rgba(47,217,138,0.35)] ring-1 ring-white/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_16px_42px_rgba(47,217,138,0.42)] active:scale-[0.98]"
+                    className="flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 font-bold text-[var(--color-accent-foreground)] shadow-[0_12px_34px_rgba(47,217,138,0.35)] ring-1 ring-white/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_16px_42px_rgba(47,217,138,0.42)] active:scale-[0.98] sm:w-auto sm:min-w-[12.5rem] sm:px-8"
                   >
                     <IconSearch size={18} />
-                    Найти билеты
+                    {t("form.search")}
                   </button>
                 </div>
 
@@ -947,26 +867,22 @@ export default function Home() {
                     </ul>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </form>
 
-          {/* Популярные направления — компактный вариант для мобильных/планшетов, где
-              боковой панели рядом с глобусом нет места (см. `hidden lg:block` выше). */}
-          <div className="relative z-10 mx-auto mt-3 w-full max-w-[1440px] lg:hidden">
-            <PopularDirectionsPanel destinations={POPULAR_DESTS} prices={popularPrices} onSelect={selectDestination} />
+          {/* Популярные направления: клик подставляет оба города в форму и сразу
+              рисует дугу на глобусе. Даты и пассажиры не меняются. */}
+          <div className="relative z-20 mx-auto mt-4 flex w-full max-w-[1760px] justify-end">
+            <div className="w-full lg:w-[300px]">
+              <PopularDirectionsPanel routes={POPULAR_ROUTES} prices={popularPrices} onSelect={selectPopularRoute} />
+            </div>
           </div>
 
             </>
           )}
         </section>
 
-        {/* Counters — статистика, на том же фоне глобуса */}
-        <div className="relative z-10">
-          <Counters />
-        </div>
-
-        {/* Почему выбирают нас — тоже на фоне глобуса */}
         <div className="relative z-10">
           <WhyUs />
         </div>
@@ -1015,7 +931,6 @@ export default function Home() {
                   style={{ left: deal.x, top: deal.y }}
                 >
                   {deal.city}
-                  <span className="ml-2 text-[var(--color-primary)]">от {deal.price} ₽</span>
                 </Link>
               ))}
             </div>
@@ -1033,8 +948,10 @@ export default function Home() {
                       <span className="block text-sm font-bold text-[var(--color-text)]">{localDeals.city} → {deal.city}</span>
                       <span className="text-xs text-[var(--color-text-muted)]">{deal.country} · {deal.iata}</span>
                     </span>
-                    <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-sm font-bold text-[var(--color-accent-foreground)]">
-                      от {deal.price} ₽
+                    <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
+                      {popularPrices[`${localDeals.iata}-${deal.iata}`] != null
+                        ? `${t("filters.price_from")} ${format(popularPrices[`${localDeals.iata}-${deal.iata}`]!)}`
+                        : t("popular.price_tba")}
                     </span>
                   </Link>
                 ))}
@@ -1053,14 +970,14 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { city: "Стамбул", country: "Турция", iata: "IST", price: "4 500", kw: "istanbul,city", lock: 11 },
-              { city: "Дубай", country: "ОАЭ", iata: "DXB", price: "9 900", kw: "dubai,skyline", lock: 12 },
-              { city: "Анталья", country: "Турция", iata: "AYT", price: "6 200", kw: "antalya,beach", lock: 13 },
-              { city: "Ереван", country: "Армения", iata: "EVN", price: "3 800", kw: "yerevan,armenia", lock: 14 },
-              { city: "Тбилиси", country: "Грузия", iata: "TBS", price: "4 100", kw: "tbilisi,city", lock: 15 },
-              { city: "Бангкок", country: "Таиланд", iata: "BKK", price: "28 500", kw: "bangkok,temple", lock: 16 },
-              { city: "Алматы", country: "Казахстан", iata: "ALA", price: "7 300", kw: "almaty,mountains", lock: 17 },
-              { city: "Сочи", country: "Россия", iata: "AER", price: "3 200", kw: "sochi,sea", lock: 18 },
+              { city: "Стамбул", country: "Турция", iata: "IST" },
+              { city: "Дубай", country: "ОАЭ", iata: "DXB" },
+              { city: "Анталья", country: "Турция", iata: "AYT" },
+              { city: "Ереван", country: "Армения", iata: "EVN" },
+              { city: "Тбилиси", country: "Грузия", iata: "TBS" },
+              { city: "Бангкок", country: "Таиланд", iata: "BKK" },
+              { city: "Алматы", country: "Казахстан", iata: "ALA" },
+              { city: "Сочи", country: "Россия", iata: "AER" },
             ].map((d) => (
               <Link
                 key={d.city}
@@ -1068,9 +985,9 @@ export default function Home() {
                 className="group relative block h-72 overflow-hidden rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
               >
                 <img
-                  src={cityPhoto(d.kw, d.lock)}
+                  src={cityPhotoUrl(d.iata)}
                   alt={d.city}
-                  onError={(e) => photoFallback(e, d.kw)}
+                  onError={cityPhotoFallback}
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
@@ -1078,12 +995,11 @@ export default function Home() {
                   {d.iata}
                 </span>
                 <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                  <div className="text-xs text-white/80">Москва →</div>
                   <div className="text-2xl font-bold">{d.city}</div>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="text-sm text-white/85">{d.country}</span>
-                    <span className="rounded-full bg-[var(--color-accent)] px-3 py-1 text-sm font-bold text-[var(--color-accent-foreground)]">
-                      от {d.price} ₽
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                      {popularPrices[d.iata] != null ? `${t("filters.price_from")} ${format(popularPrices[d.iata]!)}` : t("popular.price_tba")}
                     </span>
                   </div>
                 </div>
@@ -1098,8 +1014,8 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-8 flex items-end justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-[var(--color-text)]">🔥 Горящие предложения</h2>
-              <p className="mt-2 text-[var(--color-text-muted)]">Лучшие цены на ближайшие даты — успейте забронировать</p>
+              <h2 className="text-3xl font-bold text-[var(--color-text)]">Идеи для поездки</h2>
+              <p className="mt-2 text-[var(--color-text-muted)]">{t("deals.illustrative")}</p>
             </div>
             <a href="#search" className="hidden text-sm font-semibold text-[var(--color-primary)] hover:underline sm:block">
               Смотреть все →
@@ -1107,32 +1023,27 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {[
-              { route: "Москва — Стамбул", city: "Стамбул", iata: "IST", disc: "−45%", time: "09:50 — 14:15", dur: "5ч 25м", stops: "прямой", days: "Пн · Ср · Сб", price: "4 500", kw: "istanbul,city", lock: 21 },
-              { route: "Москва — Дубай", city: "Дубай", iata: "DXB", disc: "−30%", time: "22:30 — 04:05", dur: "5ч 35м", stops: "прямой", days: "Ежедневно", price: "9 900", kw: "dubai,skyline", lock: 22 },
-              { route: "Москва — Анталья", city: "Анталья", iata: "AYT", disc: "−52%", time: "08:15 — 12:40", dur: "4ч 25м", stops: "прямой", days: "Вт · Чт · Сб", price: "6 200", kw: "antalya,beach", lock: 23 },
+              { route: "Москва — Стамбул", city: "Стамбул", iata: "IST" },
+              { route: "Москва — Дубай", city: "Дубай", iata: "DXB" },
+              { route: "Москва — Анталья", city: "Анталья", iata: "AYT" },
             ].map((d) => (
-              <div key={d.route} className="overflow-hidden rounded-2xl bg-[var(--color-surface)] shadow-md transition hover:shadow-xl">
+              <div key={d.route} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md transition hover:shadow-xl">
                 <div className="relative h-36 overflow-hidden">
                   <img
-                    src={cityPhoto(d.kw, d.lock)}
+                    src={cityPhotoUrl(d.iata)}
                     alt={d.route}
-                    onError={(e) => photoFallback(e, d.kw)}
+                    onError={cityPhotoFallback}
                     className="h-full w-full object-cover"
                   />
-                  <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
-                    🔥 Скидка {d.disc}
-                  </span>
                 </div>
                 <div className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="text-lg font-bold text-[var(--color-text)]">{d.route}</div>
-                    <div className="text-lg font-bold text-[var(--color-primary)]">{d.price} ₽</div>
+                    <div className="text-sm font-semibold text-[var(--color-text-muted)]">
+                      {popularPrices[d.iata] != null ? `${t("filters.price_from")} ${format(popularPrices[d.iata]!)}` : t("popular.price_tba")}
+                    </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-sm text-[var(--color-text-muted)]">
-                    <span>{d.time}</span>
-                    <span>{d.dur} · {d.stops}</span>
-                  </div>
-                  <div className="mt-1 text-xs text-[var(--color-text-muted)]">{d.days}</div>
+                  <p className="mt-2 text-sm text-[var(--color-text-muted)]">{t("deals.illustrative")}</p>
                   <div className="mt-4 flex gap-2">
                     <Link href={searchHref(d.city, d.iata)} className="flex-1 rounded-lg border border-[var(--color-border)] py-2 text-center text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)]">
                       О городе

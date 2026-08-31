@@ -6,6 +6,7 @@ import {
   baggageShortLabel, carryOnShortLabel, serviceLevelLabel, dimensionsSummary,
 } from "../../data/flights";
 import { useSettings } from "../../context/settings";
+import { ANNA_PIN_FLIGHT, type PinnedFlight } from "../../lib/chatRoute";
 import AirlineLogo from "./AirlineLogo";
 import {
   IconSuitcase, IconBackpack, IconUndo, IconSwap, IconSeat, IconMeal,
@@ -20,6 +21,8 @@ interface Props {
   adults?: number;
   childrenCount?: number;
   infants?: number;
+  infantsSeat?: number;
+  cabin?: string;
   onClose: () => void;
   onSelect?: () => void;
   isSelected?: boolean;
@@ -59,7 +62,7 @@ function ConditionRow({ icon, label, value, sub, tone = "neutral" }: { icon: Rea
 }
 
 export default function FlightDetailModal({
-  flight: f, route, dateISO, paxCount, adults = paxCount, childrenCount: numChildren = 0, infants = 0,
+  flight: f, route, dateISO, paxCount, adults = paxCount, childrenCount: numChildren = 0, infants = 0, infantsSeat = 0, cabin = "economy",
   onClose, onSelect, isSelected,
 }: Props) {
   const { format, t, lang } = useSettings();
@@ -111,9 +114,26 @@ export default function FlightDetailModal({
     dateLabel: dateShort(dateISO), dateISO, pricePerPax: String(f.pricePerPax),
     paxCount: String(paxCount), total: String(total), baggageLabel: baggageShortLabel(f.fare.baggage),
     adults: String(adults), children: String(numChildren), infants: String(infants),
+    infantsSeat: String(infantsSeat),
+    cabin,
     ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
-  const targetUrl = f.bookingUrl || `/book?${bookParams.toString()}`;
+  const bookHref = `/book?${bookParams.toString()}`;
+
+  useEffect(() => {
+    const detail: PinnedFlight = {
+      airlineName: f.airlineName || f.airlineCode,
+      flightNumber: f.flightNumber,
+      fromIata: route.fromIata,
+      toIata: route.toIata,
+      dateISO,
+      departTime: f.departTime,
+      pricePerPax: f.pricePerPax,
+      bookHref,
+      baggageLabel: baggageShortLabel(f.fare.baggage),
+    };
+    window.dispatchEvent(new CustomEvent(ANNA_PIN_FLIGHT, { detail }));
+  }, [bookHref, f.airlineName, f.airlineCode, f.flightNumber, f.departTime, f.pricePerPax, f.fare.baggage, route.fromIata, route.toIata, dateISO]);
 
   const fareBrand = f.fare.brandName ?? "Эконом";
   const refundValue = f.fare.refund.allowed === "unknown" ? "Уточняется" : f.fare.refund.allowed === "yes" ? "Разрешён" : "Не разрешён";
@@ -330,14 +350,24 @@ export default function FlightDetailModal({
               {isSelected ? "✓ Выбран" : `${t("card.select")} · ${format(total)}`}
             </button>
           ) : (
-            <a
-              href={targetUrl}
-              target={f.bookingUrl ? "_blank" : undefined}
-              rel={f.bookingUrl ? "noopener noreferrer" : undefined}
-              className={`rounded-xl px-6 py-3 text-center text-sm font-semibold text-white transition sm:px-10 sm:text-base ${f.bookingUrl ? "bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]" : "bg-green-600 hover:bg-green-700"}`}
-            >
-              {f.bookingUrl ? "Купить на Aviasales →" : `${t("card.select")} · ${format(total)}`}
-            </a>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <a
+                href={bookHref}
+                className="rounded-xl bg-green-600 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-green-700 sm:px-10 sm:text-base"
+              >
+                Оформить у нас · {format(total)}
+              </a>
+              {f.bookingUrl && (
+                <a
+                  href={f.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-[var(--color-border)] px-6 py-3 text-center text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] sm:px-8"
+                >
+                  Купить на Aviasales
+                </a>
+              )}
+            </div>
           )}
         </div>
       </div>

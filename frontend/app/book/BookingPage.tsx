@@ -40,11 +40,12 @@ const EMPTY_PAX: Passenger = {
 // (одинаковые "Пассажир N", а младенцы вообще не получали анкету: paxCount
 // считал только тех, кто занимает место). Паспорт для билета нужен всем,
 // включая младенца на руках — просто он не платит за тариф.
-type PaxCategory = "adult" | "child" | "infant";
+type PaxCategory = "adult" | "child" | "infant" | "infant_seat";
 const PAX_CATEGORY_LABEL: Record<PaxCategory, string> = {
   adult: "Взрослый",
   child: "Ребёнок · 2–11 лет",
   infant: "Младенец · до 2 лет, без места",
+  infant_seat: "Младенец · до 2 лет, с местом",
 };
 
 function toPassenger(p: SavedPassenger): Passenger {
@@ -150,7 +151,7 @@ function SeatPicker({
         <div>
           <h3 className="text-base font-semibold text-[var(--color-text)]">Выбор места</h3>
           <p className="text-xs text-[var(--color-text-muted)]">
-            {included ? "Включено в тариф" : "600 ₽ за пассажира"}
+            Схема мест условная и не бронирует место у авиакомпании. {included ? "В тарифе выбор места бесплатный." : "Доплата 600 ₽ за пассажира — только в заявке."}
           </p>
         </div>
         {selected && (
@@ -371,7 +372,7 @@ function PassengerForm({
 }
 
 export default function BookingPage() {
-  const { format } = useSettings();
+  const { format, t } = useSettings();
   const sp = useSearchParams();
   const fromCity = sp.get("fromCity") || "";
   const fromIata = sp.get("fromIata") || "";
@@ -395,10 +396,12 @@ export default function BookingPage() {
   const adultsCount = sp.has("adults") ? Number(sp.get("adults")) : paxCount;
   const childrenCount = Number(sp.get("children") || 0);
   const infantsCount = Number(sp.get("infants") || 0);
+  const infantsSeatCount = Number(sp.get("infantsSeat") || 0);
   const paxCategories: PaxCategory[] = [
     ...Array(Math.max(0, adultsCount)).fill("adult" as const),
     ...Array(Math.max(0, childrenCount)).fill("child" as const),
     ...Array(Math.max(0, infantsCount)).fill("infant" as const),
+    ...Array(Math.max(0, infantsSeatCount)).fill("infant_seat" as const),
   ];
   if (paxCategories.length === 0) paxCategories.push("adult");
   const total = Number(sp.get("total") || 0);
@@ -479,13 +482,17 @@ export default function BookingPage() {
         origin: fromIata,
         destination: toIata,
         departDate: dateISO,
+        returnDate: sp.get("returnDate") || undefined,
         cabin: sp.get("cabin") ?? "economy",
         airline: airlineCode || undefined,
         flightNumber: sp.get("flightNumber") ?? undefined,
+        departAt: sp.get("departTime") ? `${dateISO}T${sp.get("departTime")}` : undefined,
+        arriveAt: sp.get("arriveTime") ? `${dateISO}T${sp.get("arriveTime")}` : undefined,
         tariff,
         seat: selectedSeat || undefined,
         promo: promoApplied ? promo.trim().toUpperCase() : undefined,
         paymentMethod,
+        bookingUrl: externalBookingUrl || undefined,
         totalAmount: grandTotal,
         passengers: passengers.map((p) => ({
           firstName: p.firstName,
@@ -513,8 +520,13 @@ export default function BookingPage() {
       <div className="flex min-h-screen flex-col items-center bg-[var(--color-bg-soft)] px-4 py-10">
         <PaymentStep
           total={grandTotal}
+          orderRef={orderRef}
+          email={email}
           onBack={() => setStep("form")}
-          onSuccess={() => setStep("success")}
+          onComplete={(status) => {
+            if (status) setOrderStatus(status);
+            setStep("success");
+          }}
         />
       </div>
     );
@@ -528,9 +540,10 @@ export default function BookingPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--color-bg-soft)] px-4 py-10">
         <div className="w-full max-w-3xl rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center shadow-lg">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl dark:bg-green-900">✓</div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">Заявка принята!</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">Заявка принята</h1>
           <p className="mt-2 text-[var(--color-text-muted)]">
-            Подтверждение придёт на <span className="font-medium text-[var(--color-text)]">{email}</span>
+            Подтверждение придёт на <span className="font-medium text-[var(--color-text)]">{email}</span>.
+            Оплата не списывается автоматически, пока не подключён платёжный шлюз или вы не завершите оплату в ЮKassa.
           </p>
 
           <div className="mx-auto mt-6 max-w-xl rounded-xl bg-[var(--color-bg-soft)] px-6 py-4 text-left text-sm">
@@ -614,9 +627,9 @@ export default function BookingPage() {
         <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2">
             <LogoMark size={34} />
-            <span className="font-heading text-lg font-bold">Aviator</span>
+            <span className="hidden font-heading text-lg font-bold sm:inline">Aviator</span>
           </Link>
-          <div className="text-sm opacity-80">
+          <div className="min-w-0 truncate text-sm opacity-80">
             {fromCity} → {toCity} · {dateLabel}
           </div>
         </div>
@@ -625,21 +638,21 @@ export default function BookingPage() {
       {/* Прогресс */}
       <div className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="mx-auto flex max-w-7xl gap-0 px-4">
-          {["Поиск", "Выбор рейса", "Данные", "Оплата"].map((step, i) => (
+          {[t("book.step_search"), t("book.step_select"), t("book.step_data"), t("book.step_pay")].map((label, i) => (
             <div
-              key={step}
-              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium ${
+              key={label}
+              className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 py-3 text-sm font-medium sm:px-4 ${
                 i === 2
                   ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]"
                   : "text-[var(--color-text-muted)]"
               }`}
             >
               <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${
-                i < 2 ? "bg-green-600 text-white" : i === 2 ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"
+                i < 2 ? "bg-[var(--color-accent)] text-[var(--color-accent-foreground)]" : i === 2 ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)] text-[var(--color-text-muted)]"
               }`}>
                 {i < 2 ? "✓" : i + 1}
               </span>
-              <span className={i === 2 ? "inline" : "hidden sm:inline"}>{step}</span>
+              <span className={i === 2 ? "inline" : "hidden sm:inline"}>{label}</span>
             </div>
           ))}
         </div>
@@ -858,16 +871,10 @@ export default function BookingPage() {
               </div>
 
               {paymentMethod === "card" && (
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
-                  <input className={`${inputCls} sm:col-span-2`} placeholder="0000 0000 0000 0000" />
-                  <input className={inputCls} placeholder="MM/YY" />
-                  <input className={inputCls} placeholder="CVC" />
-                </div>
+                <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                  Номер карты на этой странице не вводите — на следующем шаге откроется ЮKassa или заявка останется «ожидает оплаты».
+                </p>
               )}
-
-              <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                Демо-режим: реальная оплата не производится. Данные карты не сохраняются.
-              </p>
             </div>
 
             {/* Поддержка */}
@@ -994,7 +1001,7 @@ export default function BookingPage() {
                     <span className="text-[var(--color-text)]">включены</span>
                   </div>
                   <label className="block pt-2 text-xs text-[var(--color-text-muted)]">
-                    Промокод
+                    Промокод (на сервере действует AVIA10)
                     <input
                       value={promo}
                       onChange={(e) => setPromo(e.target.value)}

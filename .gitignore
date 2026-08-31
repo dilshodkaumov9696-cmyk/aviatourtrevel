@@ -24,3 +24,6 @@ out/
 # Data
 *.db
 *.sqlite
+
+# Accidental npm lockfile in Python backend
+backend/package-lock.json

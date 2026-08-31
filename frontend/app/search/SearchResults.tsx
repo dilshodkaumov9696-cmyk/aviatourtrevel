@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Flight, baggageIncluded } from "../data/flights";
 import { getDemoFlights } from "../data/flights.demo";
 import { searchFlights, buildAviasalesUrl, createPriceAlert } from "../lib/api";
@@ -15,6 +15,7 @@ import { IconPlane, IconPin, IconCalendar, IconUser, IconSwap } from "../compone
 import SettingsSwitcher from "../components/SettingsSwitcher";
 import LogoMark from "../components/Logo";
 import { useSettings } from "../context/settings";
+import { passengersForSearch, passengersSeatCount, passengersTotal } from "../components/PassengersPicker";
 
 const MONTHS_GEN = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 const WD = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
@@ -69,6 +70,7 @@ function departMinutes(f: Flight): number {
 
 export default function SearchResults() {
   const { t, format } = useSettings();
+  const router = useRouter();
   const sp = useSearchParams();
   const fromCity = sp.get("fromCity") || "Москва";
   const fromIata = sp.get("fromIata") || "MOW";
@@ -77,16 +79,20 @@ export default function SearchResults() {
   const adults = Number(sp.get("adults") || 1);
   const children = Number(sp.get("children") || 0);
   const infants = Number(sp.get("infants") || 0);
+  const infantsSeat = Number(sp.get("infantsSeat") || 0);
+  const pax = { adults, children, infants, infantsSeat };
   // Два разных счёта, их нельзя путать:
   // paxTotal — сколько человек летит, включая младенцев без места. Идёт в шапку, чтобы
   //   совпадало с формой на главной (она считает младенцев).
   // paxCount — на сколько тарифов умножается цена. Младенец без места отдельный тариф
-  //   не занимает, поэтому в множитель не входит.
-  const paxTotal = Math.max(1, adults + children + infants);
-  const paxCount = Math.max(1, adults + children);
+  //   не занимает, поэтому в множитель не входит. Младенец с местом — занимает.
+  const paxTotal = Math.max(1, passengersTotal(pax));
+  const paxCount = Math.max(1, passengersSeatCount(pax));
+  const searchPax = passengersForSearch(pax);
   // Класс обслуживания приходит из формы на главной; неизвестное значение — эконом.
+  const cabin = sp.get("cabin") ?? "economy";
   const cabinKey = ({ business: "common.business", first: "common.first" } as const)[
-    sp.get("cabin") as "business" | "first"
+    cabin as "business" | "first"
   ] ?? "common.economy";
   const urlReturnDate = sp.get("returnDate") || "";
 
@@ -125,7 +131,7 @@ export default function SearchResults() {
     return d.toISOString().slice(0, 10);
   }
   const [date, setDate] = useState(sp.get("date") || futureDateISO(14));
-  const [returnDate, setReturnDate] = useState(urlReturnDate || futureDateISO(21));
+  const [returnDate, setReturnDate] = useState(urlReturnDate);
   const [sort, setSort] = useState<Sort>("best");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -203,30 +209,32 @@ export default function SearchResults() {
       destination: toIata,
       departDate: date,
       returnDate: isRoundTrip ? returnDate : undefined,
-      adults,
+      adults: searchPax.adults,
+      children: searchPax.children,
+      infants: searchPax.infants,
+      cabin,
     }).then((result) => {
       if (cancelled) return;
-      const nextFlights = result.length ? result : fallbackFlights();
+      const nextFlights = result;
       setFlights(nextFlights);
       resetFilters(nextFlights);
       if (result.length === 0) {
-        setDataNotice("В кэше Travelpayouts пока нет цен по этому маршруту, показываем демо-рейсы для проверки интерфейса.");
+        setDataNotice("По этому маршруту в кэше Travelpayouts пока нет цен. Можно открыть полный поиск на Aviasales или подписаться на цену.");
       }
       setIsLoading(false);
     }).catch((err) => {
       if (cancelled) return;
       // Технические детали — только в консоль, пользователю показываем понятное сообщение.
       console.error("searchFlights failed:", err);
-      const nextFlights = fallbackFlights();
-      setFlights(nextFlights);
-      resetFilters(nextFlights);
+      setFlights([]);
+      resetFilters([]);
       setApiError(true);
-      setDataNotice("Не удалось загрузить актуальные предложения, поэтому показываем демо-рейсы. Кнопка Aviasales всё равно откроет полный поиск.");
+      setDataNotice("Не удалось загрузить предложения. Демо-рейсы в проде не подставляем — попробуйте ещё раз или откройте Aviasales.");
       setIsLoading(false);
     });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromIata, toIata, date, returnDate, adults, retryTick, forceDemo]);
+  }, [fromIata, toIata, date, returnDate, adults, children, infants, infantsSeat, retryTick, forceDemo]);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -281,14 +289,30 @@ export default function SearchResults() {
 
   const handleBookBoth = () => {
     if (!outboundFlight || !returnFlight) return;
-    const url = outboundFlight.bookingUrl || buildAviasalesUrl({
-      origin: fromIata,
-      destination: toIata,
-      departDate: date,
+    const params = new URLSearchParams({
+      flightId: outboundFlight.id,
+      airlineCode: outboundFlight.airlineCode,
+      airlineName: outboundFlight.airlineName,
+      flightNumber: outboundFlight.flightNumber,
+      fromCity, fromIata, toCity, toIata,
+      departTime: outboundFlight.departTime,
+      arriveTime: outboundFlight.arriveTime,
+      durationMin: String(outboundFlight.durationMin),
+      stops: String(outboundFlight.stops),
+      dateLabel: dLabel,
+      dateISO: date,
       returnDate,
-      adults,
+      pricePerPax: String(outboundFlight.pricePerPax + returnFlight.pricePerPax),
+      paxCount: String(paxCount),
+      total: String(combinedTotal),
+      adults: String(adults),
+      children: String(children),
+      infants: String(infants),
+      infantsSeat: String(infantsSeat),
+      cabin,
     });
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (outboundFlight.bookingUrl) params.set("bookingUrl", outboundFlight.bookingUrl);
+    router.push(`/book?${params.toString()}`);
   };
 
   /* Текущая дата/маршрут в зависимости от фазы */
@@ -310,6 +334,7 @@ export default function SearchResults() {
     fromCity, fromIata, toCity, toIata,
     date,
     adults: String(adults), children: String(children), infants: String(infants),
+    infantsSeat: String(infantsSeat),
     cabin: sp.get("cabin") ?? "economy",
   });
   if (isRoundTrip) changeSearchParams.set("returnDate", returnDate);
@@ -322,16 +347,21 @@ export default function SearchResults() {
         className="sticky top-0 z-30 border-b border-[var(--color-ink-border)] text-white"
         style={{ background: "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)" }}
       >
-        <div className="mx-auto max-w-[1400px] px-4 py-3.5 sm:px-6">
+        <div className="mx-auto max-w-[1760px] px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex shrink-0 items-center gap-2">
-              <LogoMark size={36} />
-              <span className="hidden font-heading text-lg font-bold lg:block">Aviator</span>
+              <LogoMark size={32} />
+              <span className="hidden font-heading text-lg font-bold sm:block">Aviator</span>
             </Link>
 
-            {/* Свёрнутая форма поиска. flex-1 на каждом чипе — строка занимает всю ширину
-                от логотипа до «Изменить», без пустоты справа. */}
-            <Link href={changeHref} className="flex min-w-0 flex-1 flex-wrap items-center gap-2" title="Изменить поиск">
+            <Link href={changeHref} className="min-w-0 flex-1 sm:hidden" title="Изменить поиск">
+              <span className="flex min-w-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm text-[#1A2B3A]">
+                <span className="truncate font-semibold">{fromCity} → {toCity}</span>
+                <span className="shrink-0 text-[12px] text-slate-500">{dShort}</span>
+              </span>
+            </Link>
+
+            <Link href={changeHref} className="hidden min-w-0 flex-1 flex-wrap items-center gap-2 sm:flex" title="Изменить поиск">
               <span className={searchChip}>
                 <IconPlane size={15} className="shrink-0 text-[var(--color-primary)]" />
                 <span className="truncate">{fromCity}</span>
@@ -346,7 +376,7 @@ export default function SearchResults() {
                 <span className="shrink-0 text-[11px] text-slate-400">{toIata}</span>
               </span>
               <span className={searchChip}>
-                <IconCalendar size={15} className="shrink-0 text-[var(--color-primary)]" />
+                <IconCalendar size={20} className="shrink-0 text-[var(--color-primary)]" />
                 <span className="truncate">{dShort}{rShort ? ` — ${rShort}` : ""}</span>
               </span>
               <span className={`${searchChip} hidden sm:flex`}>
@@ -361,7 +391,7 @@ export default function SearchResults() {
 
             <Link
               href={changeHref}
-              className="shrink-0 rounded-xl bg-[var(--color-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-[1.06]"
+              className="shrink-0 rounded-xl bg-[var(--color-accent)] px-3 py-2.5 text-sm font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-[1.06] sm:px-4"
             >
               {t("common.change")}
             </Link>
@@ -533,7 +563,7 @@ export default function SearchResults() {
                       // непусто и для перелётов в одну сторону. Признак — isRoundTrip.
                       returnDate: isRoundTrip ? returnDate : undefined,
                       targetPrice: Number(priceTarget),
-                      cabin: sp.get("cabin") ?? "economy",
+                      cabin,
                     });
                     setPriceAlertSaved(true);
                   } catch (e) {
@@ -715,6 +745,8 @@ export default function SearchResults() {
                       adults={adults}
                       childrenCount={children}
                       infants={infants}
+                      infantsSeat={infantsSeat}
+                      cabin={cabin}
                       onSelect={isRoundTrip ? (
                         phase === "outbound"
                           ? () => handleSelectOutbound(f)
@@ -737,8 +769,22 @@ export default function SearchResults() {
                   >
                     {t("search.empty_reset")}
                   </button>
+                  <a
+                    href={buildAviasalesUrl({
+                      origin: fromIata,
+                      destination: toIata,
+                      departDate: date,
+                      returnDate: isRoundTrip ? returnDate : undefined,
+                      adults,
+                    })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-[var(--color-border)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  >
+                    Открыть на Aviasales
+                  </a>
                   <Link
-                    href="/"
+                    href={changeHref}
                     className="rounded-xl border border-[var(--color-border)] px-5 py-2.5 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   >
                     Изменить поиск

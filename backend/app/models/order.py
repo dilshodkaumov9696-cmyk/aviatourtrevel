@@ -102,6 +102,8 @@ class Order(Base, TimestampMixin):
     seat: Mapped[str | None] = mapped_column(String(8), nullable=True)
     promo: Mapped[str | None] = mapped_column(String(32), nullable=True)
     payment_method: Mapped[str] = mapped_column(String(16), nullable=False, default="card")
+    booking_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    payment_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     total_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="RUB")
@@ -141,7 +143,7 @@ class Passenger(Base, TimestampMixin):
     dob: Mapped[date] = mapped_column(Date, nullable=False)
     gender: Mapped[str] = mapped_column(String(8), nullable=False)
     citizenship: Mapped[str] = mapped_column(String(64), nullable=False)
-    doc_number: Mapped[str] = mapped_column(String(32), nullable=False)
+    doc_number: Mapped[str] = mapped_column(String(255), nullable=False)
     doc_expiry: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     order: Mapped[Order] = relationship(back_populates="passengers")

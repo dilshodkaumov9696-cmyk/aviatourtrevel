@@ -4,16 +4,19 @@ from __future__ import annotations
 import logging
 from datetime import UTC, date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query  # pyright: ignore[reportMissingImports]
+from fastapi import APIRouter, Depends, HTTPException, Query, Body  # pyright: ignore[reportMissingImports]
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_optional, require_manager_key
 from app.models.user import User
+from app.core.config import settings
+from app.core.pii import decrypt_doc, encrypt_doc
 from app.db.session import get_session
 from app.models.order import Order, OrderStatus, Passenger
 from app.services.mailer import send_email
+from app.services.payments import create_yookassa_payment
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,6 +30,9 @@ ALLOWED_TRANSITIONS: dict[OrderStatus, set[OrderStatus]] = {
     OrderStatus.ISSUED: set(),
     OrderStatus.CANCELLED: set(),
 }
+
+# Серверные промокоды. Клиентский AVIA10 без этой проверки не должен проходить.
+PROMO_CODES: dict[str, float] = {"AVIA10": 0.10}
 
 
 class PassengerIn(BaseModel):
@@ -71,6 +77,7 @@ class OrderCreate(BaseModel):
     seat: str | None = Field(None, max_length=8)
     promo: str | None = Field(None, max_length=32)
     payment_method: str = Field("card", max_length=16)
+    booking_url: str | None = Field(None, max_length=1024)
 
     total_amount: float = Field(..., gt=0, le=100_000_000)
     currency: str = Field("RUB", min_length=3, max_length=3)
@@ -99,7 +106,9 @@ class OrderOut(BaseModel):
     flight_number: str | None
     tariff: str
     seat: str | None
+    promo: str | None = None
     payment_method: str
+    booking_url: str | None = None
     total_amount: float
     currency: str
     pnr: str | None
@@ -113,13 +122,27 @@ class StatusPatch(BaseModel):
     status: OrderStatus
 
 
+def _passenger_public(passenger: Passenger) -> dict:
+    return {
+        "id": passenger.id,
+        "first_name": passenger.first_name,
+        "last_name": passenger.last_name,
+        "middle_name": passenger.middle_name,
+        "dob": passenger.dob,
+        "gender": passenger.gender,
+        "citizenship": passenger.citizenship,
+        "doc_number": decrypt_doc(passenger.doc_number),
+        "doc_expiry": passenger.doc_expiry,
+    }
+
+
 def _to_out(order: Order) -> dict:
     """status_label в модели — property, pydantic его сам не подхватит."""
-    return {
-        **{c.name: getattr(order, c.name) for c in order.__table__.columns},
-        "status_label": order.status.label,
-        "passengers": order.passengers,
-    }
+    data = {c.name: getattr(order, c.name) for c in order.__table__.columns}
+    data["total_amount"] = float(order.total_amount)
+    data["status_label"] = order.status.label
+    data["passengers"] = [_passenger_public(p) for p in order.passengers]
+    return data
 
 
 @router.post("/orders", response_model=OrderOut, status_code=201)
@@ -136,8 +159,23 @@ async def create_order(
     if payload.depart_date < date.today():
         raise HTTPException(status_code=422, detail="Дата вылета уже прошла")
 
-    data = payload.model_dump(exclude={"passengers"})
-    order = Order(**data, user_id=user.id if user else None, passengers=[Passenger(**p.model_dump()) for p in payload.passengers])
+    promo = (payload.promo or "").strip().upper() or None
+    if promo and promo not in PROMO_CODES:
+        raise HTTPException(status_code=422, detail="Неизвестный промокод")
+
+    data = payload.model_dump(exclude={"passengers", "promo"})
+    passengers = []
+    for p in payload.passengers:
+        row = p.model_dump()
+        row["doc_number"] = encrypt_doc(row["doc_number"])
+        passengers.append(Passenger(**row))
+    order = Order(
+        **data,
+        promo=promo,
+        status=OrderStatus.AWAITING_PAYMENT,
+        user_id=user.id if user else None,
+        passengers=passengers,
+    )
     session.add(order)
     await session.commit()
     await session.refresh(order)
@@ -258,3 +296,103 @@ async def update_status(
         f"Статус вашей заявки {order.ref} изменился на «{order.status.label}».\n",
     )
     return _to_out(order)
+
+
+class PaymentStartIn(BaseModel):
+    return_url: str | None = None
+
+
+class PaymentStartOut(BaseModel):
+    mode: str  # yookassa | invoice
+    confirmation_url: str | None = None
+    status: OrderStatus
+    status_label: str
+
+
+@router.post("/orders/{ref}/payment", response_model=PaymentStartOut)
+async def start_payment(
+    ref: str,
+    payload: PaymentStartIn,
+    email: EmailStr = Query(..., description="Почта владельца заявки"),
+    session: AsyncSession = Depends(get_session),
+) -> PaymentStartOut:
+    """Создать платёж. Без ключей ЮKassa — invoice: заявка остаётся «ожидает оплаты»."""
+    order = await session.scalar(select(Order).where(Order.ref == ref.upper()))
+    if order is None or order.contact_email != email:
+        raise HTTPException(status_code=404, detail="Заявка не найдена")
+    if order.status is OrderStatus.PAID or order.status is OrderStatus.ISSUED:
+        return PaymentStartOut(
+            mode="already_paid",
+            confirmation_url=None,
+            status=order.status,
+            status_label=order.status.label,
+        )
+    if order.status is OrderStatus.CANCELLED:
+        raise HTTPException(status_code=409, detail="Заявка отменена")
+    if order.status is OrderStatus.NEW:
+        order.status = OrderStatus.AWAITING_PAYMENT
+
+    return_url = payload.return_url or f"{settings.site_url}/order/{order.ref}?email={order.contact_email}"
+    try:
+        created = await create_yookassa_payment(
+            amount=float(order.total_amount),
+            currency=order.currency,
+            description=f"Aviator {order.ref} {order.origin}→{order.destination}",
+            return_url=return_url,
+            metadata={"order_ref": order.ref},
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Не удалось создать платёж ЮKassa: %s", exc)
+        raise HTTPException(status_code=502, detail="Платёжный шлюз временно недоступен") from exc
+
+    if created is None:
+        await session.commit()
+        return PaymentStartOut(
+            mode="invoice",
+            confirmation_url=None,
+            status=order.status,
+            status_label=order.status.label,
+        )
+
+    order.payment_id = created.get("id")
+    await session.commit()
+    confirmation = created.get("confirmation") or {}
+    return PaymentStartOut(
+        mode="yookassa",
+        confirmation_url=confirmation.get("confirmation_url"),
+        status=order.status,
+        status_label=order.status.label,
+    )
+
+
+@router.post("/payments/yookassa/webhook")
+async def yookassa_webhook(payload: dict = Body(...), session: AsyncSession = Depends(get_session)) -> dict[str, bool]:
+    """Уведомление ЮKassa: только succeeded переводит заявку в paid."""
+    event = payload.get("event")
+    obj = payload.get("object") or {}
+    if event != "payment.succeeded" and obj.get("status") != "succeeded":
+        return {"ok": True}
+
+    payment_id = obj.get("id")
+    meta = obj.get("metadata") or {}
+    ref = str(meta.get("order_ref") or "").upper()
+    order = None
+    if payment_id:
+        order = await session.scalar(select(Order).where(Order.payment_id == payment_id))
+    if order is None and ref:
+        order = await session.scalar(select(Order).where(Order.ref == ref))
+    if order is None:
+        logger.warning("Webhook ЮKassa: заявка не найдена payment_id=%s ref=%s", payment_id, ref)
+        return {"ok": True}
+    if order.status is OrderStatus.AWAITING_PAYMENT or order.status is OrderStatus.NEW:
+        order.status = OrderStatus.PAID
+        order.paid_at = datetime.now(UTC)
+        if payment_id:
+            order.payment_id = payment_id
+        await session.commit()
+        await send_email(
+            order.contact_email,
+            f"Заявка {order.ref}: оплачено",
+            f"Оплата по заявке {order.ref} получена. Статус: {order.status.label}.\n",
+        )
+    return {"ok": True}

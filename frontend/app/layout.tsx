@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Golos_Text, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SettingsProvider } from "./context/settings";
 import { AuthProvider } from "./context/auth";
+import { ChatRouteProvider } from "./context/chatRoute";
 import ChatWidget from "./components/ChatWidget";
 import PWARegister from "./components/PWARegister";
 import CookieConsent from "./components/CookieConsent";
@@ -107,10 +109,14 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SettingsProvider>
           <AuthProvider>
-            {children}
-            <ChatWidget />
-            <PWARegister />
-            <CookieConsent />
+            <ChatRouteProvider>
+              {children}
+              <Suspense fallback={null}>
+                <ChatWidget />
+              </Suspense>
+              <PWARegister />
+              <CookieConsent />
+            </ChatRouteProvider>
           </AuthProvider>
         </SettingsProvider>
       </body>

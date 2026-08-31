@@ -93,6 +93,9 @@ class TravelpayoutsProvider(BookingProvider):
                 offers.append(offer)
 
         offers.sort(key=lambda o: o.price)
+        # Data API отдаёт цену за 1 взрослого. adults/children/cabin в кэше
+        # и в запросе, чтобы не смешивать выдачи; в HTTP v3 этих полей нет.
+        _ = (query.adults, query.children, query.infants, query.cabin)
         return offers
 
     async def _get_with_retry(self, client: httpx.AsyncClient, params: dict) -> httpx.Response:
@@ -217,6 +220,38 @@ class TravelpayoutsProvider(BookingProvider):
             return iatas
         except Exception:
             return []
+
+    async def calendar_prices(self, origin: str, destination: str, month: str) -> dict[str, float]:
+        """Минимальная цена на каждый день месяца (YYYY-MM). Тот же токен, что и поиск."""
+        if not self._token or self._is_same_city(origin, destination):
+            return {}
+        params = {
+            "origin": origin,
+            "destination": destination,
+            "departure_at": month,
+            "currency": "rub",
+            "limit": 31,
+            "token": self._token,
+            "sorting": "price",
+        }
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
+            resp = await self._get_with_retry(client, params)
+        data = resp.json()
+        items = data.get("data") or []
+        if isinstance(items, dict):
+            items = list(items.values())
+        prices: dict[str, float] = {}
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            dep = str(item.get("departure_at") or "")[:10]
+            price = item.get("price")
+            if dep and price is not None:
+                value = float(price)
+                current = prices.get(dep)
+                if current is None or value < current:
+                    prices[dep] = value
+        return prices
 
     def _booking_url(self, link: str) -> str:
         if not link:

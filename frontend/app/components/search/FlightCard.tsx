@@ -33,6 +33,8 @@ interface Props {
   adults?: number;
   childrenCount?: number;
   infants?: number;
+  infantsSeat?: number;
+  cabin?: string;
   onSelect?: () => void;
   isSelected?: boolean;
   isBest?: boolean;
@@ -40,7 +42,7 @@ interface Props {
 
 export default function FlightCard({
   flight: f, fromCity, fromIata, toCity, toIata, dateLabel, dateISO, paxCount,
-  adults = paxCount, childrenCount = 0, infants = 0,
+  adults = paxCount, childrenCount = 0, infants = 0, infantsSeat = 0, cabin = "economy",
   onSelect, isSelected, isBest,
 }: Props) {
   const [showDetail, setShowDetail] = useState(false);
@@ -147,6 +149,8 @@ export default function FlightCard({
     dateLabel, dateISO, pricePerPax: String(f.pricePerPax + baggageExtra),
     paxCount: String(paxCount), total: String(total), baggageLabel: baggagePillText,
     adults: String(adults), children: String(childrenCount), infants: String(infants),
+    infantsSeat: String(infantsSeat),
+    cabin,
     ...(f.bookingUrl ? { bookingUrl: f.bookingUrl } : {}),
   });
 
@@ -289,23 +293,26 @@ export default function FlightCard({
             >
               {isSelected ? "✓ Выбран" : t("card.select")}
             </button>
-          ) : f.bookingUrl ? (
-            <a
-              href={f.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${ctaBase} bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]`}
-            >
-              {t("card.select")}
-            </a>
           ) : (
-            <a
-              href={`/book?${bookParams.toString()}`}
-              onClick={bookWithTransition}
-              className={`${ctaBase} bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]`}
-            >
-              {t("card.select")}
-            </a>
+            <>
+              <a
+                href={`/book?${bookParams.toString()}`}
+                onClick={bookWithTransition}
+                className={`${ctaBase} bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)]`}
+              >
+                Оформить у нас
+              </a>
+              {f.bookingUrl && (
+                <a
+                  href={f.bookingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center rounded-xl border border-[var(--color-border)] px-3 py-3 text-sm font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] sm:px-4"
+                >
+                  Aviasales
+                </a>
+              )}
+            </>
           )}
         </div>
       </article>
@@ -319,6 +326,8 @@ export default function FlightCard({
           adults={adults}
           childrenCount={childrenCount}
           infants={infants}
+          infantsSeat={infantsSeat}
+          cabin={cabin}
           onClose={() => setShowDetail(false)}
           onSelect={onSelect}
           isSelected={isSelected}

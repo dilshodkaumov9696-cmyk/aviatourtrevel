@@ -152,10 +152,13 @@ export async function createOrder(params: {
   cabin?: string;
   airline?: string;
   flightNumber?: string;
+  departAt?: string;
+  arriveAt?: string;
   tariff: string;
   seat?: string;
   promo?: string;
   paymentMethod: string;
+  bookingUrl?: string;
   totalAmount: number;
   passengers: OrderPassengerInput[];
 }): Promise<CreatedOrder> {
@@ -176,10 +179,13 @@ export async function createOrder(params: {
       cabin: params.cabin ?? "economy",
       airline: params.airline || null,
       flight_number: params.flightNumber || null,
+      depart_at: params.departAt || null,
+      arrive_at: params.arriveAt || null,
       tariff: params.tariff,
       seat: params.seat || null,
       promo: params.promo || null,
       payment_method: params.paymentMethod,
+      booking_url: params.bookingUrl || null,
       total_amount: params.totalAmount,
       passengers: params.passengers.map((p) => ({
         first_name: p.firstName,
@@ -203,6 +209,29 @@ export async function createOrder(params: {
     statusLabel: data.status_label,
     totalAmount: data.total_amount,
     currency: data.currency,
+  };
+}
+
+export async function startOrderPayment(params: {
+  ref: string;
+  email: string;
+  returnUrl?: string;
+}): Promise<{ mode: string; confirmationUrl: string | null; status: string; statusLabel: string }> {
+  const url = new URL(`${API_URL}/api/v1/orders/${encodeURIComponent(params.ref)}/payment`);
+  url.searchParams.set("email", params.email);
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ return_url: params.returnUrl || null }),
+  });
+  if (!res.ok) throw new Error(await apiErrorMessage(res));
+  const data = await res.json();
+  return {
+    mode: data.mode as string,
+    confirmationUrl: (data.confirmation_url as string) ?? null,
+    status: data.status as string,
+    statusLabel: data.status_label as string,
   };
 }
 
@@ -265,14 +294,14 @@ export async function getOrder(ref: string, email: string): Promise<OrderSummary
 }
 
 export async function listManagerOrders(key: string): Promise<OrderSummary[]> {
-  const res = await fetch(`${API_URL}/api/v1/orders/admin`, { headers: { "X-Manager-Key": key } });
+  const res = await fetch(`${API_URL}/api/v1/orders/admin`, { credentials: "include", headers: key ? { "X-Manager-Key": key } : {} });
   if (!res.ok) throw new Error(await apiErrorMessage(res));
   const data = await res.json() as Record<string, unknown>[];
   return data.map((o) => ({ ref: o.ref as string, status: o.status as string, statusLabel: o.status_label as string, origin: o.origin as string, destination: o.destination as string, departDate: o.depart_date as string, returnDate: (o.return_date as string) ?? null, airline: (o.airline as string) ?? null, flightNumber: (o.flight_number as string) ?? null, tariff: o.tariff as string, seat: (o.seat as string) ?? null, totalAmount: o.total_amount as number, currency: o.currency as string, paxCount: (o.passengers as unknown[]).length, createdAt: o.created_at as string }));
 }
 
 export async function resendOrderEmail(ref: string, key: string): Promise<void> {
-  const res = await fetch(`${API_URL}/api/v1/orders/${encodeURIComponent(ref)}/resend-email`, { method: "POST", headers: { "X-Manager-Key": key } });
+  const res = await fetch(`${API_URL}/api/v1/orders/${encodeURIComponent(ref)}/resend-email`, { method: "POST", credentials: "include", headers: key ? { "X-Manager-Key": key } : {} });
   if (!res.ok) throw new Error(await apiErrorMessage(res));
 }
 
@@ -332,6 +361,7 @@ export interface AuthUser {
   fullName: string | null;
   avatarUrl: string | null;
   emailVerified: boolean;
+  isStaff: boolean;
 }
 
 function mapUser(data: Record<string, unknown>): AuthUser {
@@ -341,6 +371,7 @@ function mapUser(data: Record<string, unknown>): AuthUser {
     fullName: (data.full_name as string) ?? null,
     avatarUrl: (data.avatar_url as string) ?? null,
     emailVerified: Boolean(data.email_verified),
+    isStaff: Boolean(data.is_staff),
   };
 }
 
@@ -416,7 +447,7 @@ export type CabinetAlert = { id:number; origin:string; destination:string; depar
 export type CabinetOrderDetail = Omit<CabinetOrder, "passengers"> & { passengers: { name:string; citizenship:string; document:string }[]; ticket_numbers:string|null; paid_at:string|null; issued_at:string|null };
 export type SupportKind = "refund" | "exchange" | "question";
 export type SupportStatus = "open" | "in_progress" | "closed";
-export type SupportTicket = { id:number; kind:SupportKind; status:SupportStatus; message:string; order_ref:string; created_at:string };
+export type SupportTicket = { id:number; kind:SupportKind; status:SupportStatus; message:string; operator_reply?:string|null; order_ref:string; created_at:string };
 export type AdminSupportTicket = SupportTicket & { user_email:string };
 
 /** Запрос ссылки восстановления пароля. Ответ одинаков независимо от того, есть ли такой email. */
@@ -448,16 +479,17 @@ export async function updateProfile(fullName: string | null): Promise<AuthUser> 
 export async function listManagerSupport(key: string, status?: SupportStatus): Promise<AdminSupportTicket[]> {
   const url = new URL(`${API_URL}/api/v1/cabinet/admin/support`);
   if (status) url.searchParams.set("status", status);
-  const res = await fetch(url.toString(), { headers: { "X-Manager-Key": key } });
+  const res = await fetch(url.toString(), { credentials: "include", headers: key ? { "X-Manager-Key": key } : {} });
   if (!res.ok) throw new Error(await apiErrorMessage(res));
   return res.json();
 }
 
-export async function updateManagerSupportStatus(id: number, status: SupportStatus, key: string): Promise<AdminSupportTicket> {
+export async function updateManagerSupportStatus(id: number, status: SupportStatus, key: string, operatorReply?: string): Promise<AdminSupportTicket> {
   const res = await fetch(`${API_URL}/api/v1/cabinet/admin/support/${id}/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json", "X-Manager-Key": key },
-    body: JSON.stringify({ status }),
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(key ? { "X-Manager-Key": key } : {}) },
+    body: JSON.stringify({ status, operator_reply: operatorReply || null }),
   });
   if (!res.ok) throw new Error(await apiErrorMessage(res));
   return res.json();
@@ -469,6 +501,9 @@ export async function searchFlights(params: {
   departDate: string;
   returnDate?: string;
   adults?: number;
+  children?: number;
+  infants?: number;
+  cabin?: string;
   currency?: string;
 }): Promise<Flight[]> {
   const url = new URL(`${API_URL}/api/v1/search`);
@@ -477,6 +512,9 @@ export async function searchFlights(params: {
   url.searchParams.set("depart_date", params.departDate);
   if (params.returnDate) url.searchParams.set("return_date", params.returnDate);
   if (params.adults) url.searchParams.set("adults", String(params.adults));
+  if (params.children) url.searchParams.set("children", String(params.children));
+  if (params.infants) url.searchParams.set("infants", String(params.infants));
+  if (params.cabin) url.searchParams.set("cabin", params.cabin);
   if (params.currency) url.searchParams.set("currency", params.currency);
 
   const res = await fetch(url.toString());

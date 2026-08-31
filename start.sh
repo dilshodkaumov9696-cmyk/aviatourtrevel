@@ -28,6 +28,11 @@ BACKEND_PID=$!
 
 until curl -s http://localhost:8000/health > /dev/null 2>&1; do sleep 1; done
 
+echo "  → Воркер ценовых подписок..."
+pkill -f "app.workers.price_watch" 2>/dev/null || true
+"$ROOT/backend/venv/bin/python" -m app.workers.price_watch > /tmp/aviator_watch.log 2>&1 &
+WATCH_PID=$!
+
 # Frontend
 echo "  → Frontend (Next.js)..."
 pkill -f "next dev" 2>/dev/null || true
@@ -47,12 +52,13 @@ echo "  Swagger: http://localhost:8000/docs"
 echo ""
 echo "  Логи backend:  /tmp/aviator_backend.log"
 echo "  Логи frontend: /tmp/aviator_frontend.log"
+echo "  Логи watcher:  /tmp/aviator_watch.log"
 echo ""
 echo "  Нажми Ctrl+C чтобы остановить всё"
 echo ""
 
 open http://localhost:3000
 
-trap "echo ''; echo 'Остановка...'; kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; docker compose -f '$ROOT/infra/docker-compose.yml' stop; exit 0" INT TERM
+trap "echo ''; echo 'Остановка...'; kill $BACKEND_PID $FRONTEND_PID $WATCH_PID 2>/dev/null; docker compose -f '$ROOT/infra/docker-compose.yml' stop; exit 0" INT TERM
 
 wait

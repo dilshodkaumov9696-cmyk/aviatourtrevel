@@ -4,7 +4,6 @@ from __future__ import annotations
 import hmac
 
 from fastapi import Depends, Header, HTTPException, Request  # pyright: ignore[reportMissingImports]
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -43,17 +42,25 @@ async def get_current_user_optional(
     return user
 
 
-def require_manager_key(x_manager_key: str | None = Header(None)) -> None:
-    """Защита менеджерских ручек (смена статуса заявки) до появления ролей.
-
-    Пока в User нет is_staff и своего бэк-офиса — сверяем секретный заголовок
-    с MANAGER_API_KEY. Если ключ не настроен в .env, ручка недоступна вообще
-    (503), а не открыта всем — так безопаснее по умолчанию.
-    """
+async def require_manager_key(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    x_manager_key: str | None = Header(None),
+) -> None:
+    """Оператор: X-Manager-Key или cookie-сессия пользователя с is_staff."""
+    if settings.manager_api_key and x_manager_key and hmac.compare_digest(
+        x_manager_key, settings.manager_api_key
+    ):
+        return
+    user = await _user_from_cookie(request, session)
+    if user is not None and user.is_active and user.is_staff:
+        return
     if not settings.manager_api_key:
         raise HTTPException(
             status_code=503,
-            detail="MANAGER_API_KEY не настроен на сервере — ручка временно отключена",
+            detail="MANAGER_API_KEY не настроен и нет сессии сотрудника — ручка отключена",
         )
-    if not x_manager_key or not hmac.compare_digest(x_manager_key, settings.manager_api_key):
-        raise HTTPException(status_code=401, detail="Неверный или отсутствующий X-Manager-Key")
+    raise HTTPException(
+        status_code=401,
+        detail="Нужен X-Manager-Key или вход сотрудника (is_staff)",
+    )

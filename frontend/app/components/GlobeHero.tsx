@@ -7,8 +7,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
  * Небольшой фиксированный набор городов, которые глобус умеет подсвечивать
  * и рисовать между ними дугу маршрута. Специально мало (см. ТЗ: «не 1000 точек») —
  * покрывает состояние по умолчанию (8 популярных городов) плюс города, на которые
- * можно кликнуть из панели «Популярные направления» (Баку, которого нет среди
- * дефолтных точек, но который должен уметь подсветиться при выборе).
+ * можно кликнуть из панели «Популярные направления» (Мюнхен и другие хабы).
  */
 export const CITY_COORDS: Record<string, { city: string; lat: number; lon: number }> = {
   // СНГ и Центральная Азия — основной рынок, точек намеренно больше, чем в остальных регионах.
@@ -31,6 +30,7 @@ export const CITY_COORDS: Record<string, { city: string; lat: number; lon: numbe
   // Европа
   LON: { city: "Лондон", lat: 51.5074, lon: -0.1278 },
   PAR: { city: "Париж", lat: 49.0, lon: 2.55 },
+  MUC: { city: "Мюнхен", lat: 48.1351, lon: 11.582 },
   // Африка
   CAI: { city: "Каир", lat: 30.0444, lon: 31.2357 },
   JNB: { city: "Йоханнесбург", lat: -26.13, lon: 28.24 },
@@ -64,39 +64,101 @@ interface Props {
 function toRad(d: number) { return (d * Math.PI) / 180; }
 function toDeg(r: number) { return (r * 180) / Math.PI; }
 
-// Интерполяция большого круга между двумя точками сферы (slerp), n+1 точек.
-function greatCircle(a: [number, number], b: [number, number], n = 48): [number, number][] {
-  const lon1 = toRad(a[0]), lat1 = toRad(a[1]);
-  const lon2 = toRad(b[0]), lat2 = toRad(b[1]);
-  const d = 2 * Math.asin(Math.sqrt(
-    Math.sin((lat2 - lat1) / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2,
-  ));
-  if (d === 0) return [a, b];
-  const points: [number, number][] = [];
-  for (let i = 0; i <= n; i++) {
-    const f = i / n;
-    const A = Math.sin((1 - f) * d) / Math.sin(d);
-    const B = Math.sin(f * d) / Math.sin(d);
-    const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
-    const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
-    const z = A * Math.sin(lat1) + B * Math.sin(lat2);
-    const lat = Math.atan2(z, Math.sqrt(x * x + y * y));
-    const lon = Math.atan2(y, x);
-    points.push([toDeg(lon), toDeg(lat)]);
-  }
-  return points;
+type LngLat = [number, number];
+type Vec3 = [number, number, number];
+
+function lngLatToVec(lon: number, lat: number): Vec3 {
+  const lo = toRad(lon), la = toRad(lat);
+  return [Math.cos(la) * Math.cos(lo), Math.cos(la) * Math.sin(lo), Math.sin(la)];
+}
+function vecToLngLat(v: Vec3): LngLat {
+  const n = Math.hypot(v[0], v[1], v[2]) || 1;
+  const x = v[0] / n, y = v[1] / n, z = v[2] / n;
+  return [toDeg(Math.atan2(y, x)), toDeg(Math.asin(Math.max(-1, Math.min(1, z))))];
+}
+function vAdd(a: Vec3, b: Vec3): Vec3 { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+function vSub(a: Vec3, b: Vec3): Vec3 { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+function vScale(a: Vec3, s: number): Vec3 { return [a[0] * s, a[1] * s, a[2] * s]; }
+function vDot(a: Vec3, b: Vec3): number { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function vCross(a: Vec3, b: Vec3): Vec3 {
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+function vNorm(a: Vec3): Vec3 {
+  const n = Math.hypot(a[0], a[1], a[2]) || 1;
+  return [a[0] / n, a[1] / n, a[2] / n];
+}
+function slerp(a: Vec3, b: Vec3, t: number): Vec3 {
+  const d = Math.max(-1, Math.min(1, vDot(a, b)));
+  const omega = Math.acos(d);
+  if (omega < 1e-6) return vNorm(vAdd(a, vScale(vSub(b, a), t)));
+  const so = Math.sin(omega);
+  return vAdd(vScale(a, Math.sin((1 - t) * omega) / so), vScale(b, Math.sin(t * omega) / so));
 }
 
 // map.fitBounds() у globe-проекции в этой версии maplibre-gl считает камеру некорректно
 // (сильно отдаляет и уводит к полюсу вместо города) — вместо него центр между городами
 // + zoom по угловому расстоянию между ними, через обычный flyTo.
-function angularDistanceDeg(a: [number, number], b: [number, number]): number {
-  const lon1 = toRad(a[0]), lat1 = toRad(a[1]);
-  const lon2 = toRad(b[0]), lat2 = toRad(b[1]);
-  const d = 2 * Math.asin(Math.sqrt(
-    Math.sin((lat2 - lat1) / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2,
-  ));
-  return toDeg(d);
+function angularDistanceDeg(a: LngLat, b: LngLat): number {
+  const d = Math.max(-1, Math.min(1, vDot(lngLatToVec(a[0], a[1]), lngLatToVec(b[0], b[1]))));
+  return toDeg(Math.acos(d));
+}
+
+function curveAmplitudeDeg(distDeg: number): { s: number; arch: number } {
+  const s = Math.min(18, Math.max(4.2, distDeg * (distDeg < 14 ? 1.1 : distDeg < 40 ? 0.42 : 0.28)));
+  const arch = Math.min(9, Math.max(2.2, distDeg * (distDeg < 14 ? 0.58 : distDeg < 40 ? 0.28 : 0.16)));
+  return { s, arch };
+}
+
+// S-кривая на сфере: From и To фиксированы, середина уходит в стороны мягким
+// изгибом (sin 2π — намёк на бесконечность, без замкнутой восьмёрки).
+function flightCurve(a: LngLat, b: LngLat, n = 192): LngLat[] {
+  const A = lngLatToVec(a[0], a[1]);
+  const B = lngLatToVec(b[0], b[1]);
+  let perp = vCross(A, B);
+  if (Math.hypot(perp[0], perp[1], perp[2]) < 1e-8) {
+    perp = vCross(A, Math.abs(A[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0]);
+  }
+  perp = vNorm(perp);
+  const { s, arch } = curveAmplitudeDeg(angularDistanceDeg(a, b));
+  const ampS = toRad(s);
+  const ampArch = toRad(arch);
+
+  const raw: Vec3[] = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const p = slerp(A, B, t);
+    const ang = ampS * Math.sin(2 * Math.PI * t) + ampArch * Math.sin(Math.PI * t);
+    raw.push(vNorm(vAdd(vScale(p, Math.cos(ang)), vScale(perp, Math.sin(ang)))));
+  }
+  raw[0] = A;
+  raw[n] = B;
+
+  const dist = [0];
+  for (let i = 1; i < raw.length; i++) {
+    dist.push(dist[i - 1] + Math.acos(Math.max(-1, Math.min(1, vDot(raw[i - 1], raw[i])))));
+  }
+  const total = dist[dist.length - 1] || 1;
+  const out: LngLat[] = new Array(n + 1);
+  out[0] = a;
+  out[n] = b;
+  let j = 1;
+  for (let i = 1; i < n; i++) {
+    const target = (i / n) * total;
+    while (j < dist.length - 1 && dist[j] < target) j += 1;
+    const span = dist[j] - dist[j - 1] || 1;
+    const f = (target - dist[j - 1]) / span;
+    out[i] = vecToLngLat(slerp(raw[j - 1], raw[j], f));
+  }
+  return out;
+}
+
+function bearingAt(from: Vec3, to: Vec3): number {
+  const [lon, lat] = vecToLngLat(from);
+  const lo = toRad(lon), la = toRad(lat);
+  const east: Vec3 = [-Math.sin(lo), Math.cos(lo), 0];
+  const north: Vec3 = [-Math.sin(la) * Math.cos(lo), -Math.sin(la) * Math.sin(lo), Math.cos(la)];
+  const dir = vSub(to, from);
+  return toDeg(Math.atan2(vDot(dir, east), vDot(dir, north)));
 }
 function zoomForDistanceDeg(dDeg: number): number {
   if (dDeg < 3) return 5.5;
@@ -106,6 +168,40 @@ function zoomForDistanceDeg(dDeg: number): number {
   if (dDeg < 60) return 2;
   if (dDeg < 100) return 1.5;
   return 1.1;
+}
+
+const PLANE_FLIGHT_MS = 16000;
+const PLANE_FADE_MS = 900;
+const PLANE_SVG = `<svg class="globe-plane__icon" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L21 16z"/></svg>`;
+
+function easeInOut(t: number): number {
+  const x = Math.min(1, Math.max(0, t));
+  const k = 0.14;
+  if (x < k) {
+    const u = x / k;
+    return k * u * u * (3 - 2 * u);
+  }
+  if (x > 1 - k) {
+    const u = (x - (1 - k)) / k;
+    return (1 - k) + k * u * u * (3 - 2 * u);
+  }
+  return x;
+}
+
+function pointAlong(line: LngLat[], t: number): { lon: number; lat: number; bearing: number } {
+  const last = line.length - 1;
+  const pos = Math.min(1, Math.max(0, t)) * last;
+  const i = Math.min(last - 1, Math.floor(pos));
+  const f = pos - i;
+  const a = lngLatToVec(line[i][0], line[i][1]);
+  const b = lngLatToVec(line[i + 1][0], line[i + 1][1]);
+  const p = slerp(a, b, f);
+  const [lon, lat] = vecToLngLat(p);
+  return { lon, lat, bearing: bearingAt(a, b) };
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 type MaplibreMap = import("maplibre-gl").Map;
@@ -220,14 +316,19 @@ export default function GlobeHero({ origin = null, destination = null, onCityCli
         // наполняются вторым эффектом, когда выбраны origin и destination.
         map.addSource("route-arc", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addLayer({
+          id: "route-arc-halo", type: "line", source: "route-arc",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#C4841D", "line-width": 16, "line-blur": 11, "line-opacity": 0.38 },
+        });
+        map.addLayer({
           id: "route-arc-glow", type: "line", source: "route-arc",
           layout: { "line-cap": "round", "line-join": "round" },
-          paint: { "line-color": "#2FD98A", "line-width": 7, "line-blur": 7, "line-opacity": 0.45 },
+          paint: { "line-color": "#E8B84A", "line-width": 7.5, "line-blur": 2.2, "line-opacity": 0.85 },
         });
         map.addLayer({
           id: "route-arc-core", type: "line", source: "route-arc",
           layout: { "line-cap": "round", "line-join": "round" },
-          paint: { "line-color": "#B9FFDD", "line-width": 1.6, "line-opacity": 0.95 },
+          paint: { "line-color": "#FFE9A3", "line-width": 2.2, "line-opacity": 1 },
         });
 
         // Точки городов — немного (см. CITY_COORDS), статичные, без постоянной пульсации.
@@ -289,43 +390,59 @@ export default function GlobeHero({ origin = null, destination = null, onCityCli
     const hasRoute = Boolean(originCoord && destCoord);
 
     if (originCoord && destCoord && src) {
-      const line = greatCircle([originCoord.lon, originCoord.lat], [destCoord.lon, destCoord.lat]);
+      const from: LngLat = [originCoord.lon, originCoord.lat];
+      const to: LngLat = [destCoord.lon, destCoord.lat];
+      const line = flightCurve(from, to);
       src.setData({ type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: line } }] });
 
       const MarkerCtor = maplibreglRef.current?.Marker;
-      if (MarkerCtor) {
+      if (MarkerCtor && line.length >= 2) {
         cancelAnimationFrame(planeRafRef.current);
-        if (!planeMarkerRef.current) {
-          const wrap = document.createElement("div");
-          wrap.className = "globe-plane";
-          wrap.innerHTML = `<span class="globe-plane__icon">✈</span>`;
-          planeMarkerRef.current = new MarkerCtor({ element: wrap, anchor: "center" });
-        }
-        const marker = planeMarkerRef.current!;
-        marker.setLngLat(line[0]).addTo(map);
-        const iconEl = marker.getElement().querySelector<HTMLElement>(".globe-plane__icon");
-        const start = performance.now();
-        const flightDuration = 3000;
-        const step = (now: number) => {
-          const t = Math.min(1, (now - start) / flightDuration);
-          const idx = Math.min(line.length - 1, Math.floor(t * (line.length - 1)));
-          const point = line[idx];
-          if (!point) return;
-          const [lon, lat] = point;
-          marker.setLngLat([lon, lat]);
-          const next = line[Math.min(line.length - 1, idx + 1)];
-          if (iconEl && next) {
-            const bearing = Math.atan2(next[0] - lon, next[1] - lat) * (180 / Math.PI);
-            iconEl.style.transform = `rotate(${bearing}deg)`;
-          }
-          if (t < 1) planeRafRef.current = requestAnimationFrame(step);
+        planeMarkerRef.current?.remove();
+        const wrap = document.createElement("div");
+        wrap.className = "globe-plane";
+        wrap.setAttribute("aria-hidden", "true");
+        wrap.style.pointerEvents = "none";
+        wrap.innerHTML = PLANE_SVG;
+        const marker = new MarkerCtor({
+          element: wrap,
+          anchor: "center",
+          pitchAlignment: "viewport",
+          rotationAlignment: "viewport",
+        });
+        planeMarkerRef.current = marker;
+        const iconEl = wrap.querySelector<HTMLElement>(".globe-plane__icon");
+
+        const placeAt = (t: number, opacity: number) => {
+          const p = pointAlong(line, t);
+          marker.setLngLat([p.lon, p.lat]);
+          wrap.style.opacity = String(opacity);
+          if (iconEl) iconEl.style.transform = `rotate(${p.bearing}deg)`;
         };
-        planeRafRef.current = requestAnimationFrame(step);
+
+        placeAt(0, 0);
+        marker.addTo(map);
+
+        if (prefersReducedMotion()) {
+          placeAt(0.5, 1);
+        } else {
+          const start = performance.now();
+          const step = (now: number) => {
+            const elapsed = (now - start) % PLANE_FLIGHT_MS;
+            const linear = elapsed / PLANE_FLIGHT_MS;
+            const fade = Math.min(elapsed / PLANE_FADE_MS, (PLANE_FLIGHT_MS - elapsed) / PLANE_FADE_MS, 1);
+            placeAt(easeInOut(linear), fade);
+            planeRafRef.current = requestAnimationFrame(step);
+          };
+          planeRafRef.current = requestAnimationFrame(step);
+        }
       }
 
+      const dist = angularDistanceDeg(from, to);
+      const amp = curveAmplitudeDeg(dist);
       map.flyTo({
         center: [(originCoord.lon + destCoord.lon) / 2, (originCoord.lat + destCoord.lat) / 2],
-        zoom: zoomForDistanceDeg(angularDistanceDeg([originCoord.lon, originCoord.lat], [destCoord.lon, destCoord.lat])),
+        zoom: zoomForDistanceDeg(dist + amp.s + amp.arch),
         duration: 1200,
       });
     } else {
@@ -336,7 +453,7 @@ export default function GlobeHero({ origin = null, destination = null, onCityCli
       if (originCoord) {
         map.flyTo({ center: [originCoord.lon, originCoord.lat], zoom: 3, duration: 1000 });
       } else {
-        map.flyTo({ center: [45, 32], zoom: 1.35, duration: 1000 });
+        map.flyTo({ center: [38, 28], zoom: 1.22, duration: 1000 });
       }
     }
 
@@ -347,7 +464,7 @@ export default function GlobeHero({ origin = null, destination = null, onCityCli
       const spin = () => {
         if (mapRef.current && !userInteractingRef.current) {
           const c = mapRef.current.getCenter();
-          c.lng -= 0.035;
+          c.lng -= 0.018;
           mapRef.current.jumpTo({ center: c });
         }
         raf = requestAnimationFrame(spin);

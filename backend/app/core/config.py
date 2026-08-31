@@ -73,6 +73,15 @@ class Settings(BaseSettings):
     price_watch_batch: int = 50  # сколько подписок проверять за проход
     site_url: str = "http://localhost:3000"  # для ссылок в письмах
 
+    # ЮKassa. Пусто — оплата не списывается, заявка остаётся «ожидает оплаты».
+    yookassa_shop_id: str = ""
+    yookassa_secret_key: str = ""
+    yookassa_return_url: str = "http://localhost:3000/order"
+
+    @property
+    def cookie_secure(self) -> bool:
+        return self.app_env.lower() in {"production", "prod"}
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
