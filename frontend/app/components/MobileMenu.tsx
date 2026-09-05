@@ -5,19 +5,7 @@ import SettingsSwitcher from "./SettingsSwitcher";
 import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 import { IconClose } from "./icons";
-import {
-  Airplane,
-  Buildings,
-  MapTrifold,
-  SimCard,
-  ShieldCheck,
-  Train,
-  Car,
-  Percent,
-  Headset,
-  User,
-  List,
-} from "@phosphor-icons/react";
+import { FolderIcon, NAV_ITEMS } from "./navIcons";
 import LogoMark from "./Logo";
 import Link from "next/link";
 
@@ -35,14 +23,7 @@ export default function MobileMenu({
   const [open, setOpen] = useState(false);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
 
-  const upcoming = [
-    [t("nav.hotels"), Buildings],
-    [t("nav.tours"), MapTrifold],
-    [t("nav.esim"), SimCard],
-    [t("nav.insurance"), ShieldCheck],
-    [t("nav.trains"), Train],
-    [t("nav.transfers"), Car],
-  ] as const;
+  const upcoming = NAV_ITEMS.filter((item) => item.href === null);
 
   useEffect(() => {
     if (!open) return;
@@ -72,7 +53,7 @@ export default function MobileMenu({
         onClick={() => setOpen(true)}
         className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       >
-        <List size={20} weight="regular" />
+        <FolderIcon name="menu" size={20} invert />
       </button>
 
       {open && (
@@ -105,12 +86,14 @@ export default function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
-                <Airplane size={20} weight="regular" />
+                <FolderIcon name="flights" size={20} />
                 {t("nav.flights")}
               </a>
-              {upcoming.map(([label, Icon]) => (
+              {upcoming.map(({ key, icon }) => {
+                const label = t(`nav.${key}`);
+                return (
                 <button
-                  key={label}
+                  key={key}
                   type="button"
                   onClick={() => {
                     setComingSoon(label);
@@ -118,19 +101,20 @@ export default function MobileMenu({
                   }}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
                 >
-                  <Icon size={20} weight="regular" />
+                  <FolderIcon name={icon} size={20} />
                   <span>
                     {label}
                     {comingSoon === label && <span className="ml-2 text-xs font-semibold text-[var(--color-primary)]">{t("nav.coming_soon")}</span>}
                   </span>
                 </button>
-              ))}
+                );
+              })}
               <a
                 href="/#deals"
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
-                <Percent size={20} weight="regular" />
+                <FolderIcon name="deals" size={20} />
                 {t("nav.deals")}
               </a>
             </nav>
@@ -144,7 +128,7 @@ export default function MobileMenu({
                 }}
                 className="mb-4 flex w-full min-h-12 items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left"
               >
-                <Headset size={22} weight="regular" className="text-[var(--color-primary)]" />
+                <FolderIcon name="support" size={22} className="text-[var(--color-primary)]" />
                 <span>
                   <span className="block text-sm font-semibold text-[var(--color-text)]">{t("nav.support")}</span>
                   <span className="text-xs font-bold tracking-wide text-[var(--color-primary)]">{t("nav.support_247")}</span>
@@ -160,7 +144,7 @@ export default function MobileMenu({
                   onClick={() => setOpen(false)}
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-3 text-base font-semibold text-white"
                 >
-                  <User size={18} weight="regular" />
+                  <FolderIcon name="login" size={18} />
                   {user.fullName || user.email.split("@")[0]}
                 </Link>
               ) : (
@@ -169,7 +153,7 @@ export default function MobileMenu({
                   onClick={login}
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-3 text-center text-base font-semibold text-[var(--color-accent-foreground)]"
                 >
-                  <User size={18} weight="regular" />
+                  <FolderIcon name="login" size={18} />
                   {t("nav.login")}
                 </button>
               )}

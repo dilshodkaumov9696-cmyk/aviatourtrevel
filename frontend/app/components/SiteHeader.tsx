@@ -2,24 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Airplane,
-  Buildings,
-  MapTrifold,
-  SimCard,
-  ShieldCheck,
-  Train,
-  Car,
-  Percent,
-  Headset,
-  Moon,
-  Sun,
-  User,
-} from "@phosphor-icons/react";
 import LogoMark from "./Logo";
 import AuthModal from "./AuthModal";
 import SettingsSwitcher from "./SettingsSwitcher";
 import MobileMenu from "./MobileMenu";
+import { FolderIcon, NAV_ITEMS } from "./navIcons";
 import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 
@@ -29,17 +16,6 @@ const NAV_IDLE =
   "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22 hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
 const NAV_ACTIVE =
   "bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-inset ring-white/28";
-
-const NAV_ITEMS = [
-  ["flights", Airplane, "/#search"],
-  ["hotels", Buildings, null],
-  ["tours", MapTrifold, null],
-  ["esim", SimCard, null],
-  ["insurance", ShieldCheck, null],
-  ["trains", Train, null],
-  ["transfers", Car, null],
-  ["deals", Percent, "/#deals"],
-] as const;
 
 function ThemeToggle() {
   const [dark, setDark] = useState<boolean | null>(null);
@@ -66,7 +42,7 @@ function ThemeToggle() {
       className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       title={dark ? "Светлая тема" : "Тёмная тема"}
     >
-      {dark ? <Sun size={18} weight="regular" /> : <Moon size={18} weight="regular" />}
+      <FolderIcon name={dark ? "sun" : "moon"} size={18} invert />
     </button>
   );
 }
@@ -82,6 +58,46 @@ export default function SiteHeader({
   const { user } = useAuth();
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
+
+  function navButtons() {
+    return NAV_ITEMS.map(({ key, icon, href }) => {
+      const label = t(`nav.${key}`);
+      const active = key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
+      const className = `${NAV_BTN} ${active ? NAV_ACTIVE : NAV_IDLE}`;
+      const inner = (
+        <>
+          <FolderIcon name={icon} size={18} invert />
+          {label}
+        </>
+      );
+      if (href) {
+        return (
+          <Link key={key} href={href} className={className}>
+            {inner}
+          </Link>
+        );
+      }
+      return (
+        <div key={key} className="relative">
+          <button
+            type="button"
+            onClick={() => {
+              setComingSoon(label);
+              window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
+            }}
+            className={className}
+          >
+            {inner}
+          </button>
+          {comingSoon === label && (
+            <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+              {t("nav.coming_soon")}
+            </span>
+          )}
+        </div>
+      );
+    });
+  }
 
   return (
     <>
@@ -102,46 +118,7 @@ export default function SiteHeader({
             <span className="hidden font-heading text-lg font-bold tracking-tight text-white lg:inline sm:text-[22px]">Aviator</span>
           </Link>
           <nav className="hidden min-w-0 flex-1 items-center justify-start overflow-x-auto md:flex lg:justify-center">
-            <div className="flex items-center gap-1 2xl:gap-1.5">
-              {NAV_ITEMS.map(([key, Icon, href]) => {
-                const label = t(`nav.${key}`);
-                const active = key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
-                const iconClass = active ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white";
-                const className = `${NAV_BTN} ${active ? NAV_ACTIVE : NAV_IDLE}`;
-                const inner = (
-                  <>
-                    <Icon size={16} weight="regular" className={iconClass} />
-                    {label}
-                  </>
-                );
-                if (href) {
-                  return (
-                    <Link key={key} href={href} className={className}>
-                      {inner}
-                    </Link>
-                  );
-                }
-                return (
-                  <div key={key} className="relative">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setComingSoon(label);
-                        window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
-                      }}
-                      className={className}
-                    >
-                      {inner}
-                    </button>
-                    {comingSoon === label && (
-                      <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
-                        {t("nav.coming_soon")}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <div className="flex items-center gap-1 2xl:gap-1.5">{navButtons()}</div>
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
@@ -149,7 +126,7 @@ export default function SiteHeader({
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
               className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3.5"
             >
-              <Headset size={20} weight="regular" className="shrink-0 text-[var(--color-accent)]" />
+              <FolderIcon name="support" size={20} invert className="shrink-0" />
               <span className="leading-tight text-left">
                 <span className="block text-[13px] font-semibold">{t("nav.support")}</span>
                 <span className="block text-[11px] font-bold tracking-wide text-white">{t("nav.support_247")}</span>
@@ -175,13 +152,16 @@ export default function SiteHeader({
                 onClick={() => setAuthOpen(true)}
                 className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:inline-flex"
               >
-                <User size={18} weight="regular" />
+                <FolderIcon name="login" size={18} invert />
                 {t("nav.login")}
               </button>
             )}
             <MobileMenu activeSection={activeSection} onLogin={() => setAuthOpen(true)} />
           </div>
         </div>
+        <nav className="flex overflow-x-auto border-t border-white/10 px-3 py-2 md:hidden" aria-label={t("nav.menu")}>
+          <div className="flex items-center gap-1">{navButtons()}</div>
+        </nav>
       </header>
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </>
