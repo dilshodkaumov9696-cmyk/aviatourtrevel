@@ -4,7 +4,20 @@ import { useEffect, useState } from "react";
 import SettingsSwitcher from "./SettingsSwitcher";
 import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
-import { IconClose, IconHeadset, IconUser } from "./icons";
+import { IconClose } from "./icons";
+import {
+  Airplane,
+  Buildings,
+  MapTrifold,
+  SimCard,
+  ShieldCheck,
+  Train,
+  Car,
+  Percent,
+  Headset,
+  User,
+  List,
+} from "@phosphor-icons/react";
 import LogoMark from "./Logo";
 import Link from "next/link";
 
@@ -23,13 +36,13 @@ export default function MobileMenu({
   const [comingSoon, setComingSoon] = useState<string | null>(null);
 
   const upcoming = [
-    t("nav.hotels"),
-    t("nav.tours"),
-    t("nav.esim"),
-    t("nav.insurance"),
-    t("nav.trains"),
-    t("nav.transfers"),
-  ];
+    [t("nav.hotels"), Buildings],
+    [t("nav.tours"), MapTrifold],
+    [t("nav.esim"), SimCard],
+    [t("nav.insurance"), ShieldCheck],
+    [t("nav.trains"), Train],
+    [t("nav.transfers"), Car],
+  ] as const;
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +64,7 @@ export default function MobileMenu({
   }
 
   return (
-    <div className="xl:hidden">
+    <div className="md:hidden">
       <button
         type="button"
         aria-label={t("nav.menu")}
@@ -59,9 +72,7 @@ export default function MobileMenu({
         onClick={() => setOpen(true)}
         className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.15" strokeLinecap="round" aria-hidden>
-          <path d="M3 6h18M3 12h18M3 18h18" />
-        </svg>
+        <List size={20} weight="regular" />
       </button>
 
       {open && (
@@ -90,13 +101,14 @@ export default function MobileMenu({
 
             <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
               <a
-                href="#search"
+                href="/#search"
                 onClick={() => setOpen(false)}
-                className={`rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
+                <Airplane size={20} weight="regular" />
                 {t("nav.flights")}
               </a>
-              {upcoming.map((label) => (
+              {upcoming.map(([label, Icon]) => (
                 <button
                   key={label}
                   type="button"
@@ -104,17 +116,21 @@ export default function MobileMenu({
                     setComingSoon(label);
                     window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
                   }}
-                  className="rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
                 >
-                  {label}
-                  {comingSoon === label && <span className="ml-2 text-xs font-semibold text-[var(--color-primary)]">{t("nav.coming_soon")}</span>}
+                  <Icon size={20} weight="regular" />
+                  <span>
+                    {label}
+                    {comingSoon === label && <span className="ml-2 text-xs font-semibold text-[var(--color-primary)]">{t("nav.coming_soon")}</span>}
+                  </span>
                 </button>
               ))}
               <a
-                href="#deals"
+                href="/#deals"
                 onClick={() => setOpen(false)}
-                className={`rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
+                <Percent size={20} weight="regular" />
                 {t("nav.deals")}
               </a>
             </nav>
@@ -128,7 +144,7 @@ export default function MobileMenu({
                 }}
                 className="mb-4 flex w-full min-h-12 items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left"
               >
-                <IconHeadset size={22} className="text-[var(--color-primary)]" />
+                <Headset size={22} weight="regular" className="text-[var(--color-primary)]" />
                 <span>
                   <span className="block text-sm font-semibold text-[var(--color-text)]">{t("nav.support")}</span>
                   <span className="text-xs font-bold tracking-wide text-[var(--color-primary)]">{t("nav.support_247")}</span>
@@ -144,7 +160,7 @@ export default function MobileMenu({
                   onClick={() => setOpen(false)}
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-3 text-base font-semibold text-white"
                 >
-                  <IconUser size={18} />
+                  <User size={18} weight="regular" />
                   {user.fullName || user.email.split("@")[0]}
                 </Link>
               ) : (
@@ -153,7 +169,7 @@ export default function MobileMenu({
                   onClick={login}
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-3 text-center text-base font-semibold text-[var(--color-accent-foreground)]"
                 >
-                  <IconUser size={18} />
+                  <User size={18} weight="regular" />
                   {t("nav.login")}
                 </button>
               )}

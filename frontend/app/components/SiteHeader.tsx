@@ -24,7 +24,7 @@ import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 
 const NAV_BTN =
-  "group inline-flex items-center gap-2 rounded-full px-3.5 py-3 text-[13px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 2xl:gap-2.5 2xl:px-4 2xl:text-[13.5px]";
+  "group inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-[12px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 lg:gap-2 lg:px-3 lg:py-2.5 lg:text-[13px] 2xl:gap-2.5 2xl:px-4 2xl:py-3 2xl:text-[13.5px]";
 const NAV_IDLE =
   "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22 hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
 const NAV_ACTIVE =
@@ -101,7 +101,7 @@ export default function SiteHeader({
             <LogoMark size={42} className="hidden xl:block" />
             <span className="font-heading text-lg font-bold tracking-tight text-white sm:text-[22px]">Aviator</span>
           </Link>
-          <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center md:flex">
             <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
               {NAV_ITEMS.map(([key, Icon, href]) => {
                 const label = t(`nav.${key}`);
@@ -156,13 +156,13 @@ export default function SiteHeader({
               </span>
             </button>
             <ThemeToggle />
-            <div className="hidden items-center xl:flex">
+            <div className="hidden items-center md:flex">
               <SettingsSwitcher variant="dark" />
             </div>
             {user ? (
               <Link
                 href="/account"
-                className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
+                className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:inline-flex"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">
                   {(user.fullName || user.email)[0]?.toUpperCase()}
@@ -173,7 +173,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
+                className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:inline-flex"
               >
                 <User size={18} weight="regular" />
                 {t("nav.login")}
