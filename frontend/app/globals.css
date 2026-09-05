@@ -423,6 +423,27 @@ textarea:focus-visible {
   .chat-typing-dot { animation: none; opacity: 0.85; }
 }
 
+/* ===== Иллюстрация окна входа/регистрации ===== */
+.auth-plane-float {
+  animation: auth-plane-float 3.2s ease-in-out infinite;
+}
+@keyframes auth-plane-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.auth-trail {
+  stroke-dashoffset: 0;
+  animation: auth-trail-draw 6s linear infinite;
+}
+@keyframes auth-trail-draw {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -50; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-plane-float,
+  .auth-trail { animation: none; }
+}
+
 /* ===== Глобус MapLibre («живой глобус маршрутов») ===== */
 .globe-canvas {
   position: absolute;
