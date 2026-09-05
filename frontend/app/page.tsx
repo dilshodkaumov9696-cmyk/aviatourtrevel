@@ -530,7 +530,7 @@ export default function Home() {
                   {/* Скругления по брейкпоинтам: <sm — верхняя ячейка колонки, sm..xl — левый
                       верхний угол бара, xl+ — левый торец строки. */}
                   <div className={`group relative min-w-0 flex-1 ${boxBase} rounded-t-2xl sm:rounded-tr-none xl:rounded-bl-2xl ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
-                    <span className="nav-icon nav-icon--fly inline-flex shrink-0 items-center justify-center">
+                    <span className="nav-icon nav-icon--spin360 inline-flex shrink-0 items-center justify-center">
                       <IconPlane size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
                     <AirportInput
@@ -556,7 +556,7 @@ export default function Home() {
 
                   {/* sm..xl «Куда» замыкает правый верхний угол бара, на xl+ — рядовая ячейка */}
                   <div className={`group relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-2xl xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
-                    <span className="nav-icon nav-icon--drop inline-flex shrink-0 items-center justify-center">
+                    <span className="nav-icon nav-icon--flip inline-flex shrink-0 items-center justify-center">
                       <IconPin size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
                     <AirportInput
@@ -584,7 +584,7 @@ export default function Home() {
                         {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : t("form.depart_date")}
                       </div>
                     </div>
-                    <span className="nav-icon nav-icon--unfold inline-flex shrink-0 items-center justify-center">
+                    <span className="nav-icon nav-icon--spin360 inline-flex shrink-0 items-center justify-center">
                       <IconCalendar size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
                   </div>
@@ -614,7 +614,7 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    <span className="nav-icon nav-icon--unfold inline-flex shrink-0 items-center justify-center">
+                    <span className="nav-icon nav-icon--spin360 inline-flex shrink-0 items-center justify-center">
                       <IconCalendar size={22} className={`nav-icon__img shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
                     </span>
                   </div>

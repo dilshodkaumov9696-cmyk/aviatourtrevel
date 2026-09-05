@@ -44,7 +44,7 @@ export function FolderIcon({
 }) {
   const motion = animated ? ICON_MOTION[name] ?? "nav-icon--pop" : "";
   return (
-    <span className={`nav-icon inline-flex shrink-0 items-center justify-center ${motion} ${className}`} style={{ width: size, height: size }}>
+    <span className={`nav-icon relative inline-flex shrink-0 items-center justify-center ${motion} ${className}`} style={{ width: size, height: size }}>
       <img
         src={`/icons/${name}.svg`}
         alt=""
@@ -53,6 +53,16 @@ export function FolderIcon({
         className={`nav-icon__img block h-full w-full ${invert ? "brightness-0 invert" : ""}`}
         draggable={false}
       />
+      {name === "support" && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-1.5 left-1/2 flex -translate-x-1/2 gap-[3px] opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+        >
+          <span className="chat-typing-dot h-[3px] w-[3px] rounded-full bg-current" />
+          <span className="chat-typing-dot h-[3px] w-[3px] rounded-full bg-current" />
+          <span className="chat-typing-dot h-[3px] w-[3px] rounded-full bg-current" />
+        </span>
+      )}
     </span>
   );
 }

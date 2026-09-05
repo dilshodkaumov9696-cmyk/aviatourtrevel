@@ -333,6 +333,14 @@ textarea:focus-visible {
   40% { transform: scale(1.18) rotate(-10deg); }
   70% { transform: scale(1.05) rotate(4deg); }
 }
+@keyframes nav-spin360 {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes nav-flip {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
 
 .nav-icon__img {
   transform-origin: center;
@@ -363,6 +371,10 @@ textarea:focus-visible {
 .group:focus-visible .nav-icon--drop .nav-icon__img { animation: nav-drop 0.45s ease; }
 .group:hover .nav-icon--zoom .nav-icon__img,
 .group:focus-visible .nav-icon--zoom .nav-icon__img { animation: nav-zoom 0.5s ease; }
+.group:hover .nav-icon--spin360 .nav-icon__img,
+.group:focus-visible .nav-icon--spin360 .nav-icon__img { animation: nav-spin360 0.6s ease; }
+.group:hover .nav-icon--flip .nav-icon__img,
+.group:focus-visible .nav-icon--flip .nav-icon__img { animation: nav-flip 0.6s ease; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
