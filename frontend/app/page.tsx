@@ -17,7 +17,7 @@ import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
 import PassengersPicker, { Passengers, CabinClass, EMPTY_PASSENGERS } from "./components/PassengersPicker";
-import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconUser } from "./components/icons";
 import SiteHeader from "./components/SiteHeader";
 import { useSettings } from "./context/settings";
 import { usePublishHomeRoute } from "./context/chatRoute";
