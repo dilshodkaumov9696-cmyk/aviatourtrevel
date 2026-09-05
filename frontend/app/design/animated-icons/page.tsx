@@ -22,11 +22,11 @@ export default function AnimatedIconsPreviewPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#E8B84A]">Превью · ещё не в шапке</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#E8B84A]">Превью · уже в шапке</p>
             <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight sm:text-4xl">Анимированные иконки Aviator</h1>
             <p className="mt-3 max-w-2xl text-white/70">
-              Набор придуман под текущую шапку. Наведите на карточку или смотрите автоповтор.
-              Когда утвердите — подключим в SiteHeader вместо статичных SVG.
+              Набор подключён в SiteHeader и MobileMenu. Наведите на карточку или смотрите автоповтор —
+              те же движения срабатывают при наведении на пункты меню в шапке.
             </p>
           </div>
           <Link href="/" className="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10">

@@ -6,7 +6,8 @@ import LogoMark from "./Logo";
 import AuthModal from "./AuthModal";
 import SettingsSwitcher from "./SettingsSwitcher";
 import MobileMenu from "./MobileMenu";
-import { FolderIcon, NAV_ITEMS } from "./navIcons";
+import { NAV_ITEMS } from "./navIcons";
+import { ANIMATED_ICON_MAP, AnimLogin, AnimMoon, AnimSun, AnimSupport } from "./animatedIcons";
 import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 
@@ -33,8 +34,8 @@ function ThemeToggle() {
 
   if (dark === null) {
     return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10" aria-hidden>
-        <FolderIcon name="moon" size={18} invert />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white" aria-hidden>
+        <AnimMoon size={18} />
       </div>
     );
   }
@@ -46,7 +47,7 @@ function ThemeToggle() {
       className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       title={dark ? "Светлая тема" : "Тёмная тема"}
     >
-      <FolderIcon name={dark ? "sun" : "moon"} size={18} invert />
+      {dark ? <AnimSun size={18} /> : <AnimMoon size={18} />}
     </button>
   );
 }
@@ -89,12 +90,13 @@ export default function SiteHeader({
             <div className="flex w-max items-center gap-1 pr-1 sm:gap-1.5">
               {NAV_ITEMS.map(({ key, icon, href }) => {
                 const label = t(`nav.${key}`);
+                const Icon = ANIMATED_ICON_MAP[icon];
                 const active =
                   key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
                 const className = `${NAV_BTN} ${active ? NAV_ACTIVE : NAV_IDLE}`;
                 const inner = (
                   <>
-                    <FolderIcon name={icon} size={20} invert />
+                    <Icon size={20} className="shrink-0 text-current" />
                     <span>{label}</span>
                   </>
                 );
@@ -135,7 +137,7 @@ export default function SiteHeader({
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
               className="group hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
             >
-              <FolderIcon name="support" size={20} invert className="shrink-0" />
+              <AnimSupport size={20} className="shrink-0 text-current" />
               <span className="leading-tight text-left">
                 <span className="block text-[13px] font-semibold">{t("nav.support")}</span>
                 <span className="block text-[11px] font-bold tracking-wide text-white">{t("nav.support_247")}</span>
@@ -161,7 +163,7 @@ export default function SiteHeader({
                 onClick={() => setAuthOpen(true)}
                 className="group hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
               >
-                <FolderIcon name="login" size={18} invert />
+                <AnimLogin size={18} className="shrink-0 text-current" />
                 {t("nav.login")}
               </button>
             )}

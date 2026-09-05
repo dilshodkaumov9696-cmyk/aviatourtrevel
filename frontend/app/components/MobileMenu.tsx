@@ -6,6 +6,7 @@ import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 import { IconClose } from "./icons";
 import { FolderIcon, NAV_ITEMS } from "./navIcons";
+import { ANIMATED_ICON_MAP, AnimLogin, AnimSupport } from "./animatedIcons";
 import LogoMark from "./Logo";
 import Link from "next/link";
 
@@ -86,11 +87,12 @@ export default function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
-                <FolderIcon name="flights" size={20} />
+                <ANIMATED_ICON_MAP.flights size={20} className="shrink-0 text-current" />
                 {t("nav.flights")}
               </a>
               {upcoming.map(({ key, icon }) => {
                 const label = t(`nav.${key}`);
+                const Icon = ANIMATED_ICON_MAP[icon];
                 return (
                 <button
                   key={key}
@@ -101,7 +103,7 @@ export default function MobileMenu({
                   }}
                   className="group flex items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
                 >
-                  <FolderIcon name={icon} size={20} />
+                  <Icon size={20} className="shrink-0 text-current" />
                   <span>
                     {label}
                     {comingSoon === label && <span className="ml-2 text-xs font-semibold text-[var(--color-primary)]">{t("nav.coming_soon")}</span>}
@@ -114,7 +116,7 @@ export default function MobileMenu({
                 onClick={() => setOpen(false)}
                 className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
-                <FolderIcon name="deals" size={20} />
+                <ANIMATED_ICON_MAP.deals size={20} className="shrink-0 text-current" />
                 {t("nav.deals")}
               </a>
             </nav>
@@ -128,7 +130,7 @@ export default function MobileMenu({
                 }}
                 className="group mb-4 flex w-full min-h-12 items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left"
               >
-                <FolderIcon name="support" size={22} className="text-[var(--color-primary)]" />
+                <AnimSupport size={22} className="shrink-0 text-[var(--color-primary)]" />
                 <span>
                   <span className="block text-sm font-semibold text-[var(--color-text)]">{t("nav.support")}</span>
                   <span className="text-xs font-bold tracking-wide text-[var(--color-primary)]">{t("nav.support_247")}</span>
@@ -142,18 +144,18 @@ export default function MobileMenu({
                 <Link
                   href="/account"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-3 text-base font-semibold text-white"
+                  className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-3 text-base font-semibold text-white"
                 >
-                  <FolderIcon name="login" size={18} />
+                  <AnimLogin size={18} className="shrink-0 text-current" />
                   {user.fullName || user.email.split("@")[0]}
                 </Link>
               ) : (
                 <button
                   type="button"
                   onClick={login}
-                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-3 text-center text-base font-semibold text-[var(--color-accent-foreground)]"
+                  className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-3 text-center text-base font-semibold text-[var(--color-accent-foreground)]"
                 >
-                  <FolderIcon name="login" size={18} />
+                  <AnimLogin size={18} className="shrink-0 text-current" />
                   {t("nav.login")}
                 </button>
               )}

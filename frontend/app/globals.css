@@ -411,38 +411,70 @@ textarea:focus-visible {
 }
 
 .ai-preview:hover .ai-flights,
-.ai-preview.is-playing .ai-flights { animation: ai-fly 0.7s ease; transform-origin: 50% 60%; }
+.ai-preview.is-playing .ai-flights,
+.group:hover .ai-flights,
+.group:focus-visible .ai-flights { animation: ai-fly 0.7s ease; transform-origin: 50% 60%; }
 .ai-preview:hover .ai-hotels,
-.ai-preview.is-playing .ai-hotels { animation: ai-breathe 0.9s ease; transform-origin: center bottom; }
+.ai-preview.is-playing .ai-hotels,
+.group:hover .ai-hotels,
+.group:focus-visible .ai-hotels { animation: ai-breathe 0.9s ease; transform-origin: center bottom; }
 .ai-preview:hover .ai-hotels__windows,
-.ai-preview.is-playing .ai-hotels__windows { animation: ai-blink 1.1s ease; }
+.ai-preview.is-playing .ai-hotels__windows,
+.group:hover .ai-hotels__windows,
+.group:focus-visible .ai-hotels__windows { animation: ai-blink 1.1s ease; }
 .ai-preview:hover .ai-tours__left,
-.ai-preview.is-playing .ai-tours__left { animation: ai-map-left 0.8s ease; transform-origin: right center; }
+.ai-preview.is-playing .ai-tours__left,
+.group:hover .ai-tours__left,
+.group:focus-visible .ai-tours__left { animation: ai-map-left 0.8s ease; transform-origin: right center; }
 .ai-preview:hover .ai-tours__right,
-.ai-preview.is-playing .ai-tours__right { animation: ai-map-right 0.8s ease; transform-origin: left center; }
+.ai-preview.is-playing .ai-tours__right,
+.group:hover .ai-tours__right,
+.group:focus-visible .ai-tours__right { animation: ai-map-right 0.8s ease; transform-origin: left center; }
 .ai-preview:hover .ai-esim__waves,
-.ai-preview.is-playing .ai-esim__waves { animation: ai-wave 0.9s ease; transform-origin: left center; }
+.ai-preview.is-playing .ai-esim__waves,
+.group:hover .ai-esim__waves,
+.group:focus-visible .ai-esim__waves { animation: ai-wave 0.9s ease; transform-origin: left center; }
 .ai-preview:hover .ai-insurance__check,
-.ai-preview.is-playing .ai-insurance__check {
+.ai-preview.is-playing .ai-insurance__check,
+.group:hover .ai-insurance__check,
+.group:focus-visible .ai-insurance__check {
   stroke-dasharray: 24;
   animation: ai-check 0.7s ease forwards;
 }
 .ai-preview:hover .ai-trains,
-.ai-preview.is-playing .ai-trains { animation: ai-roll 0.7s ease; }
+.ai-preview.is-playing .ai-trains,
+.group:hover .ai-trains,
+.group:focus-visible .ai-trains { animation: ai-roll 0.7s ease; }
 .ai-preview:hover .ai-transfers,
-.ai-preview.is-playing .ai-transfers { animation: ai-drive 0.7s ease; }
+.ai-preview.is-playing .ai-transfers,
+.group:hover .ai-transfers,
+.group:focus-visible .ai-transfers { animation: ai-drive 0.7s ease; }
 .ai-preview:hover .ai-deals,
-.ai-preview.is-playing .ai-deals { animation: ai-spin-soft 0.7s ease; transform-origin: center; }
+.ai-preview.is-playing .ai-deals,
+.group:hover .ai-deals,
+.group:focus-visible .ai-deals { animation: ai-spin-soft 0.7s ease; transform-origin: center; }
 .ai-preview:hover .ai-support,
-.ai-preview.is-playing .ai-support { animation: ai-ring 0.65s ease; transform-origin: 50% 30%; }
+.ai-preview.is-playing .ai-support,
+.group:hover .ai-support,
+.group:focus-visible .ai-support { animation: ai-ring 0.65s ease; transform-origin: 50% 30%; }
 .ai-preview:hover .ai-login,
-.ai-preview.is-playing .ai-login { animation: ai-pop 0.45s ease; transform-origin: center; }
+.ai-preview.is-playing .ai-login,
+.group:hover .ai-login,
+.group:focus-visible .ai-login { animation: ai-pop 0.45s ease; transform-origin: center; }
 .ai-preview:hover .ai-sun__rays,
-.ai-preview.is-playing .ai-sun__rays { animation: ai-rays 2.4s linear infinite; transform-origin: 16px 16px; }
+.ai-preview.is-playing .ai-sun__rays,
+.group:hover .ai-sun__rays,
+.group:focus-visible .ai-sun__rays { animation: ai-rays 2.4s linear infinite; transform-origin: 16px 16px; }
+.ai-preview:hover .ai-moon,
+.ai-preview.is-playing .ai-moon,
+.group:hover .ai-moon,
+.group:focus-visible .ai-moon { animation: ai-pop 0.5s ease; transform-origin: center; }
 
 @media (prefers-reduced-motion: reduce) {
   .ai-preview:hover [class*="ai-"],
-  .ai-preview.is-playing [class*="ai-"] { animation: none !important; }
+  .ai-preview.is-playing [class*="ai-"],
+  .group:hover [class*="ai-"],
+  .group:focus-visible [class*="ai-"] { animation: none !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

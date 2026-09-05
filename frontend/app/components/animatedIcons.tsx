@@ -178,6 +178,38 @@ export function AnimSun({ size, className, title = "Светлая тема" }: 
   );
 }
 
+/** Луна — мягкий «pop» на hover */
+export function AnimMoon({ size, className, title = "Тёмная тема" }: IconProps) {
+  return (
+    <Frame size={size} className={className} title={title}>
+      <g className="ai-moon">
+        <path
+          {...stroke}
+          d="M20.5 18.2A7.2 7.2 0 1 1 13.8 7.5 5.6 5.6 0 0 0 20.5 18.2Z"
+        />
+      </g>
+    </Frame>
+  );
+}
+
+/** Lookup by nav / utility key for SiteHeader + MobileMenu */
+export const ANIMATED_ICON_MAP = {
+  flights: AnimFlights,
+  hotels: AnimHotels,
+  tours: AnimTours,
+  esim: AnimEsim,
+  insurance: AnimInsurance,
+  trains: AnimTrains,
+  transfers: AnimTransfers,
+  deals: AnimDeals,
+  support: AnimSupport,
+  login: AnimLogin,
+  sun: AnimSun,
+  moon: AnimMoon,
+} as const;
+
+export type AnimatedIconKey = keyof typeof ANIMATED_ICON_MAP;
+
 export const ANIMATED_NAV_ICONS = [
   { key: "flights", label: "Авиабилеты", motion: "взлёт и лёгкий крен", Icon: AnimFlights },
   { key: "hotels", label: "Отели", motion: "здание дышит, окна мигают", Icon: AnimHotels },
@@ -189,5 +221,6 @@ export const ANIMATED_NAV_ICONS = [
   { key: "deals", label: "Акции", motion: "процент крутится", Icon: AnimDeals },
   { key: "support", label: "Поддержка", motion: "гарнитура «звонит»", Icon: AnimSupport },
   { key: "login", label: "Войти", motion: "силуэт мягко увеличивается", Icon: AnimLogin },
-  { key: "sun", label: "Тема", motion: "лучи солнца вращаются", Icon: AnimSun },
+  { key: "sun", label: "Тема (солнце)", motion: "лучи солнца вращаются", Icon: AnimSun },
+  { key: "moon", label: "Тема (луна)", motion: "мягкий pop", Icon: AnimMoon },
 ] as const;
