@@ -748,6 +748,7 @@ export default function ChatWidget() {
         className="fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-xl transition hover:scale-105 active:scale-95"
         style={{ background: "linear-gradient(135deg, var(--color-ink-soft), var(--color-ink))" }}
       >
+        {!open && <span className="chat-fab-ring" aria-hidden />}
         {open ? (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -757,6 +758,9 @@ export default function ChatWidget() {
           <>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              <circle className="chat-typing-dot" cx="8.7" cy="11.3" r="1.15" fill="currentColor" stroke="none" />
+              <circle className="chat-typing-dot" cx="12" cy="11.3" r="1.15" fill="currentColor" stroke="none" />
+              <circle className="chat-typing-dot" cx="15.3" cy="11.3" r="1.15" fill="currentColor" stroke="none" />
             </svg>
             {unread && (
               <span className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">

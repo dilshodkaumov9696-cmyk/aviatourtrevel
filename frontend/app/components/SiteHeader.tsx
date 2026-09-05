@@ -133,13 +133,11 @@ export default function SiteHeader({
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
-              className="group hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
+              title={`${t("nav.support")} — ${t("nav.support_247")}`}
+              aria-label={`${t("nav.support")} — ${t("nav.support_247")}`}
+              className="group hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
             >
-              <FolderIcon name="support" size={20} invert className="shrink-0" />
-              <span className="leading-tight text-left">
-                <span className="block text-[13px] font-semibold">{t("nav.support")}</span>
-                <span className="block text-[11px] font-bold tracking-wide text-white">{t("nav.support_247")}</span>
-              </span>
+              <FolderIcon name="support" size={22} invert className="shrink-0" />
             </button>
             <ThemeToggle />
             <div className="hidden items-center xl:flex">
