@@ -23,8 +23,10 @@ export default function PopularDirectionsPanel({ routes, prices, onSelect }: Pro
 
   return (
     <div className="relative z-[20] rounded-2xl border border-white/12 bg-[var(--color-ink)]/55 p-3 text-white shadow-lg backdrop-blur-md">
-      <div className="flex items-center gap-2 px-1.5 py-1 text-[13px] font-bold uppercase tracking-wide">
-        <IconPin size={16} className="text-[var(--color-accent)]" />
+      <div className="group flex items-center gap-2 px-1.5 py-1 text-[13px] font-bold uppercase tracking-wide">
+        <span className="nav-icon nav-icon--drop inline-flex shrink-0 items-center justify-center">
+          <IconPin size={16} className="nav-icon__img text-[var(--color-accent)]" />
+        </span>
         {t("popular.title")}
       </div>
       <div className="mt-2 flex flex-col gap-0.5">
@@ -36,11 +38,13 @@ export default function PopularDirectionsPanel({ routes, prices, onSelect }: Pro
               key={key}
               type="button"
               onClick={() => onSelect(d)}
-              className="flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left transition hover:bg-white/10"
+              className="group flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left transition hover:bg-white/10"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[13px] font-semibold">
-                  {d.fromCity} → {d.toCity}
+                  {d.fromCity}
+                  <span className="mx-1 inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+                  {d.toCity}
                 </span>
                 <span className="block truncate font-mono text-[11px] text-white/55">
                   {d.fromIata} · {d.toIata}

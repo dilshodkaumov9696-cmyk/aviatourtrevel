@@ -323,6 +323,16 @@ textarea:focus-visible {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.16); }
 }
+@keyframes nav-drop {
+  0% { transform: translateY(-3px) scale(0.9); }
+  55% { transform: translateY(1px) scale(1.08); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes nav-zoom {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  40% { transform: scale(1.18) rotate(-10deg); }
+  70% { transform: scale(1.05) rotate(4deg); }
+}
 
 .nav-icon__img {
   transform-origin: center;
@@ -349,6 +359,10 @@ textarea:focus-visible {
 .group:focus-visible .nav-icon--ring .nav-icon__img { animation: nav-ring 0.55s ease; }
 .group:hover .nav-icon--pop .nav-icon__img,
 .group:focus-visible .nav-icon--pop .nav-icon__img { animation: nav-pop 0.35s ease; }
+.group:hover .nav-icon--drop .nav-icon__img,
+.group:focus-visible .nav-icon--drop .nav-icon__img { animation: nav-drop 0.45s ease; }
+.group:hover .nav-icon--zoom .nav-icon__img,
+.group:focus-visible .nav-icon--zoom .nav-icon__img { animation: nav-zoom 0.5s ease; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

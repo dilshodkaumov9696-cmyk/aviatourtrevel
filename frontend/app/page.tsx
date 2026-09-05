@@ -480,11 +480,13 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setFormCollapsed((v) => !v)}
-            className="absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
+            className="group absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
           >
             {formCollapsed ? (
               <>
-                <IconSearch size={14} className="shrink-0" />
+                <span className="nav-icon nav-icon--zoom inline-flex shrink-0 items-center justify-center">
+                  <IconSearch size={14} className="nav-icon__img shrink-0" />
+                </span>
                 {t("form.expand_search")}
               </>
             ) : (
@@ -527,8 +529,10 @@ export default function Home() {
                 <div className="relative flex min-w-0 flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 xl:min-w-[26rem] xl:flex-[2.6]">
                   {/* Скругления по брейкпоинтам: <sm — верхняя ячейка колонки, sm..xl — левый
                       верхний угол бара, xl+ — левый торец строки. */}
-                  <div className={`relative min-w-0 flex-1 ${boxBase} rounded-t-2xl sm:rounded-tr-none xl:rounded-bl-2xl ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
-                    <IconPlane size={22} className="text-[var(--color-primary)] shrink-0" />
+                  <div className={`group relative min-w-0 flex-1 ${boxBase} rounded-t-2xl sm:rounded-tr-none xl:rounded-bl-2xl ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                    <span className="nav-icon nav-icon--fly inline-flex shrink-0 items-center justify-center">
+                      <IconPlane size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
+                    </span>
                     <AirportInput
                       airport={originAirport}
                       onChange={(a) => {
@@ -551,8 +555,10 @@ export default function Home() {
                   </button>
 
                   {/* sm..xl «Куда» замыкает правый верхний угол бара, на xl+ — рядовая ячейка */}
-                  <div className={`relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-2xl xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
-                    <IconPin size={22} className="text-[var(--color-primary)] shrink-0" />
+                  <div className={`group relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-2xl xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                    <span className="nav-icon nav-icon--drop inline-flex shrink-0 items-center justify-center">
+                      <IconPin size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
+                    </span>
                     <AirportInput
                       airport={destAirport}
                       onChange={(a) => {
@@ -570,7 +576,7 @@ export default function Home() {
                 <div ref={datepickerRef} className="relative flex min-w-0 divide-x divide-[var(--color-border)] xl:min-w-[18rem] xl:flex-[1.9]">
                   {/* Туда */}
                   <div
-                    className={`flex-1 min-w-0 ${boxBase} ${errors.departDate ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}
+                    className={`group flex-1 min-w-0 ${boxBase} ${errors.departDate ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}
                     onClick={() => openDatePicker("depart")}
                   >
                     <div className="min-w-0 flex-1 overflow-hidden">
@@ -578,12 +584,14 @@ export default function Home() {
                         {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : t("form.depart_date")}
                       </div>
                     </div>
-                    <IconCalendar size={22} className="text-[var(--color-primary)] shrink-0" />
+                    <span className="nav-icon nav-icon--unfold inline-flex shrink-0 items-center justify-center">
+                      <IconCalendar size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
+                    </span>
                   </div>
 
                   {/* Обратно */}
                   <div
-                    className={`flex-1 min-w-0 ${boxBase}`}
+                    className={`group flex-1 min-w-0 ${boxBase}`}
                     onClick={() => openDatePicker("return")}
                   >
                     <div className="min-w-0 flex-1 overflow-hidden">
@@ -606,7 +614,9 @@ export default function Home() {
                         )}
                       </div>
                     </div>
-                    <IconCalendar size={22} className={`shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
+                    <span className="nav-icon nav-icon--unfold inline-flex shrink-0 items-center justify-center">
+                      <IconCalendar size={22} className={`nav-icon__img shrink-0 ${returnDate ? "text-[var(--color-primary)]" : "text-[var(--color-text-muted)]"}`} />
+                    </span>
                   </div>
 
                   {datepickerOpen && (
@@ -652,7 +662,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={searching}
-                  className="relative flex min-h-[56px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-6 text-[16px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default sm:min-h-[76px] sm:px-10 xl:min-h-[84px] xl:w-[11.5rem] xl:rounded-bl-none xl:rounded-tr-2xl"
+                  className="group relative flex min-h-[56px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-6 text-[16px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default sm:min-h-[76px] sm:px-10 xl:min-h-[84px] xl:w-[11.5rem] xl:rounded-bl-none xl:rounded-tr-2xl"
                 >
                   {searching ? (
                     <>
@@ -661,7 +671,9 @@ export default function Home() {
                     </>
                   ) : (
                     <>
-                      <IconSearch size={18} />
+                      <span className="nav-icon nav-icon--zoom inline-flex shrink-0 items-center justify-center">
+                        <IconSearch size={18} className="nav-icon__img" />
+                      </span>
                       {t("form.search")}
                     </>
                   )}
@@ -699,8 +711,10 @@ export default function Home() {
                 />
                 <div className="flex min-w-0 flex-col gap-3 border-t border-[var(--color-border)] px-4 pt-4 pb-4 sm:flex-row sm:items-end sm:justify-end sm:px-5">
                   <div className="flex min-w-0 flex-col gap-1.5">
-                    <span className="hidden items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--color-gold-dark)] sm:flex">
-                      <IconUser size={13} />
+                    <span className="group hidden items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--color-gold-dark)] sm:flex">
+                      <span className="nav-icon nav-icon--pop inline-flex shrink-0 items-center justify-center">
+                        <IconUser size={13} className="nav-icon__img" />
+                      </span>
                       Пассажиры и класс — на весь маршрут
                     </span>
                     <PassengersPicker
@@ -714,9 +728,11 @@ export default function Home() {
                   </div>
                   <button
                     type="submit"
-                    className="flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 text-[15px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 sm:w-auto sm:min-w-[12.5rem] sm:px-8"
+                    className="group flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 text-[15px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 sm:w-auto sm:min-w-[12.5rem] sm:px-8"
                   >
-                    <IconSearch size={18} />
+                    <span className="nav-icon nav-icon--zoom inline-flex shrink-0 items-center justify-center">
+                      <IconSearch size={18} className="nav-icon__img" />
+                    </span>
                     {t("form.search")}
                   </button>
                 </div>
