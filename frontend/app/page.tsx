@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { buildAviasalesUrl, searchFlights } from "./lib/api";
 import Link from "next/link";
@@ -17,11 +17,9 @@ import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
 import PassengersPicker, { Passengers, CabinClass, EMPTY_PASSENGERS } from "./components/PassengersPicker";
-import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHeadset, IconUser } from "./components/icons";
-import { Plane, Hotel, Map, SmartphoneNfc, Shield, TrainFront, CarFront, Percent } from "lucide-react";
-import { Airplane, Buildings, MapTrifold, SimCard, ShieldCheck, Train, Car, Percent as PhPercent } from "@phosphor-icons/react";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
+import { Airplane, Buildings, MapTrifold, SimCard, ShieldCheck, Train, Car, Percent, Headset, Moon, Sun, User } from "@phosphor-icons/react";
 
-import ThemeToggle from "./components/ThemeToggle";
 import LogoMark from "./components/Logo";
 import AuthModal from "./components/AuthModal";
 import { useAuth } from "./context/auth";
@@ -59,105 +57,6 @@ function flightsWord(n: number): string {
 const boxBase =
   "relative flex min-h-[72px] items-center gap-2.5 px-3.5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)] sm:min-h-[76px] sm:gap-3 sm:px-5 xl:min-h-[84px] xl:px-6";
 
-// Иконки только для верхней шапки. Lucide в проекте нет — свой набор в том же
-// stroke-стиле, чтобы не ставить новую зависимость и не трогать icons.tsx
-// (там самолёт заливной и используется формой поиска).
-type HeaderIconProps = { className?: string; size?: number };
-const headerIconStroke = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.75,
-  strokeLinecap: "round" as const,
-  strokeLinejoin: "round" as const,
-};
-
-function HeaderIcon({
-  size = 16,
-  className = "",
-  children,
-}: HeaderIconProps & { children: ReactNode }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" className={`shrink-0 ${className}`} aria-hidden="true" {...headerIconStroke}>
-      {children}
-    </svg>
-  );
-}
-
-function HeaderIconPlane(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconHotel(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-      <path d="M6 12h12M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 16h4" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconMap(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20Z" />
-      <path d="M9 4v13.5M15 6.5V20" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconEsim(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <rect x="7" y="2" width="10" height="20" rx="2" />
-      <path d="M11 6h2M9.5 11h5v5h-5z" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconShield(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <path d="M12 3 20 7v6c0 5-3.4 7.6-7.7 8.9a1 1 0 0 1-.6 0C7.4 20.6 4 18 4 13V7Z" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconTrain(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <rect x="5" y="3" width="14" height="14" rx="3" />
-      <path d="M5 11h14M8 21l2-4M16 21l-2-4" />
-      <circle cx="9" cy="14" r="1" />
-      <circle cx="15" cy="14" r="1" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconCar(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <path d="M5 17h14l-1.2-4.2A2 2 0 0 0 15.9 11H8.1a2 2 0 0 0-1.9 1.8Z" />
-      <path d="M7 11 8.2 7.6A2 2 0 0 1 10.1 6h3.8a2 2 0 0 1 1.9 1.6L17 11" />
-      <circle cx="7.5" cy="17" r="1.4" />
-      <circle cx="16.5" cy="17" r="1.4" />
-    </HeaderIcon>
-  );
-}
-function HeaderIconDeals(p: HeaderIconProps) {
-  return (
-    <HeaderIcon {...p}>
-      <path d="M19 5 5 19" />
-      <circle cx="7" cy="7" r="2.2" />
-      <circle cx="17" cy="17" r="2.2" />
-    </HeaderIcon>
-  );
-}
-
-// Локальные иконки шапки оставляем: тест сравнивает Lucide и Phosphor, этот набор не удаляем.
-const KEPT_CUSTOM_HEADER_ICONS = {
-  HeaderIconPlane, HeaderIconHotel, HeaderIconMap, HeaderIconEsim,
-  HeaderIconShield, HeaderIconTrain, HeaderIconCar, HeaderIconDeals,
-};
-void KEPT_CUSTOM_HEADER_ICONS;
-
 const HEADER_NAV_BTN =
   "group inline-flex items-center gap-2 rounded-full px-3.5 py-3 text-[13px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 2xl:gap-2.5 2xl:px-4 2xl:text-[13.5px]";
 const HEADER_NAV_IDLE =
@@ -165,103 +64,44 @@ const HEADER_NAV_IDLE =
 const HEADER_NAV_ACTIVE =
   "bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-inset ring-white/28";
 
-type HeaderNavIcon = (props: { size?: number; className?: string }) => ReactNode;
+const HEADER_NAV_ICONS = [
+  ["flights", Airplane],
+  ["hotels", Buildings],
+  ["tours", MapTrifold],
+  ["esim", SimCard],
+  ["insurance", ShieldCheck],
+  ["trains", Train],
+  ["transfers", Car],
+  ["deals", Percent],
+] as const;
 
-const LUCIDE_NAV_ICONS = {
-  flights: (p: { size?: number; className?: string }) => <Plane size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  hotels: (p: { size?: number; className?: string }) => <Hotel size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  tours: (p: { size?: number; className?: string }) => <Map size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  esim: (p: { size?: number; className?: string }) => <SmartphoneNfc size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  insurance: (p: { size?: number; className?: string }) => <Shield size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  trains: (p: { size?: number; className?: string }) => <TrainFront size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  transfers: (p: { size?: number; className?: string }) => <CarFront size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-  deals: (p: { size?: number; className?: string }) => <Percent size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
-} satisfies Record<string, HeaderNavIcon>;
+function HeaderThemeToggle() {
+  const [dark, setDark] = useState<boolean | null>(null);
 
-const PHOSPHOR_NAV_ICONS = {
-  flights: (p: { size?: number; className?: string }) => <Airplane size={p.size ?? 16} weight="regular" className={p.className} />,
-  hotels: (p: { size?: number; className?: string }) => <Buildings size={p.size ?? 16} weight="regular" className={p.className} />,
-  tours: (p: { size?: number; className?: string }) => <MapTrifold size={p.size ?? 16} weight="regular" className={p.className} />,
-  esim: (p: { size?: number; className?: string }) => <SimCard size={p.size ?? 16} weight="regular" className={p.className} />,
-  insurance: (p: { size?: number; className?: string }) => <ShieldCheck size={p.size ?? 16} weight="regular" className={p.className} />,
-  trains: (p: { size?: number; className?: string }) => <Train size={p.size ?? 16} weight="regular" className={p.className} />,
-  transfers: (p: { size?: number; className?: string }) => <Car size={p.size ?? 16} weight="regular" className={p.className} />,
-  deals: (p: { size?: number; className?: string }) => <PhPercent size={p.size ?? 16} weight="regular" className={p.className} />,
-} satisfies Record<string, HeaderNavIcon>;
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
 
-function HeaderNavCompareRow({
-  label,
-  icons,
-  variant,
-  t,
-  activeSection,
-  comingSoon,
-  setComingSoon,
-}: {
-  label: string;
-  icons: typeof LUCIDE_NAV_ICONS;
-  variant: "lucide" | "phosphor";
-  t: (key: string) => string;
-  activeSection: "search" | "directions" | "deals" | "help";
-  comingSoon: { variant: string; label: string } | null;
-  setComingSoon: Dispatch<SetStateAction<{ variant: string; label: string } | null>>;
-}) {
-  const upcoming = [
-    ["nav.hotels", t("nav.hotels"), icons.hotels],
-    ["nav.tours", t("nav.tours"), icons.tours],
-    ["nav.esim", t("nav.esim"), icons.esim],
-    ["nav.insurance", t("nav.insurance"), icons.insurance],
-    ["nav.trains", t("nav.trains"), icons.trains],
-    ["nav.transfers", t("nav.transfers"), icons.transfers],
-  ] as const;
+  function toggle() {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
+    setDark(next);
+  }
 
-  function iconClass(on: boolean) {
-    return on ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white";
+  if (dark === null) {
+    return <div className="h-10 w-10 rounded-full border border-white/20 bg-white/10" aria-hidden />;
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-16 shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">{label}</span>
-      <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
-        <a
-          href="#search"
-          className={`${HEADER_NAV_BTN} ${activeSection === "search" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
-        >
-          {icons.flights({ size: 16, className: iconClass(activeSection === "search") })}
-          {t("nav.flights")}
-        </a>
-        {upcoming.map(([key, itemLabel, Icon]) => {
-          const on = comingSoon?.variant === variant && comingSoon.label === itemLabel;
-          return (
-            <div key={`${variant}-${key}`} className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setComingSoon({ variant, label: itemLabel });
-                  window.setTimeout(() => setComingSoon((cur) => (cur?.variant === variant && cur.label === itemLabel ? null : cur)), 1600);
-                }}
-                className={`${HEADER_NAV_BTN} ${on ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
-              >
-                {Icon({ size: 16, className: iconClass(on) })}
-                {itemLabel}
-              </button>
-              {on && (
-                <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
-                  {t("nav.coming_soon")}
-                </span>
-              )}
-            </div>
-          );
-        })}
-        <a
-          href="#deals"
-          className={`${HEADER_NAV_BTN} ${activeSection === "deals" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
-        >
-          {icons.deals({ size: 16, className: iconClass(activeSection === "deals") })}
-          {t("nav.deals")}
-        </a>
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={toggle}
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+      title={dark ? "Светлая тема" : "Тёмная тема"}
+    >
+      {dark ? <Sun size={18} weight="regular" /> : <Moon size={18} weight="regular" />}
+    </button>
   );
 }
 
@@ -385,7 +225,7 @@ export default function Home() {
 
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
-  const [comingSoon, setComingSoon] = useState<{ variant: string; label: string } | null>(null);
+  const [comingSoon, setComingSoon] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState<"search" | "directions" | "deals" | "help">("search");
 
@@ -674,25 +514,48 @@ export default function Home() {
             <LogoMark size={42} className="hidden xl:block" />
             <span className="font-heading text-lg font-bold tracking-tight text-white sm:text-[22px]">Aviator</span>
           </a>
-          <nav className="hidden min-w-0 flex-1 flex-col items-center justify-center gap-2 xl:flex">
-            <HeaderNavCompareRow
-              label="Lucide"
-              icons={LUCIDE_NAV_ICONS}
-              variant="lucide"
-              t={t}
-              activeSection={activeSection}
-              comingSoon={comingSoon}
-              setComingSoon={setComingSoon}
-            />
-            <HeaderNavCompareRow
-              label="Phosphor"
-              icons={PHOSPHOR_NAV_ICONS}
-              variant="phosphor"
-              t={t}
-              activeSection={activeSection}
-              comingSoon={comingSoon}
-              setComingSoon={setComingSoon}
-            />
+          <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+            <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
+              {HEADER_NAV_ICONS.map(([key, Icon]) => {
+                const label = t(`nav.${key}`);
+                const isLink = key === "flights" || key === "deals";
+                const active = key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
+                const iconClass = active ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white";
+                const className = `${HEADER_NAV_BTN} ${active ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`;
+                const inner = (
+                  <>
+                    <Icon size={16} weight="regular" className={iconClass} />
+                    {label}
+                  </>
+                );
+                if (isLink) {
+                  return (
+                    <a key={key} href={key === "flights" ? "#search" : "#deals"} className={className}>
+                      {inner}
+                    </a>
+                  );
+                }
+                return (
+                  <div key={key} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setComingSoon(label);
+                        window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
+                      }}
+                      className={className}
+                    >
+                      {inner}
+                    </button>
+                    {comingSoon === label && (
+                      <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+                        {t("nav.coming_soon")}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
@@ -700,13 +563,13 @@ export default function Home() {
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
               className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3.5"
             >
-              <IconHeadset size={20} className="shrink-0 text-[var(--color-accent)]" />
+              <Headset size={20} weight="regular" className="shrink-0 text-[var(--color-accent)]" />
               <span className="leading-tight text-left">
                 <span className="block text-[13px] font-semibold">{t("nav.support")}</span>
                 <span className="block text-[11px] font-bold tracking-wide text-white">{t("nav.support_247")}</span>
               </span>
             </button>
-            <ThemeToggle variant="dark" />
+            <HeaderThemeToggle />
             <div className="hidden items-center xl:flex">
               <SettingsSwitcher variant="dark" />
             </div>
@@ -726,7 +589,7 @@ export default function Home() {
                 onClick={() => setAuthOpen(true)}
                 className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
               >
-                <IconUser size={18} />
+                <User size={18} weight="regular" />
                 {t("nav.login")}
               </button>
             )}
