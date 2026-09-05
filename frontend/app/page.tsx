@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import dynamic from "next/dynamic";
 import { buildAviasalesUrl, searchFlights } from "./lib/api";
 import Link from "next/link";
@@ -18,6 +18,8 @@ import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
 import PassengersPicker, { Passengers, CabinClass, EMPTY_PASSENGERS } from "./components/PassengersPicker";
 import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHeadset, IconUser } from "./components/icons";
+import { Plane, Hotel, Map, SmartphoneNfc, Shield, TrainFront, CarFront, Percent } from "lucide-react";
+import { Airplane, Buildings, MapTrifold, SimCard, ShieldCheck, Train, Car, Percent as PhPercent } from "@phosphor-icons/react";
 
 import ThemeToggle from "./components/ThemeToggle";
 import LogoMark from "./components/Logo";
@@ -149,12 +151,119 @@ function HeaderIconDeals(p: HeaderIconProps) {
   );
 }
 
+// Локальные иконки шапки оставляем: тест сравнивает Lucide и Phosphor, этот набор не удаляем.
+const KEPT_CUSTOM_HEADER_ICONS = {
+  HeaderIconPlane, HeaderIconHotel, HeaderIconMap, HeaderIconEsim,
+  HeaderIconShield, HeaderIconTrain, HeaderIconCar, HeaderIconDeals,
+};
+void KEPT_CUSTOM_HEADER_ICONS;
+
 const HEADER_NAV_BTN =
   "group inline-flex items-center gap-2 rounded-full px-3.5 py-3 text-[13px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 2xl:gap-2.5 2xl:px-4 2xl:text-[13.5px]";
 const HEADER_NAV_IDLE =
   "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22 hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
 const HEADER_NAV_ACTIVE =
   "bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-inset ring-white/28";
+
+type HeaderNavIcon = (props: { size?: number; className?: string }) => ReactNode;
+
+const LUCIDE_NAV_ICONS = {
+  flights: (p: { size?: number; className?: string }) => <Plane size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  hotels: (p: { size?: number; className?: string }) => <Hotel size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  tours: (p: { size?: number; className?: string }) => <Map size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  esim: (p: { size?: number; className?: string }) => <SmartphoneNfc size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  insurance: (p: { size?: number; className?: string }) => <Shield size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  trains: (p: { size?: number; className?: string }) => <TrainFront size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  transfers: (p: { size?: number; className?: string }) => <CarFront size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+  deals: (p: { size?: number; className?: string }) => <Percent size={p.size ?? 16} strokeWidth={1.75} className={p.className} />,
+} satisfies Record<string, HeaderNavIcon>;
+
+const PHOSPHOR_NAV_ICONS = {
+  flights: (p: { size?: number; className?: string }) => <Airplane size={p.size ?? 16} weight="regular" className={p.className} />,
+  hotels: (p: { size?: number; className?: string }) => <Buildings size={p.size ?? 16} weight="regular" className={p.className} />,
+  tours: (p: { size?: number; className?: string }) => <MapTrifold size={p.size ?? 16} weight="regular" className={p.className} />,
+  esim: (p: { size?: number; className?: string }) => <SimCard size={p.size ?? 16} weight="regular" className={p.className} />,
+  insurance: (p: { size?: number; className?: string }) => <ShieldCheck size={p.size ?? 16} weight="regular" className={p.className} />,
+  trains: (p: { size?: number; className?: string }) => <Train size={p.size ?? 16} weight="regular" className={p.className} />,
+  transfers: (p: { size?: number; className?: string }) => <Car size={p.size ?? 16} weight="regular" className={p.className} />,
+  deals: (p: { size?: number; className?: string }) => <PhPercent size={p.size ?? 16} weight="regular" className={p.className} />,
+} satisfies Record<string, HeaderNavIcon>;
+
+function HeaderNavCompareRow({
+  label,
+  icons,
+  variant,
+  t,
+  activeSection,
+  comingSoon,
+  setComingSoon,
+}: {
+  label: string;
+  icons: typeof LUCIDE_NAV_ICONS;
+  variant: "lucide" | "phosphor";
+  t: (key: string) => string;
+  activeSection: "search" | "directions" | "deals" | "help";
+  comingSoon: { variant: string; label: string } | null;
+  setComingSoon: Dispatch<SetStateAction<{ variant: string; label: string } | null>>;
+}) {
+  const upcoming = [
+    ["nav.hotels", t("nav.hotels"), icons.hotels],
+    ["nav.tours", t("nav.tours"), icons.tours],
+    ["nav.esim", t("nav.esim"), icons.esim],
+    ["nav.insurance", t("nav.insurance"), icons.insurance],
+    ["nav.trains", t("nav.trains"), icons.trains],
+    ["nav.transfers", t("nav.transfers"), icons.transfers],
+  ] as const;
+
+  function iconClass(on: boolean) {
+    return on ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white";
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-16 shrink-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">{label}</span>
+      <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
+        <a
+          href="#search"
+          className={`${HEADER_NAV_BTN} ${activeSection === "search" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
+        >
+          {icons.flights({ size: 16, className: iconClass(activeSection === "search") })}
+          {t("nav.flights")}
+        </a>
+        {upcoming.map(([key, itemLabel, Icon]) => {
+          const on = comingSoon?.variant === variant && comingSoon.label === itemLabel;
+          return (
+            <div key={`${variant}-${key}`} className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setComingSoon({ variant, label: itemLabel });
+                  window.setTimeout(() => setComingSoon((cur) => (cur?.variant === variant && cur.label === itemLabel ? null : cur)), 1600);
+                }}
+                className={`${HEADER_NAV_BTN} ${on ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
+              >
+                {Icon({ size: 16, className: iconClass(on) })}
+                {itemLabel}
+              </button>
+              {on && (
+                <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+                  {t("nav.coming_soon")}
+                </span>
+              )}
+            </div>
+          );
+        })}
+        <a
+          href="#deals"
+          className={`${HEADER_NAV_BTN} ${activeSection === "deals" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
+        >
+          {icons.deals({ size: 16, className: iconClass(activeSection === "deals") })}
+          {t("nav.deals")}
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function futureDateISO(daysAhead: number): string {
   const d = new Date();
@@ -276,7 +385,7 @@ export default function Home() {
 
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
-  const [comingSoon, setComingSoon] = useState<string | null>(null);
+  const [comingSoon, setComingSoon] = useState<{ variant: string; label: string } | null>(null);
 
   const [activeSection, setActiveSection] = useState<"search" | "directions" | "deals" | "help">("search");
 
@@ -565,50 +674,25 @@ export default function Home() {
             <LogoMark size={42} className="hidden xl:block" />
             <span className="font-heading text-lg font-bold tracking-tight text-white sm:text-[22px]">Aviator</span>
           </a>
-          <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
-            <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
-              <a
-                href="#search"
-                className={`${HEADER_NAV_BTN} ${activeSection === "search" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
-              >
-                <HeaderIconPlane size={16} className={activeSection === "search" ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white"} />
-                {t("nav.flights")}
-              </a>
-              {([
-                ["nav.hotels", t("nav.hotels"), HeaderIconHotel],
-                ["nav.tours", t("nav.tours"), HeaderIconMap],
-                ["nav.esim", t("nav.esim"), HeaderIconEsim],
-                ["nav.insurance", t("nav.insurance"), HeaderIconShield],
-                ["nav.trains", t("nav.trains"), HeaderIconTrain],
-                ["nav.transfers", t("nav.transfers"), HeaderIconCar],
-              ] as const).map(([key, label, Icon]) => (
-                <div key={key} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setComingSoon(label);
-                      window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
-                    }}
-                    className={`${HEADER_NAV_BTN} ${comingSoon === label ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
-                  >
-                    <Icon size={16} className={comingSoon === label ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white"} />
-                    {label}
-                  </button>
-                  {comingSoon === label && (
-                    <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
-                      {t("nav.coming_soon")}
-                    </span>
-                  )}
-                </div>
-              ))}
-              <a
-                href="#deals"
-                className={`${HEADER_NAV_BTN} ${activeSection === "deals" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
-              >
-                <HeaderIconDeals size={16} className={activeSection === "deals" ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white"} />
-                {t("nav.deals")}
-              </a>
-            </div>
+          <nav className="hidden min-w-0 flex-1 flex-col items-center justify-center gap-2 xl:flex">
+            <HeaderNavCompareRow
+              label="Lucide"
+              icons={LUCIDE_NAV_ICONS}
+              variant="lucide"
+              t={t}
+              activeSection={activeSection}
+              comingSoon={comingSoon}
+              setComingSoon={setComingSoon}
+            />
+            <HeaderNavCompareRow
+              label="Phosphor"
+              icons={PHOSPHOR_NAV_ICONS}
+              variant="phosphor"
+              t={t}
+              activeSection={activeSection}
+              comingSoon={comingSoon}
+              setComingSoon={setComingSoon}
+            />
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
