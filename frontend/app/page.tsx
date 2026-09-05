@@ -150,11 +150,11 @@ function HeaderIconDeals(p: HeaderIconProps) {
 }
 
 const HEADER_NAV_BTN =
-  "group inline-flex items-center gap-2 rounded-full px-3 py-2.5 text-[13px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 2xl:px-3.5 2xl:text-[13.5px]";
+  "group inline-flex items-center gap-2 rounded-full px-3.5 py-3 text-[13px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 2xl:gap-2.5 2xl:px-4 2xl:text-[13.5px]";
 const HEADER_NAV_IDLE =
-  "text-white/72 hover:bg-white/10 hover:text-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
+  "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22 hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
 const HEADER_NAV_ACTIVE =
-  "bg-white/14 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-white/20";
+  "bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-inset ring-white/28";
 
 function futureDateISO(daysAhead: number): string {
   const d = new Date();
@@ -559,7 +559,7 @@ export default function Home() {
             : "linear-gradient(180deg, #071428 0%, #0a1d3c 58%, #0c274c 100%)",
         }}
       >
-        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-5 xl:px-6 2xl:px-8 ${isScrolled ? "py-3.5" : "py-5"}`}>
+        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-5 xl:px-6 2xl:px-8 ${isScrolled ? "py-4" : "py-6"}`}>
           <a href="#search" className="flex min-w-0 shrink-0 items-center gap-2.5">
             <LogoMark size={38} className="xl:hidden" />
             <LogoMark size={42} className="hidden xl:block" />
