@@ -273,6 +273,83 @@ textarea:focus-visible {
 .dark .badge-success { background: #14362A; color: #6EE7A8; }
 .badge-muted { background: var(--color-bg-soft); color: var(--color-text-muted); }
 
+/* Бесплатная анимация иконок шапки (свои SVG, без Flaticon) */
+@keyframes nav-fly {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  40% { transform: translate(2px, -3px) rotate(-12deg); }
+  70% { transform: translate(-1px, -1px) rotate(6deg); }
+}
+@keyframes nav-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes nav-unfold {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(-8deg) scale(1.08); }
+  70% { transform: rotate(6deg) scale(1.04); }
+}
+@keyframes nav-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+}
+@keyframes nav-shield {
+  0%, 100% { transform: scale(1); }
+  35% { transform: scale(1.12); }
+  55% { transform: scale(0.96); }
+}
+@keyframes nav-roll {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+}
+@keyframes nav-drive {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  40% { transform: translateX(3px) rotate(4deg); }
+  70% { transform: translateX(-1px) rotate(-2deg); }
+}
+@keyframes nav-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(18deg) scale(1.1); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+@keyframes nav-ring {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-12deg); }
+  40% { transform: rotate(10deg); }
+  60% { transform: rotate(-6deg); }
+  80% { transform: rotate(4deg); }
+}
+@keyframes nav-pop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.16); }
+}
+
+.nav-icon__img {
+  transform-origin: center;
+  transition: transform 0.2s ease;
+  will-change: transform;
+}
+.group:hover .nav-icon--fly .nav-icon__img,
+.group:focus-visible .nav-icon--fly .nav-icon__img { animation: nav-fly 0.55s ease; }
+.group:hover .nav-icon--bob .nav-icon__img,
+.group:focus-visible .nav-icon--bob .nav-icon__img { animation: nav-bob 0.45s ease; }
+.group:hover .nav-icon--unfold .nav-icon__img,
+.group:focus-visible .nav-icon--unfold .nav-icon__img { animation: nav-unfold 0.5s ease; }
+.group:hover .nav-icon--pulse .nav-icon__img,
+.group:focus-visible .nav-icon--pulse .nav-icon__img { animation: nav-pulse 0.45s ease; }
+.group:hover .nav-icon--shield .nav-icon__img,
+.group:focus-visible .nav-icon--shield .nav-icon__img { animation: nav-shield 0.5s ease; }
+.group:hover .nav-icon--roll .nav-icon__img,
+.group:focus-visible .nav-icon--roll .nav-icon__img { animation: nav-roll 0.45s ease; }
+.group:hover .nav-icon--drive .nav-icon__img,
+.group:focus-visible .nav-icon--drive .nav-icon__img { animation: nav-drive 0.5s ease; }
+.group:hover .nav-icon--spin .nav-icon__img,
+.group:focus-visible .nav-icon--spin .nav-icon__img { animation: nav-spin 0.5s ease; }
+.group:hover .nav-icon--ring .nav-icon__img,
+.group:focus-visible .nav-icon--ring .nav-icon__img { animation: nav-ring 0.55s ease; }
+.group:hover .nav-icon--pop .nav-icon__img,
+.group:focus-visible .nav-icon--pop .nav-icon__img { animation: nav-pop 0.35s ease; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .animate-fade-in,
@@ -282,6 +359,12 @@ textarea:focus-visible {
   .animate-marquee,
   .animate-pulse,
   .animate-bounce { animation: none; }
+  .nav-icon__img,
+  .group:hover .nav-icon__img,
+  .group:focus-visible .nav-icon__img {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* ===== Глобус MapLibre («живой глобус маршрутов») ===== */

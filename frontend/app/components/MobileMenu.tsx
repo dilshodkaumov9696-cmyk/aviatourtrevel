@@ -51,7 +51,7 @@ export default function MobileMenu({
         aria-label={t("nav.menu")}
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+        className="group flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       >
         <FolderIcon name="menu" size={20} invert />
       </button>
@@ -84,7 +84,7 @@ export default function MobileMenu({
               <a
                 href="/#search"
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
+                className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
                 <FolderIcon name="flights" size={20} />
                 {t("nav.flights")}
@@ -99,7 +99,7 @@ export default function MobileMenu({
                     setComingSoon(label);
                     window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
                   }}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
+                  className="group flex items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
                 >
                   <FolderIcon name={icon} size={20} />
                   <span>
@@ -112,7 +112,7 @@ export default function MobileMenu({
               <a
                 href="/#deals"
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
+                className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
                 <FolderIcon name="deals" size={20} />
                 {t("nav.deals")}
@@ -126,7 +126,7 @@ export default function MobileMenu({
                   setOpen(false);
                   window.dispatchEvent(new CustomEvent("open-chat"));
                 }}
-                className="mb-4 flex w-full min-h-12 items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left"
+                className="group mb-4 flex w-full min-h-12 items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left"
               >
                 <FolderIcon name="support" size={22} className="text-[var(--color-primary)]" />
                 <span>
