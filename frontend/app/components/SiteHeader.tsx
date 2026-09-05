@@ -11,9 +11,9 @@ import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 
 const NAV_BTN =
-  "group inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-[12px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 lg:gap-2 lg:px-3 lg:py-2.5 lg:text-[13px] 2xl:gap-2.5 2xl:px-4 2xl:py-3 2xl:text-[13.5px]";
+  "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-[12px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 sm:gap-2 sm:px-3 sm:py-2.5 sm:text-[13px]";
 const NAV_IDLE =
-  "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22 hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
+  "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22";
 const NAV_ACTIVE =
   "bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-inset ring-white/28";
 
@@ -39,7 +39,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       title={dark ? "Светлая тема" : "Тёмная тема"}
     >
       <FolderIcon name={dark ? "sun" : "moon"} size={18} invert />
@@ -59,46 +59,6 @@ export default function SiteHeader({
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
 
-  function navButtons() {
-    return NAV_ITEMS.map(({ key, icon, href }) => {
-      const label = t(`nav.${key}`);
-      const active = key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
-      const className = `${NAV_BTN} ${active ? NAV_ACTIVE : NAV_IDLE}`;
-      const inner = (
-        <>
-          <FolderIcon name={icon} size={18} invert />
-          {label}
-        </>
-      );
-      if (href) {
-        return (
-          <Link key={key} href={href} className={className}>
-            {inner}
-          </Link>
-        );
-      }
-      return (
-        <div key={key} className="relative">
-          <button
-            type="button"
-            onClick={() => {
-              setComingSoon(label);
-              window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
-            }}
-            className={className}
-          >
-            {inner}
-          </button>
-          {comingSoon === label && (
-            <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
-              {t("nav.coming_soon")}
-            </span>
-          )}
-        </div>
-      );
-    });
-  }
-
   return (
     <>
       <header
@@ -111,20 +71,65 @@ export default function SiteHeader({
             : "linear-gradient(180deg, #071428 0%, #0a1d3c 58%, #0c274c 100%)",
         }}
       >
-        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-5 xl:px-6 2xl:px-8 ${scrolled ? "py-4" : "py-6"}`}>
-          <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
-            <LogoMark size={38} className="xl:hidden" />
+        <div className={`mx-auto flex max-w-[1760px] items-center gap-2 px-3 sm:gap-3 sm:px-5 xl:px-6 2xl:px-8 ${scrolled ? "py-3" : "py-5"}`}>
+          <Link href="/" className="flex shrink-0 items-center gap-2">
+            <LogoMark size={36} className="xl:hidden" />
             <LogoMark size={42} className="hidden xl:block" />
-            <span className="hidden font-heading text-lg font-bold tracking-tight text-white lg:inline sm:text-[22px]">Aviator</span>
+            <span className="hidden font-heading text-lg font-bold tracking-tight text-white xl:inline">Aviator</span>
           </Link>
-          <nav className="hidden min-w-0 flex-1 items-center justify-start overflow-x-auto md:flex lg:justify-center">
-            <div className="flex items-center gap-1 2xl:gap-1.5">{navButtons()}</div>
+
+          <nav
+            className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label={t("nav.menu")}
+          >
+            <div className="flex w-max items-center gap-1 pr-1 sm:gap-1.5">
+              {NAV_ITEMS.map(({ key, icon, href }) => {
+                const label = t(`nav.${key}`);
+                const active =
+                  key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
+                const className = `${NAV_BTN} ${active ? NAV_ACTIVE : NAV_IDLE}`;
+                const inner = (
+                  <>
+                    <FolderIcon name={icon} size={20} invert />
+                    <span>{label}</span>
+                  </>
+                );
+                if (href) {
+                  return (
+                    <Link key={key} href={href} className={className} title={label}>
+                      {inner}
+                    </Link>
+                  );
+                }
+                return (
+                  <div key={key} className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setComingSoon(label);
+                        window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
+                      }}
+                      className={className}
+                      title={label}
+                    >
+                      {inner}
+                    </button>
+                    {comingSoon === label && (
+                      <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+                        {t("nav.coming_soon")}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
-              className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3.5"
+              className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
             >
               <FolderIcon name="support" size={20} invert className="shrink-0" />
               <span className="leading-tight text-left">
@@ -133,13 +138,13 @@ export default function SiteHeader({
               </span>
             </button>
             <ThemeToggle />
-            <div className="hidden items-center lg:flex">
+            <div className="hidden items-center xl:flex">
               <SettingsSwitcher variant="dark" />
             </div>
             {user ? (
               <Link
                 href="/account"
-                className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:inline-flex"
+                className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">
                   {(user.fullName || user.email)[0]?.toUpperCase()}
@@ -150,7 +155,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white md:inline-flex"
+                className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
               >
                 <FolderIcon name="login" size={18} invert />
                 {t("nav.login")}
@@ -159,9 +164,6 @@ export default function SiteHeader({
             <MobileMenu activeSection={activeSection} onLogin={() => setAuthOpen(true)} />
           </div>
         </div>
-        <nav className="flex overflow-x-auto border-t border-white/10 px-3 py-2 md:hidden" aria-label={t("nav.menu")}>
-          <div className="flex items-center gap-1">{navButtons()}</div>
-        </nav>
       </header>
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </>
