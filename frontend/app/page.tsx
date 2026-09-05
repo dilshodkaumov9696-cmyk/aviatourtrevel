@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { buildAviasalesUrl, searchFlights } from "./lib/api";
 import Link from "next/link";
@@ -56,6 +56,105 @@ function flightsWord(n: number): string {
 
 const boxBase =
   "relative flex min-h-[72px] items-center gap-2.5 px-3.5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)] sm:min-h-[76px] sm:gap-3 sm:px-5 xl:min-h-[84px] xl:px-6";
+
+// Иконки только для верхней шапки. Lucide в проекте нет — свой набор в том же
+// stroke-стиле, чтобы не ставить новую зависимость и не трогать icons.tsx
+// (там самолёт заливной и используется формой поиска).
+type HeaderIconProps = { className?: string; size?: number };
+const headerIconStroke = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.75,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
+function HeaderIcon({
+  size = 16,
+  className = "",
+  children,
+}: HeaderIconProps & { children: ReactNode }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={`shrink-0 ${className}`} aria-hidden="true" {...headerIconStroke}>
+      {children}
+    </svg>
+  );
+}
+
+function HeaderIconPlane(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconHotel(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+      <path d="M6 12h12M10 6h.01M14 6h.01M10 10h.01M14 10h.01M10 16h4" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconMap(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20Z" />
+      <path d="M9 4v13.5M15 6.5V20" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconEsim(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <rect x="7" y="2" width="10" height="20" rx="2" />
+      <path d="M11 6h2M9.5 11h5v5h-5z" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconShield(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <path d="M12 3 20 7v6c0 5-3.4 7.6-7.7 8.9a1 1 0 0 1-.6 0C7.4 20.6 4 18 4 13V7Z" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconTrain(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <rect x="5" y="3" width="14" height="14" rx="3" />
+      <path d="M5 11h14M8 21l2-4M16 21l-2-4" />
+      <circle cx="9" cy="14" r="1" />
+      <circle cx="15" cy="14" r="1" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconCar(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <path d="M5 17h14l-1.2-4.2A2 2 0 0 0 15.9 11H8.1a2 2 0 0 0-1.9 1.8Z" />
+      <path d="M7 11 8.2 7.6A2 2 0 0 1 10.1 6h3.8a2 2 0 0 1 1.9 1.6L17 11" />
+      <circle cx="7.5" cy="17" r="1.4" />
+      <circle cx="16.5" cy="17" r="1.4" />
+    </HeaderIcon>
+  );
+}
+function HeaderIconDeals(p: HeaderIconProps) {
+  return (
+    <HeaderIcon {...p}>
+      <path d="M19 5 5 19" />
+      <circle cx="7" cy="7" r="2.2" />
+      <circle cx="17" cy="17" r="2.2" />
+    </HeaderIcon>
+  );
+}
+
+const HEADER_NAV_BTN =
+  "group inline-flex items-center gap-2 rounded-full px-3 py-2.5 text-[13px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 2xl:px-3.5 2xl:text-[13.5px]";
+const HEADER_NAV_IDLE =
+  "text-white/72 hover:bg-white/10 hover:text-white hover:shadow-[0_8px_20px_rgba(0,0,0,0.18)]";
+const HEADER_NAV_ACTIVE =
+  "bg-white/14 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 ring-white/20";
 
 function futureDateISO(daysAhead: number): string {
   const d = new Date();
@@ -451,39 +550,38 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       {/* Header */}
       <header
-        className={`sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300 ${
-          isScrolled ? "border-[var(--color-ink-border)] shadow-xl shadow-black/20" : "border-transparent"
+        className={`sticky top-0 z-50 border-b backdrop-blur-xl transition-all duration-300 ${
+          isScrolled ? "border-white/10 shadow-[0_12px_40px_rgba(2,8,20,0.45)]" : "border-white/[0.06]"
         }`}
         style={{
           background: isScrolled
-            ? "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)"
-            : "linear-gradient(180deg, rgba(10,27,56,0.16) 0%, rgba(10,27,56,0.04) 60%, rgba(10,27,56,0) 100%)",
+            ? "linear-gradient(180deg, #06101f 0%, #0a1c38 100%)"
+            : "linear-gradient(180deg, #071428 0%, #0a1d3c 58%, #0c274c 100%)",
         }}
       >
-        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-4 xl:px-6 2xl:px-8 ${isScrolled ? "py-2" : "py-3"}`}>
-          <a href="#search" className="flex min-w-0 shrink-0 items-center gap-2">
-            <LogoMark size={34} className="xl:hidden" />
-            <LogoMark size={38} className="hidden xl:block" />
-            <span className="font-heading text-[17px] font-bold tracking-tight text-white sm:text-xl">Aviator</span>
+        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-5 xl:px-6 2xl:px-8 ${isScrolled ? "py-3.5" : "py-5"}`}>
+          <a href="#search" className="flex min-w-0 shrink-0 items-center gap-2.5">
+            <LogoMark size={38} className="xl:hidden" />
+            <LogoMark size={42} className="hidden xl:block" />
+            <span className="font-heading text-lg font-bold tracking-tight text-white sm:text-[22px]">Aviator</span>
           </a>
           <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
-            <div className="flex max-w-full items-center justify-center gap-0.5 2xl:gap-1">
+            <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
               <a
                 href="#search"
-                className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
-                  activeSection === "search" ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                }`}
+                className={`${HEADER_NAV_BTN} ${activeSection === "search" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
               >
+                <HeaderIconPlane size={16} className={activeSection === "search" ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white"} />
                 {t("nav.flights")}
               </a>
               {([
-                ["nav.hotels", t("nav.hotels")],
-                ["nav.tours", t("nav.tours")],
-                ["nav.esim", t("nav.esim")],
-                ["nav.insurance", t("nav.insurance")],
-                ["nav.trains", t("nav.trains")],
-                ["nav.transfers", t("nav.transfers")],
-              ] as const).map(([key, label]) => (
+                ["nav.hotels", t("nav.hotels"), HeaderIconHotel],
+                ["nav.tours", t("nav.tours"), HeaderIconMap],
+                ["nav.esim", t("nav.esim"), HeaderIconEsim],
+                ["nav.insurance", t("nav.insurance"), HeaderIconShield],
+                ["nav.trains", t("nav.trains"), HeaderIconTrain],
+                ["nav.transfers", t("nav.transfers"), HeaderIconCar],
+              ] as const).map(([key, label, Icon]) => (
                 <div key={key} className="relative">
                   <button
                     type="button"
@@ -491,14 +589,13 @@ export default function Home() {
                       setComingSoon(label);
                       window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
                     }}
-                    className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
-                      comingSoon === label ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                    }`}
+                    className={`${HEADER_NAV_BTN} ${comingSoon === label ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
                   >
+                    <Icon size={16} className={comingSoon === label ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white"} />
                     {label}
                   </button>
                   {comingSoon === label && (
-                    <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+                    <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
                       {t("nav.coming_soon")}
                     </span>
                   )}
@@ -506,10 +603,9 @@ export default function Home() {
               ))}
               <a
                 href="#deals"
-                className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
-                  activeSection === "deals" ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                }`}
+                className={`${HEADER_NAV_BTN} ${activeSection === "deals" ? HEADER_NAV_ACTIVE : HEADER_NAV_IDLE}`}
               >
+                <HeaderIconDeals size={16} className={activeSection === "deals" ? "text-[var(--color-accent)]" : "text-white/70 group-hover:text-white"} />
                 {t("nav.deals")}
               </a>
             </div>
@@ -518,7 +614,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
-              className="hidden items-center gap-2 rounded-xl border border-white/15 px-2.5 py-2 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3"
+              className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3.5"
             >
               <IconHeadset size={20} className="shrink-0 text-[var(--color-accent)]" />
               <span className="leading-tight text-left">
@@ -533,7 +629,7 @@ export default function Home() {
             {user ? (
               <Link
                 href="/account"
-                className="hidden items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
+                className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">
                   {(user.fullName || user.email)[0]?.toUpperCase()}
@@ -544,7 +640,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="hidden items-center gap-2 rounded-xl bg-[var(--color-accent)] px-3.5 py-2 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
+                className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
               >
                 <IconUser size={18} />
                 {t("nav.login")}
