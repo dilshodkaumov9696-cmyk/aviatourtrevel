@@ -1,3 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor">
-  <path d="M201.89,54.66A103.43,103.43,0,0,0,128.79,24H128A104,104,0,0,0,24,128v56a24,24,0,0,0,24,24H64a24,24,0,0,0,24-24V144a24,24,0,0,0-24-24H40.36A88.12,88.12,0,0,1,190.54,65.93,87.39,87.39,0,0,1,215.65,120H192a24,24,0,0,0-24,24v40a24,24,0,0,0,24,24h24a24,24,0,0,1-24,24H136a8,8,0,0,0,0,16h56a40,40,0,0,0,40-40V128A103.41,103.41,0,0,0,201.89,54.66ZM64,136a8,8,0,0,1,8,8v40a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V136Zm128,56a8,8,0,0,1-8-8V144a8,8,0,0,1,8-8h24v56Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <style>
+    .headset-outline {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 26;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .headset-cable {
+      fill: none;
+      stroke: #2FD98A;
+      stroke-width: 20;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .headset-jack {
+      fill: #2FD98A;
+      transform-origin: 235px 452px;
+      animation: jack-pulse 1.6s ease-in-out infinite;
+    }
+    .headset-ring {
+      fill: none;
+      stroke: #2FD98A;
+      stroke-width: 10;
+      transform-origin: 235px 452px;
+      opacity: 0;
+      animation: ring-pulse 1.6s ease-out infinite;
+    }
+    @keyframes jack-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.22); }
+    }
+    @keyframes ring-pulse {
+      0% { transform: scale(0.6); opacity: 0.55; }
+      70% { transform: scale(1.9); opacity: 0; }
+      100% { transform: scale(1.9); opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .headset-jack, .headset-ring { animation: none; }
+    }
+  </style>
+
+  <!-- дуга оголовья -->
+  <path class="headset-outline" d="M 96 256 A 160 160 0 0 1 416 256" />
+
+  <!-- левый наушник -->
+  <rect class="headset-outline" x="56" y="236" width="70" height="150" rx="35" />
+  <!-- правый наушник -->
+  <rect class="headset-outline" x="386" y="236" width="70" height="150" rx="35" />
+
+  <!-- провод от правого наушника к разъёму -->
+  <path class="headset-cable" d="M 421 386 L 421 420 A 30 30 0 0 1 391 450 L 260 452" />
+
+  <!-- разъём/индикатор поддержки — пульсирует -->
+  <circle class="headset-ring" cx="235" cy="452" r="14" />
+  <circle class="headset-jack" cx="235" cy="452" r="14" />
 </svg>
