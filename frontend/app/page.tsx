@@ -17,16 +17,10 @@ import AirportInput from "./components/AirportInput";
 import DateRangePicker from "./components/DateRangePicker";
 import MultiCitySegments, { MultiSegment } from "./components/MultiCitySegments";
 import PassengersPicker, { Passengers, CabinClass, EMPTY_PASSENGERS } from "./components/PassengersPicker";
-import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute, IconHeadset, IconUser } from "./components/icons";
-
-import ThemeToggle from "./components/ThemeToggle";
-import LogoMark from "./components/Logo";
-import AuthModal from "./components/AuthModal";
-import { useAuth } from "./context/auth";
+import { IconPlane, IconPin, IconCalendar, IconSearch, IconSwap, IconRoute } from "./components/icons";
+import SiteHeader from "./components/SiteHeader";
 import { useSettings } from "./context/settings";
 import { usePublishHomeRoute } from "./context/chatRoute";
-import SettingsSwitcher from "./components/SettingsSwitcher";
-import MobileMenu from "./components/MobileMenu";
 import Footer from "./components/Footer";
 import WhyUs from "./components/WhyUs";
 import DirectionsCarousel from "./components/DirectionsCarousel";
@@ -128,7 +122,6 @@ const ORIGIN_DEALS = {
 
 export default function Home() {
   const router = useRouter();
-  const { user } = useAuth();
   const { t, format } = useSettings();
   const { add: addRecentSearch } = useRecentSearches();
   // Режим формы: обычный (туда + опц. обратно) или сложный маршрут
@@ -171,13 +164,10 @@ export default function Home() {
   // Ошибки валидации
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Модалка авторизации
-  const [authOpen, setAuthOpen] = useState(false);
   const [localOrigin, setLocalOrigin] = useState<keyof typeof ORIGIN_DEALS>("MOW");
 
   // Sticky header на скролле
   const [isScrolled, setIsScrolled] = useState(false);
-  const [comingSoon, setComingSoon] = useState<string | null>(null);
 
   const [activeSection, setActiveSection] = useState<"search" | "directions" | "deals" | "help">("search");
 
@@ -449,111 +439,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-1 flex-col">
-      {/* Header */}
-      <header
-        className={`sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300 ${
-          isScrolled ? "border-[var(--color-ink-border)] shadow-xl shadow-black/20" : "border-transparent"
-        }`}
-        style={{
-          background: isScrolled
-            ? "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)"
-            : "linear-gradient(180deg, rgba(10,27,56,0.16) 0%, rgba(10,27,56,0.04) 60%, rgba(10,27,56,0) 100%)",
-        }}
-      >
-        <div className={`mx-auto flex max-w-[1760px] items-center gap-3 px-3 transition-all duration-200 sm:px-5 xl:gap-4 xl:px-6 2xl:px-8 ${isScrolled ? "py-2" : "py-3"}`}>
-          <a href="#search" className="flex min-w-0 shrink-0 items-center gap-2">
-            <LogoMark size={34} className="xl:hidden" />
-            <LogoMark size={38} className="hidden xl:block" />
-            <span className="font-heading text-[17px] font-bold tracking-tight text-white sm:text-xl">Aviator</span>
-          </a>
-          <nav className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
-            <div className="flex max-w-full items-center justify-center gap-0.5 2xl:gap-1">
-              <a
-                href="#search"
-                className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
-                  activeSection === "search" ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {t("nav.flights")}
-              </a>
-              {([
-                ["nav.hotels", t("nav.hotels")],
-                ["nav.tours", t("nav.tours")],
-                ["nav.esim", t("nav.esim")],
-                ["nav.insurance", t("nav.insurance")],
-                ["nav.trains", t("nav.trains")],
-                ["nav.transfers", t("nav.transfers")],
-              ] as const).map(([key, label]) => (
-                <div key={key} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setComingSoon(label);
-                      window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
-                    }}
-                    className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
-                      comingSoon === label ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                  {comingSoon === label && (
-                    <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
-                      {t("nav.coming_soon")}
-                    </span>
-                  )}
-                </div>
-              ))}
-              <a
-                href="#deals"
-                className={`rounded-lg px-2.5 py-2 text-[13.5px] font-semibold tracking-[0.01em] whitespace-nowrap transition-colors 2xl:px-3.5 2xl:text-[14px] ${
-                  activeSection === "deals" ? "bg-white/12 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {t("nav.deals")}
-              </a>
-            </div>
-          </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
-              className="hidden items-center gap-2 rounded-xl border border-white/15 px-2.5 py-2 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex 2xl:px-3"
-            >
-              <IconHeadset size={20} className="shrink-0 text-[var(--color-accent)]" />
-              <span className="leading-tight text-left">
-                <span className="block text-[13px] font-semibold">{t("nav.support")}</span>
-                <span className="block text-[11px] font-bold tracking-wide text-white">{t("nav.support_247")}</span>
-              </span>
-            </button>
-            <ThemeToggle variant="dark" />
-            <div className="hidden items-center xl:flex">
-              <SettingsSwitcher variant="dark" />
-            </div>
-            {user ? (
-              <Link
-                href="/account"
-                className="hidden items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">
-                  {(user.fullName || user.email)[0]?.toUpperCase()}
-                </span>
-                <span className="max-w-[7.5rem] truncate">{user.fullName || user.email.split("@")[0]}</span>
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAuthOpen(true)}
-                className="hidden items-center gap-2 rounded-xl bg-[var(--color-accent)] px-3.5 py-2 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white xl:inline-flex"
-              >
-                <IconUser size={18} />
-                {t("nav.login")}
-              </button>
-            )}
-            <MobileMenu activeSection={activeSection} onLogin={() => setAuthOpen(true)} />
-          </div>
-        </div>
-      </header>
+      <SiteHeader scrolled={isScrolled} activeSection={activeSection} />
 
       {/* Глобус теперь фон не только hero, а всего этого блока: hero + статистика + "Почему
           выбирают нас" сидят на одном непрерывном полотне карты, без переключения на белый фон
@@ -1114,8 +1000,6 @@ export default function Home() {
       <AirlinesMarquee />
 
       <Footer />
-
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 }

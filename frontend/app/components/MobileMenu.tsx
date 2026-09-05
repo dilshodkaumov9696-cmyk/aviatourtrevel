@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import SettingsSwitcher from "./SettingsSwitcher";
 import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
-import { IconClose, IconHeadset, IconUser } from "./icons";
+import { IconClose } from "./icons";
+import { FolderIcon, NAV_ITEMS } from "./navIcons";
 import LogoMark from "./Logo";
 import Link from "next/link";
 
@@ -22,14 +23,7 @@ export default function MobileMenu({
   const [open, setOpen] = useState(false);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
 
-  const upcoming = [
-    t("nav.hotels"),
-    t("nav.tours"),
-    t("nav.esim"),
-    t("nav.insurance"),
-    t("nav.trains"),
-    t("nav.transfers"),
-  ];
+  const upcoming = NAV_ITEMS.filter((item) => item.href === null);
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +45,7 @@ export default function MobileMenu({
   }
 
   return (
-    <div className="xl:hidden">
+    <div className="lg:hidden">
       <button
         type="button"
         aria-label={t("nav.menu")}
@@ -59,9 +53,7 @@ export default function MobileMenu({
         onClick={() => setOpen(true)}
         className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.15" strokeLinecap="round" aria-hidden>
-          <path d="M3 6h18M3 12h18M3 18h18" />
-        </svg>
+        <FolderIcon name="menu" size={20} invert />
       </button>
 
       {open && (
@@ -90,31 +82,39 @@ export default function MobileMenu({
 
             <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
               <a
-                href="#search"
+                href="/#search"
                 onClick={() => setOpen(false)}
-                className={`rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "search" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
+                <FolderIcon name="flights" size={20} />
                 {t("nav.flights")}
               </a>
-              {upcoming.map((label) => (
+              {upcoming.map(({ key, icon }) => {
+                const label = t(`nav.${key}`);
+                return (
                 <button
-                  key={label}
+                  key={key}
                   type="button"
                   onClick={() => {
                     setComingSoon(label);
                     window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
                   }}
-                  className="rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-base font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-soft)]"
                 >
-                  {label}
-                  {comingSoon === label && <span className="ml-2 text-xs font-semibold text-[var(--color-primary)]">{t("nav.coming_soon")}</span>}
+                  <FolderIcon name={icon} size={20} />
+                  <span>
+                    {label}
+                    {comingSoon === label && <span className="ml-2 text-xs font-semibold text-[var(--color-primary)]">{t("nav.coming_soon")}</span>}
+                  </span>
                 </button>
-              ))}
+                );
+              })}
               <a
-                href="#deals"
+                href="/#deals"
                 onClick={() => setOpen(false)}
-                className={`rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold transition ${activeSection === "deals" ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "text-[var(--color-text)] hover:bg-[var(--color-bg-soft)]"}`}
               >
+                <FolderIcon name="deals" size={20} />
                 {t("nav.deals")}
               </a>
             </nav>
@@ -128,7 +128,7 @@ export default function MobileMenu({
                 }}
                 className="mb-4 flex w-full min-h-12 items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2 text-left"
               >
-                <IconHeadset size={22} className="text-[var(--color-primary)]" />
+                <FolderIcon name="support" size={22} className="text-[var(--color-primary)]" />
                 <span>
                   <span className="block text-sm font-semibold text-[var(--color-text)]">{t("nav.support")}</span>
                   <span className="text-xs font-bold tracking-wide text-[var(--color-primary)]">{t("nav.support_247")}</span>
@@ -144,7 +144,7 @@ export default function MobileMenu({
                   onClick={() => setOpen(false)}
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-primary)] px-4 py-3 text-base font-semibold text-white"
                 >
-                  <IconUser size={18} />
+                  <FolderIcon name="login" size={18} />
                   {user.fullName || user.email.split("@")[0]}
                 </Link>
               ) : (
@@ -153,7 +153,7 @@ export default function MobileMenu({
                   onClick={login}
                   className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-3 text-center text-base font-semibold text-[var(--color-accent-foreground)]"
                 >
-                  <IconUser size={18} />
+                  <FolderIcon name="login" size={18} />
                   {t("nav.login")}
                 </button>
               )}

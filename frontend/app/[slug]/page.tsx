@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import SiteHeader from "../components/SiteHeader";
 
 const PAGES: Record<string, { title: string; description: string; body: string[]; cta?: { label: string; href: string } }> = {
   "search-results": {
@@ -161,8 +162,10 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-soft)] px-6 py-20 text-[var(--color-text)]">
-      <div className="mx-auto max-w-4xl rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-sm">
+    <main className="min-h-screen bg-[var(--color-bg-soft)] text-[var(--color-text)]">
+      <SiteHeader />
+      <div className="mx-auto max-w-4xl px-6 py-20">
+      <div className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 shadow-sm">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-[var(--color-primary)]">
           Aviatour.travel
         </p>
@@ -185,6 +188,7 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             </Link>
           </div>
         )}
+      </div>
       </div>
     </main>
   );
