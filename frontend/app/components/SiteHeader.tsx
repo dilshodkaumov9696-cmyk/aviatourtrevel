@@ -32,7 +32,11 @@ function ThemeToggle() {
   }
 
   if (dark === null) {
-    return <div className="h-10 w-10 rounded-full border border-white/20 bg-white/10" aria-hidden />;
+    return (
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10" aria-hidden>
+        <FolderIcon name="moon" size={18} invert />
+      </div>
+    );
   }
 
   return (
