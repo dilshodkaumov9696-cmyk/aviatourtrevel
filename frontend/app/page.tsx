@@ -485,13 +485,6 @@ export default function Home() {
               noValidate
               className="animate-fade-in-down relative z-30 mx-auto mt-6 w-full min-w-0 max-w-[1760px] overflow-visible text-left sm:mt-10"
             >
-            <div className="mb-5 max-w-xl pr-20 sm:mb-6 sm:pr-28">
-              <h1 className="font-heading text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:text-[2.55rem]">
-                {t("hero.title")}
-                <span className="mt-1 block text-white/90">{t("hero.title_line2")}</span>
-              </h1>
-              <p className="mt-3 max-w-md text-[15px] leading-relaxed text-white/70">{t("hero.subtitle")}</p>
-            </div>
             {mode === "simple" && (
               <div className="min-w-0">
               <div className="mb-2 flex min-w-0 items-center">
