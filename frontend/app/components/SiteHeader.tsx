@@ -99,10 +99,10 @@ export default function SiteHeader({
           <Link href="/" className="flex min-w-0 shrink-0 items-center gap-2.5">
             <LogoMark size={38} className="xl:hidden" />
             <LogoMark size={42} className="hidden xl:block" />
-            <span className="font-heading text-lg font-bold tracking-tight text-white sm:text-[22px]">Aviator</span>
+            <span className="hidden font-heading text-lg font-bold tracking-tight text-white lg:inline sm:text-[22px]">Aviator</span>
           </Link>
-          <nav className="hidden min-w-0 flex-1 items-center justify-center md:flex">
-            <div className="flex max-w-full items-center justify-center gap-1 2xl:gap-1.5">
+          <nav className="hidden min-w-0 flex-1 items-center justify-start overflow-x-auto md:flex lg:justify-center">
+            <div className="flex items-center gap-1 2xl:gap-1.5">
               {NAV_ITEMS.map(([key, Icon, href]) => {
                 const label = t(`nav.${key}`);
                 const active = key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
@@ -156,7 +156,7 @@ export default function SiteHeader({
               </span>
             </button>
             <ThemeToggle />
-            <div className="hidden items-center md:flex">
+            <div className="hidden items-center lg:flex">
               <SettingsSwitcher variant="dark" />
             </div>
             {user ? (
