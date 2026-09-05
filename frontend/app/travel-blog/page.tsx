@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { blogPosts } from "../data/blogPosts";
+import SiteHeader from "../components/SiteHeader";
 
 export const metadata: Metadata = {
   title: "Блог — Aviatour.travel",
@@ -11,8 +12,9 @@ const dateFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: 
 
 export default function TravelBlogPage() {
   return (
-    <main className="min-h-screen bg-[var(--color-bg-soft)] px-6 py-20 text-[var(--color-text)]">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-screen bg-[var(--color-bg-soft)] text-[var(--color-text)]">
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl px-6 py-20">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-[var(--color-primary)]">
           Aviatour.travel
         </p>

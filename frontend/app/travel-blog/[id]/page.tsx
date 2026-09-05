@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { blogPosts } from "../../data/blogPosts";
+import SiteHeader from "../../components/SiteHeader";
 
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
@@ -28,8 +29,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-soft)] px-6 py-20 text-[var(--color-text)]">
-      <div className="mx-auto max-w-3xl">
+    <main className="min-h-screen bg-[var(--color-bg-soft)] text-[var(--color-text)]">
+      <SiteHeader />
+      <div className="mx-auto max-w-3xl px-6 py-20">
         <Link href="/travel-blog" className="text-sm font-semibold text-[var(--color-primary)] hover:underline">
           ← Ко всем статьям
         </Link>
