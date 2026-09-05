@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import SiteHeader from "../components/SiteHeader";
 
 const categories = [
   {
@@ -47,7 +48,9 @@ export default function FAQPage() {
   const toggle = (id: string) => setOpenId(openId === id ? null : id);
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg-soft)] px-6 py-20 text-[var(--color-text)]">
+    <main className="min-h-screen bg-[var(--color-bg-soft)] text-[var(--color-text)]">
+      <SiteHeader />
+      <div className="px-6 py-20">
       <div className="mx-auto max-w-4xl">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.24em] text-[var(--color-primary)]">
           Поддержка
@@ -106,6 +109,7 @@ export default function FAQPage() {
             Связаться с поддержкой
           </Link>
         </div>
+      </div>
       </div>
     </main>
   );
