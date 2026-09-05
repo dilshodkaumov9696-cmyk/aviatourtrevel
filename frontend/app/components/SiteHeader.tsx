@@ -43,7 +43,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+      className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
       title={dark ? "Светлая тема" : "Тёмная тема"}
     >
       <FolderIcon name={dark ? "sun" : "moon"} size={18} invert />
@@ -133,7 +133,7 @@ export default function SiteHeader({
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
-              className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
+              className="group hidden items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3 py-2.5 text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
             >
               <FolderIcon name="support" size={20} invert className="shrink-0" />
               <span className="leading-tight text-left">
@@ -159,7 +159,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
+                className="group hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
               >
                 <FolderIcon name="login" size={18} invert />
                 {t("nav.login")}
