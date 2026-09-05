@@ -14,6 +14,9 @@ interface Props {
   destinationIata?: string;
   /** Растянуть панель по ширине поля. Только для сложного маршрута — обычный поиск не меняет. */
   matchField?: boolean;
+  /** Раньше этой даты дни недоступны для выбора (по умолчанию — сегодня). Для сегментов
+   *  сложного маршрута — дата предыдущего перелёта, чтобы маршрут шёл по порядку. */
+  minDate?: string;
 }
 
 const MONTHS_RU = [
@@ -64,6 +67,7 @@ interface MonthProps {
   year: number;
   month: number;
   today: string;
+  minSelectable: string;
   departDate: string;
   effectiveEnd: string;
   isRange: boolean;
@@ -76,7 +80,7 @@ interface MonthProps {
 }
 
 function MonthGrid({
-  year, month, today, departDate, effectiveEnd, isRange,
+  year, month, today, minSelectable, departDate, effectiveEnd, isRange,
   onDayClick, onDayHover, className = "", prices, priceRange, roomy = false,
 }: MonthProps) {
   const offset = firstWeekday(year, month);
@@ -84,7 +88,7 @@ function MonthGrid({
   const hasRange = isRange && !!departDate && !!effectiveEnd && departDate < effectiveEnd;
 
   function classify(d: string): DayState {
-    if (d < today) return "past";
+    if (d < minSelectable) return "past";
     if (hasRange) {
       if (d === departDate) return "start";
       if (d === effectiveEnd) return "end";
@@ -161,19 +165,24 @@ export default function DateRangePicker({
   originIata,
   destinationIata,
   matchField = false,
+  minDate,
 }: Props) {
   const isRange = mode === "range";
-  const now = new Date();
-  const [leftYear, setLeftYear] = useState(now.getFullYear());
-  const [leftMonth, setLeftMonth] = useState(now.getMonth());
+  const today = todayStr();
+  // Нижняя граница выбора: сегодня, а для сегмента сложного маршрута — не раньше
+  // даты предыдущего перелёта, если она позже сегодняшней.
+  const floor = minDate && minDate > today ? minDate : today;
+  const floorYear = parseInt(floor.slice(0, 4), 10);
+  const floorMonth = parseInt(floor.slice(5, 7), 10) - 1;
+  const [leftYear, setLeftYear] = useState(floorYear);
+  const [leftMonth, setLeftMonth] = useState(floorMonth);
   const [selectingReturn, setSelectingReturn] = useState(isRange && initialField === "return" && !!departDate);
   const [hovered, setHovered] = useState("");
   const [prices, setPrices] = useState<Record<string, number>>({});
   const fetchedMonths = useRef(new Set<string>());
 
-  const today = todayStr();
   const right = addMonths(leftYear, leftMonth, 1);
-  const atCurrentMonth = leftYear === now.getFullYear() && leftMonth === now.getMonth();
+  const atFloorMonth = leftYear === floorYear && leftMonth === floorMonth;
 
   // Price heatmap: подтягиваем цены Aviasales по датам для видимых месяцев.
   // Кэшируем по месяцу, чтобы не дёргать API повторно при листании туда-обратно.
@@ -209,7 +218,7 @@ export default function DateRangePicker({
     isRange && selectingReturn && hovered && hovered > departDate ? hovered : returnDate;
 
   function prev() {
-    if (atCurrentMonth) return;
+    if (atFloorMonth) return;
     const p = addMonths(leftYear, leftMonth, -1);
     setLeftYear(p.year);
     setLeftMonth(p.month);
@@ -254,6 +263,7 @@ export default function DateRangePicker({
 
   const common = {
     today,
+    minSelectable: floor,
     departDate,
     effectiveEnd,
     isRange,
@@ -307,7 +317,7 @@ export default function DateRangePicker({
         <button
           type="button"
           onClick={prev}
-          disabled={atCurrentMonth}
+          disabled={atFloorMonth}
           className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-[var(--color-text-muted)] transition hover:bg-[var(--color-bg-soft)] hover:text-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-25"
         >
           ‹

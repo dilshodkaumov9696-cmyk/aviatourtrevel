@@ -365,7 +365,22 @@ export default function Home() {
   // Правки после «Найти билеты» гасят показанный план — иначе он молча разойдётся
   // с тем, что сейчас в форме.
   function updateSegment(id: number, patch: Partial<MultiSegment>) {
-    setSegments((s) => s.map((seg) => (seg.id === id ? { ...seg, ...patch } : seg)));
+    setSegments((s) => {
+      const idx = s.findIndex((seg) => seg.id === id);
+      const updated = s.map((seg) => (seg.id === id ? { ...seg, ...patch } : seg));
+      // Маршрут должен идти по порядку дат. Если сдвинули дату этого перелёта вперёд,
+      // а более поздний перелёт по факту оказался раньше — его дату сбрасываем, а не
+      // оставляем маршрут в невозможном состоянии молча.
+      if (idx !== -1 && patch.date) {
+        const newDate = updated[idx].date;
+        for (let i = idx + 1; i < updated.length; i++) {
+          if (updated[i].date && updated[i].date < newDate) {
+            updated[i] = { ...updated[i], date: "" };
+          }
+        }
+      }
+      return updated;
+    });
     setErrors((p) => {
       const next = { ...p };
       Object.keys(patch).forEach((k) => delete next[`${k}${id}`]);
@@ -389,10 +404,14 @@ export default function Home() {
   function validate(): boolean {
     const e: Record<string, string> = {};
     if (mode === "multi") {
+      let prevDate = "";
       segments.forEach((seg) => {
         if (!seg.from) e[`from${seg.id}`] = "Укажите город";
         if (!seg.to) e[`to${seg.id}`] = "Укажите город";
+        if (seg.from && seg.to && seg.from.iata === seg.to.iata) e[`to${seg.id}`] = "Города совпадают";
         if (!seg.date) e[`date${seg.id}`] = "Дата";
+        else if (prevDate && seg.date < prevDate) e[`date${seg.id}`] = "Раньше предыдущего перелёта";
+        if (seg.date) prevDate = seg.date;
       });
     } else {
       if (!originAirport) e.origin = "Укажите город вылета";
@@ -799,18 +818,24 @@ export default function Home() {
                   onAdd={addSegment}
                   onRemove={removeSegment}
                 />
-                <div className="flex min-w-0 flex-col gap-3 px-4 pb-4 sm:flex-row sm:items-center sm:justify-end sm:px-5">
-                  <PassengersPicker
-                    passengers={passengers}
-                    cabin={cabin}
-                    onPassengers={setPassengers}
-                    onCabin={setCabin}
-                    align="right"
-                    className="w-full min-w-0 sm:w-64"
-                  />
+                <div className="flex min-w-0 flex-col gap-3 border-t border-[var(--color-border)] px-4 pt-4 pb-4 sm:flex-row sm:items-end sm:justify-end sm:px-5">
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <span className="hidden items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--color-gold-dark)] sm:flex">
+                      <IconUser size={13} />
+                      Пассажиры и класс — на весь маршрут
+                    </span>
+                    <PassengersPicker
+                      passengers={passengers}
+                      cabin={cabin}
+                      onPassengers={setPassengers}
+                      onCabin={setCabin}
+                      align="right"
+                      className="w-full min-w-0 sm:w-64"
+                    />
+                  </div>
                   <button
                     type="submit"
-                    className="flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 font-bold text-[var(--color-accent-foreground)] shadow-[0_12px_34px_rgba(47,217,138,0.35)] ring-1 ring-white/30 transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_16px_42px_rgba(47,217,138,0.42)] active:scale-[0.98] sm:w-auto sm:min-w-[12.5rem] sm:px-8"
+                    className="flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 text-[15px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 sm:w-auto sm:min-w-[12.5rem] sm:px-8"
                   >
                     <IconSearch size={18} />
                     {t("form.search")}
@@ -818,15 +843,16 @@ export default function Home() {
                 </div>
 
                 {/* Итог по маршруту: своей ссылки Aviasales на несколько городов сразу нет,
-                    поэтому честно даём отдельную ссылку на каждый перелёт вместо того чтобы
-                    молча искать только первый. */}
+                    поэтому даём отдельную ссылку на каждый перелёт вместо того чтобы молча
+                    искать только первый — но подаём это как обычный шаг оформления по
+                    перелётам, а не как признание нехватки функции. */}
                 {multiRoutePlan && (
                   <div id="multi-route-plan" className="mx-4 mb-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] p-4">
                     <div className="mb-1 text-sm font-semibold text-[var(--color-text)]">
                       Ваш маршрут — {multiRoutePlan.length} {flightsWord(multiRoutePlan.length)}
                     </div>
                     <p className="mb-3 text-xs text-[var(--color-text-muted)]">
-                      Единого поиска на несколько городов у нас пока нет — откройте Aviasales отдельно по каждому перелёту.
+                      Открывайте и бронируйте каждый перелёт по ссылке ниже — она уходит на Aviasales в новой вкладке.
                     </p>
                     <ul className="space-y-2">
                       {multiRoutePlan.map((seg, i) =>
