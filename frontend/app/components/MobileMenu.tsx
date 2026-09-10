@@ -51,9 +51,9 @@ export default function MobileMenu({
         aria-label={t("nav.menu")}
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="group flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+        className="group flex h-11 w-11 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:bg-[var(--color-bg-soft)]"
       >
-        <FolderIcon name="menu" size={20} invert />
+        <FolderIcon name="menu" size={20} />
       </button>
 
       {open && (

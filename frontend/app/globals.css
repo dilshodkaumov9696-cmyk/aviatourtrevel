@@ -129,7 +129,8 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: none;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Якорные секции не прячутся под будущий sticky-хедер */
@@ -445,12 +446,24 @@ textarea:focus-visible {
 }
 
 /* ===== Глобус MapLibre («живой глобус маршрутов») ===== */
+/* Тёмный холст героя: без неона. Если WebGL/тайлы не поднялись, страница
+   не должна становиться белой — глобус по-прежнему монтируется сверху. */
+.home-hero-canvas {
+  background: #0b1220;
+}
+.globe-canvas,
+.globe-canvas.maplibregl-map,
+.globe-canvas .maplibregl-canvas-container,
+.globe-canvas .maplibregl-canvas {
+  background: #0b1220 !important;
+}
+
 .globe-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.78;
+  opacity: 1;
   pointer-events: none;
 }
 .globe-canvas .globe-dot { pointer-events: auto; }

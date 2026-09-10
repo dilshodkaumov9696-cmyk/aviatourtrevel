@@ -129,7 +129,7 @@ export default function AirportInput({ airport, onChange, label = "", placeholde
   return (
     <div ref={ref} className="min-w-0 flex-1">
       {label ? (
-        <label className="mb-0.5 block text-xs font-semibold text-[var(--color-text-muted)]">
+        <label className="mb-0.5 block text-[12px] font-semibold text-[var(--color-text)]">
           {label}
         </label>
       ) : null}
@@ -186,7 +186,7 @@ export default function AirportInput({ airport, onChange, label = "", placeholde
               const active = i === highlighted;
               return (
                 <li
-                  key={a.iata}
+                  key={`${kind}-${a.iata}-${i}`}
                   onMouseDown={() => select(a)}
                   onMouseEnter={() => setHighlighted(i)}
                   className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition ${child ? "ml-4 border-l-2 border-[var(--color-border)]" : ""} ${

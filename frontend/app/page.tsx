@@ -49,7 +49,7 @@ function flightsWord(n: number): string {
 }
 
 const boxBase =
-  "relative flex min-h-[72px] items-center gap-2.5 px-3.5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-surface)] focus-within:bg-[var(--color-surface)] sm:min-h-[76px] sm:gap-3 sm:px-5 xl:min-h-[84px] xl:px-6";
+  "relative flex min-h-14 items-center gap-2.5 px-3.5 py-3 transition-colors duration-200 cursor-pointer hover:bg-[var(--color-bg-soft)] focus-within:bg-[var(--color-bg-soft)] sm:min-h-16 sm:gap-3 sm:px-4";
 
 function futureDateISO(daysAhead: number): string {
   const d = new Date();
@@ -464,23 +464,17 @@ export default function Home() {
           выбирают нас" сидят на одном непрерывном полотне карты, без переключения на белый фон
           между ними — попросили, чтобы глобус было видно и за карточками ниже, а не только
           в самом верху. */}
-      <div
-        className="relative text-white"
-        style={{
-          background:
-            "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
-        }}
-      >
+      <div className="home-hero-canvas relative text-white">
         <div className="absolute inset-x-0 top-0 z-0 h-[620px] overflow-hidden sm:h-[700px] md:h-full">
           <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
         </div>
 
         {/* Hero */}
-        <section id="search" className="relative z-10 overflow-visible px-3 pb-12 pt-6 sm:px-4 sm:pb-16 sm:pt-10 md:px-6 md:pb-20 md:pt-12 lg:px-8">
+        <section id="search" className="relative z-10 overflow-visible px-3 pb-16 pt-8 sm:px-4 sm:pb-20 sm:pt-12 md:px-6 md:pb-24 md:pt-14 lg:px-8">
           <button
             type="button"
             onClick={() => setFormCollapsed((v) => !v)}
-            className="group absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
+            className="group absolute right-3 top-3 z-20 flex min-h-11 items-center gap-1.5 rounded-md border border-white/25 bg-[var(--color-surface)] px-3 py-2 text-[13px] font-semibold text-[var(--color-text)] transition hover:bg-[var(--color-bg-soft)] sm:right-4 sm:top-4 md:right-6 md:top-6"
           >
             {formCollapsed ? (
               <>
@@ -504,7 +498,7 @@ export default function Home() {
             <form
               onSubmit={handleSearch}
               noValidate
-              className="animate-fade-in-down relative z-30 mx-auto mt-6 w-full min-w-0 max-w-[1760px] overflow-visible text-left sm:mt-10"
+              className="animate-fade-in-down relative z-30 mx-auto mt-8 w-full min-w-0 max-w-[1200px] overflow-visible text-left sm:mt-12"
             >
             {mode === "simple" && (
               <div className="min-w-0">
@@ -515,21 +509,21 @@ export default function Home() {
                   setMode("multi");
                   setMultiRoutePlan(null);
                 }}
-                className="group inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] transition-colors duration-300 hover:text-[var(--color-text)]"
+                className="group inline-flex min-h-11 items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-white/80 transition-colors duration-300 hover:text-white"
                 title="Перелёты с пересадками в нескольких городах"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[var(--color-bg-soft)] text-[var(--color-text-muted)] transition-all duration-300 group-hover:rotate-12 group-hover:bg-[var(--color-gold)]/15 group-hover:text-[var(--color-gold)]">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/12 text-white/80 transition-all duration-300 group-hover:rotate-12 group-hover:bg-white/20 group-hover:text-white">
                   <IconRoute size={14} />
                 </span>
                 {t("form.complex")}
               </button>
               </div>
-              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_24px_60px_rgba(10,27,56,0.28)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0 dark:bg-[var(--color-bg-soft)]">
+              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0">
                 {/* Маршрут: Откуда + Куда со свапом */}
                 <div className="relative flex min-w-0 flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 xl:min-w-[26rem] xl:flex-[2.6]">
                   {/* Скругления по брейкпоинтам: <sm — верхняя ячейка колонки, sm..xl — левый
                       верхний угол бара, xl+ — левый торец строки. */}
-                  <div className={`group relative min-w-0 flex-1 ${boxBase} rounded-t-2xl sm:rounded-tr-none xl:rounded-bl-2xl ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                  <div className={`group relative min-w-0 flex-1 ${boxBase} rounded-t-lg sm:rounded-tr-none xl:rounded-bl-lg ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
                     <span className="nav-icon nav-icon--spin360 inline-flex shrink-0 items-center justify-center">
                       <IconPlane size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
@@ -549,13 +543,14 @@ export default function Home() {
                     type="button"
                     onClick={swap}
                     title="Поменять местами"
-                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-md hover:bg-[var(--color-primary-light)] hover:shadow-lg transition"
+                    aria-label="Поменять местами"
+                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary-light)]"
                   >
                     <IconSwap size={15} className="rotate-90 sm:rotate-0 hover:rotate-180 transition-transform duration-300" />
                   </button>
 
                   {/* sm..xl «Куда» замыкает правый верхний угол бара, на xl+ — рядовая ячейка */}
-                  <div className={`group relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-2xl xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                  <div className={`group relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-lg xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
                     <span className="nav-icon nav-icon--flip inline-flex shrink-0 items-center justify-center">
                       <IconPin size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
@@ -580,6 +575,7 @@ export default function Home() {
                     onClick={() => openDatePicker("depart")}
                   >
                     <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="text-[12px] font-semibold leading-tight text-[var(--color-text)]">{t("form.depart")}</div>
                       <div className={`text-[15px] truncate ${departDate ? "text-[var(--color-text)] font-medium" : errors.departDate ? "text-red-500 font-medium" : "text-[var(--color-text-muted)]"}`}>
                         {departDate ? fmtDate(departDate) : errors.departDate ? errors.departDate : t("form.depart_date")}
                       </div>
@@ -595,6 +591,7 @@ export default function Home() {
                     onClick={() => openDatePicker("return")}
                   >
                     <div className="min-w-0 flex-1 overflow-hidden">
+                      <div className="text-[12px] font-semibold leading-tight text-[var(--color-text)]">{t("form.return")}</div>
                       <div className="flex items-center gap-1">
                         <span className={`text-[15px] truncate ${returnDate ? "text-[var(--color-text)] font-medium" : "text-[var(--color-text-muted)]"}`}>
                           {returnDate ? fmtDate(returnDate) : t("form.pick_return")}
@@ -662,7 +659,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={searching}
-                  className="group relative flex min-h-[56px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-6 text-[16px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default sm:min-h-[76px] sm:px-10 xl:min-h-[84px] xl:w-[11.5rem] xl:rounded-bl-none xl:rounded-tr-2xl"
+                  className="group relative flex min-h-14 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-b-lg bg-[var(--color-primary)] px-6 text-[16px] font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] active:brightness-95 disabled:cursor-default sm:min-h-16 sm:px-8 xl:w-[10.5rem] xl:rounded-b-none xl:rounded-r-lg"
                 >
                   {searching ? (
                     <>
@@ -684,7 +681,7 @@ export default function Home() {
 
             {/* --- Сложный маршрут --- */}
             {mode === "multi" && (
-              <div className="min-w-0 overflow-visible rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_24px_60px_rgba(10,27,56,0.28)] dark:bg-[var(--color-bg-soft)]">
+              <div className="min-w-0 overflow-visible rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)]">
                 <div className="flex min-w-0 items-center px-4 pt-2.5 sm:px-5">
                   <button
                     type="button"
@@ -728,7 +725,7 @@ export default function Home() {
                   </div>
                   <button
                     type="submit"
-                    className="group flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 text-[15px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 sm:w-auto sm:min-w-[12.5rem] sm:px-8"
+                    className="group flex min-h-12 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--color-primary)] px-6 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] active:brightness-95 sm:w-auto sm:min-w-[12.5rem] sm:px-8"
                   >
                     <span className="nav-icon nav-icon--zoom inline-flex shrink-0 items-center justify-center">
                       <IconSearch size={18} className="nav-icon__img" />
@@ -794,7 +791,7 @@ export default function Home() {
 
           {/* Популярные направления: клик подставляет оба города в форму и сразу
               рисует дугу на глобусе. Даты и пассажиры не меняются. */}
-          <div className="relative z-20 mx-auto mt-4 flex w-full max-w-[1760px] justify-end">
+          <div className="relative z-20 mx-auto mt-6 flex w-full max-w-[1200px] justify-end">
             <div className="w-full lg:w-[300px]">
               <PopularDirectionsPanel routes={POPULAR_ROUTES} prices={popularPrices} onSelect={selectPopularRoute} />
             </div>

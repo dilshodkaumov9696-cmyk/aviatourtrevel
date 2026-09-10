@@ -160,7 +160,7 @@ export default function PassengersPicker({
       <div
         className={
           variant === "bar"
-            ? "group flex h-full w-full min-h-[64px] items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--color-surface)] sm:min-h-[76px] sm:px-5 xl:min-h-[84px] xl:px-6"
+            ? "group flex h-full w-full min-h-14 items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--color-bg-soft)] sm:min-h-16 sm:px-4"
             : "group flex w-full items-center gap-2.5 min-h-[52px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-3.5 py-1.5 cursor-pointer hover:border-[var(--color-primary)] transition"
         }
         onClick={() => setOpen((v) => !v)}
@@ -179,8 +179,8 @@ export default function PassengersPicker({
           <IconUser size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
         </span>
         <div className="min-w-0 flex-1 overflow-hidden leading-tight">
-          <div className="truncate text-[11px] font-medium text-[var(--color-text-muted)]">{cabinFull[cabin]}</div>
-          <div className="truncate text-[15px] font-semibold text-[var(--color-text)]">{countWord(passengers)}</div>
+          <div className="truncate text-[12px] font-semibold leading-tight text-[var(--color-text)]">{t("form.passengers")}</div>
+          <div className="truncate text-[15px] font-medium text-[var(--color-text)]">{countWord(passengers)}, {cabinFull[cabin]}</div>
         </div>
         <span className="shrink-0 text-[var(--color-text-muted)] text-xs" aria-hidden>{open ? "▴" : "▾"}</span>
       </div>
@@ -287,7 +287,7 @@ export default function PassengersPicker({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--color-accent)] text-sm font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-105"
+              className="flex min-h-11 flex-1 items-center justify-center rounded-md bg-[var(--color-primary)] text-sm font-semibold text-white transition hover:bg-[var(--color-primary-dark)]"
             >
               {t("pax.done")}
             </button>
