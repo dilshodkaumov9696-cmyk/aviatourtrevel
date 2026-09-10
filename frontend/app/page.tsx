@@ -460,27 +460,50 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       <SiteHeader scrolled={isScrolled} activeSection={activeSection} />
 
-      {/* Глобус теперь фон не только hero, а всего этого блока: hero + статистика + "Почему
-          выбирают нас" сидят на одном непрерывном полотне карты, без переключения на белый фон
-          между ними — попросили, чтобы глобус было видно и за карточками ниже, а не только
-          в самом верху. */}
-      <div
-        className="relative text-white"
-        style={{
-          background:
-            "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
-        }}
-      >
-        <div className="absolute inset-x-0 top-0 z-0 h-[620px] overflow-hidden sm:h-[700px] md:h-full">
+      {/* Premium monochrome hero: light = wing photo, dark = globe */}
+      <div className="relative overflow-hidden bg-[var(--color-bg)] text-[var(--color-text)]">
+        {/* Light hero photo */}
+        <div className="pointer-events-none absolute inset-0 dark:hidden" aria-hidden>
+          <img
+            src="/hero-wing.jpg"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[70%_40%] opacity-[0.55] grayscale"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)] via-[var(--color-bg)]/92 to-[var(--color-bg)]/35" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-bg)]/40 via-transparent to-[var(--color-bg)]" />
+        </div>
+        {/* Dark globe canvas */}
+        <div className="absolute inset-x-0 top-0 z-0 hidden h-[620px] overflow-hidden dark:block sm:h-[700px] md:h-full">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(255,255,255,0.06),transparent_30%),radial-gradient(circle_at_88%_8%,rgba(255,255,255,0.04),transparent_35%),linear-gradient(160deg,#050506_0%,#0c0c0e_55%,#121214_100%)]" />
           <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
+        </div>
+
+        {/* Vertical brand rail */}
+        <div
+          className="pointer-events-none absolute right-3 top-1/2 z-[5] hidden -translate-y-1/2 select-none text-[10px] font-semibold uppercase tracking-[0.35em] text-[var(--color-text-muted)]/50 [writing-mode:vertical-rl] xl:block dark:text-white/25"
+          aria-hidden
+        >
+          Aviator · Travel the world
         </div>
 
         {/* Hero */}
         <section id="search" className="relative z-10 overflow-visible px-3 pb-12 pt-6 sm:px-4 sm:pb-16 sm:pt-10 md:px-6 md:pb-20 md:pt-12 lg:px-8">
+          <div className="mx-auto mb-6 max-w-[1760px] sm:mb-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)] dark:text-white/55">
+              Больше, чем путешествия
+            </p>
+            <h1 className="mt-3 max-w-3xl font-heading text-[2rem] font-bold leading-[1.1] tracking-tight text-[var(--color-text)] sm:text-5xl dark:text-white">
+              Открывайте мир с лучшими билетами
+            </h1>
+            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--color-text-muted)] dark:text-white/65">
+              Надёжный поиск. Выгодные цены. Новые впечатления.
+            </p>
+          </div>
+
           <button
             type="button"
             onClick={() => setFormCollapsed((v) => !v)}
-            className="group absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
+            className="group absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)]/80 px-3 py-2 text-[12px] font-semibold text-[var(--color-text)] backdrop-blur-sm transition hover:bg-[var(--color-surface)] dark:border-white/15 dark:bg-white/15 dark:text-white dark:hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
           >
             {formCollapsed ? (
               <>

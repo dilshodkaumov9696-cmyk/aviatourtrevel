@@ -3,12 +3,12 @@
 import { useInViewAnimation } from "../hooks/useInViewAnimation";
 
 const svg = {
-  width: 26,
-  height: 26,
+  width: 24,
+  height: 24,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.8,
+  strokeWidth: 1.7,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
   "aria-hidden": true,
@@ -44,8 +44,8 @@ const IconCheck = () => (
 const ITEMS = [
   { icon: <IconShield />, title: "Безопасная оплата", text: "Платежи защищены, данные карты под надёжным шифрованием." },
   { icon: <IconSupport />, title: "Поддержка 24/7", text: "Помогаем в любое время — до, во время и после поездки." },
-  { icon: <IconTag />, title: "Лучшая цена", text: "" },
-  { icon: <IconCheck />, title: "Без скрытых сборов", text: "Честная итоговая стоимость — без доплат на последнем шаге." },
+  { icon: <IconTag />, title: "Лучшая цена", text: "Сравниваем предложения и показываем честную стоимость." },
+  { icon: <IconCheck />, title: "Без скрытых сборов", text: "Итоговая цена без доплат на последнем шаге." },
 ];
 
 export default function WhyUs() {
@@ -54,27 +54,22 @@ export default function WhyUs() {
   return (
     <section
       ref={ref}
-      className={`py-16 transition-all duration-700 ${
-        isInView ? "opacity-100" : "opacity-0 translate-y-10"
+      className={`py-10 transition-all duration-700 sm:py-14 ${
+        isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       }`}
     >
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-10 text-center">
-          <h2 className="font-heading text-3xl font-bold text-white">Почему выбирают нас</h2>
-          <p className="mt-2 text-white/60">Надёжный сервис для поиска и покупки авиабилетов</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
           {ITEMS.map((it) => (
             <div
               key={it.title}
-              className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-[var(--color-gold)] hover:bg-white/[0.07]"
+              className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 p-5 shadow-[var(--shadow-soft)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/[0.04]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-[var(--color-gold)]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-bg-soft)] text-[var(--color-text)] dark:bg-white/10">
                 {it.icon}
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-white">{it.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">{it.text}</p>
+              <h3 className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">{it.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-muted)]">{it.text}</p>
             </div>
           ))}
         </div>

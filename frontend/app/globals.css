@@ -4,62 +4,61 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Основной — глубокий премиальный синий (не электрик, а «авиационный») */
-  --color-primary: #2454D6;
-  --color-primary-dark: #16389E;
-  --color-primary-light: #E8EDFC;
-  --color-secondary: #2E6FA8;
-  --color-tertiary: #1897A8;
-  /* Тёмный «чернильный» синий — хедер, футер, якорные поверхности бренда */
-  --color-ink: #0A1B38;
-  --color-ink-soft: #12274D;
-  --color-ink-border: rgba(255, 255, 255, 0.12);
-  /* Акцент — приглушённый премиальный изумруд (был неоново-мятный) */
-  --color-accent: #189A63;
-  --color-accent-dark: #0F7A4C;
-  --color-accent-foreground: #FFFFFF; /* светлый текст на тёмном акценте */
-  /* Золото — точечный премиальный штрих: логотип, «лучший выбор», разделители */
-  --color-gold: #E2A63B;
-  --color-gold-dark: #C08A24;
-  --color-highlight: #FF4FA0;
-  --color-warm: #FFE3C2;
-  /* База */
-  --color-bg: #FFFFFF;
-  --color-bg-soft: #F4F7FB;
+  /* Premium monochrome — light (GPT reference) */
+  --color-primary: #0B0B0C;
+  --color-primary-dark: #000000;
+  --color-primary-light: #F0F0F1;
+  --color-secondary: #3A3A3C;
+  --color-tertiary: #6B6B6E;
+  --color-ink: #0B0B0C;
+  --color-ink-soft: #1A1A1C;
+  --color-ink-border: rgba(0, 0, 0, 0.08);
+  /* CTA = solid black */
+  --color-accent: #0B0B0C;
+  --color-accent-dark: #000000;
+  --color-accent-foreground: #FFFFFF;
+  --color-gold: #8A8A8E;
+  --color-gold-dark: #5C5C60;
+  --color-highlight: #0B0B0C;
+  --color-warm: #F2F2F0;
+  /* Surfaces */
+  --color-bg: #F6F6F4;
+  --color-bg-soft: #EEEEEC;
   --color-surface: #FFFFFF;
-  --color-text: #0F1B2E;
-  --color-text-muted: #5B6B82;
-  --color-border: #DDE5F0;
-  --radius-sm: 0.65rem;
-  --radius-md: 0.9rem;
-  --radius-lg: 1.2rem;
-  --shadow-soft: 0 12px 40px rgba(10, 27, 56, 0.07);
-  --shadow-card: 0 16px 48px rgba(10, 27, 56, 0.12);
+  --color-text: #111113;
+  --color-text-muted: #6B6B70;
+  --color-border: #E4E4E2;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.35rem;
+  --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 18px 50px rgba(0, 0, 0, 0.10);
 }
 
 .dark {
-  --color-primary: #6C9CF2;
-  --color-primary-dark: #3E6FD1;
-  --color-primary-light: #16294D;
-  --color-secondary: #69C5F2;
-  --color-tertiary: #2FC4D6;
-  --color-ink: #060F22;
-  --color-ink-soft: #0D1B36;
+  /* Premium monochrome — dark (GPT reference) */
+  --color-primary: #F5F5F5;
+  --color-primary-dark: #FFFFFF;
+  --color-primary-light: #1C1C1F;
+  --color-secondary: #C8C8CC;
+  --color-tertiary: #8E8E93;
+  --color-ink: #050506;
+  --color-ink-soft: #121214;
   --color-ink-border: rgba(255, 255, 255, 0.1);
-  --color-accent: #2FD98A;
-  --color-accent-dark: #22B873;
-  --color-accent-foreground: #04331F;
-  --color-gold: #E9B65B;
-  --color-gold-dark: #C6932E;
-  --color-warm: #F4D1A9;
-  --color-bg: #07131A;
-  --color-bg-soft: #11212A;
-  --color-surface: #0F1D27;
-  --color-text: #eef6fb;
-  --color-text-muted: #95a9b7;
-  --color-border: #254455;
-  --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.28);
-  --shadow-card: 0 18px 55px rgba(0, 0, 0, 0.34);
+  --color-accent: #FFFFFF;
+  --color-accent-dark: #E8E8EA;
+  --color-accent-foreground: #0B0B0C;
+  --color-gold: #A1A1A6;
+  --color-gold-dark: #7C7C80;
+  --color-warm: #1C1C1F;
+  --color-bg: #0A0A0B;
+  --color-bg-soft: #141416;
+  --color-surface: #18181B;
+  --color-text: #F4F4F5;
+  --color-text-muted: #A1A1A6;
+  --color-border: #2A2A2E;
+  --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.55);
 }
 
 @theme inline {
@@ -82,7 +81,7 @@ html {
 }
 
 body {
-  background: #ffffff;
+  background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -92,9 +91,7 @@ body {
 }
 
 .dark body {
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 28%),
-    linear-gradient(135deg, #07131a 0%, #0f202c 45%, #112730 100%);
+  background: var(--color-bg);
 }
 
 h1, h2, h3, h4, h5, h6 {
