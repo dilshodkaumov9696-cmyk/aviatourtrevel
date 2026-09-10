@@ -518,12 +518,12 @@ export default function Home() {
                 {t("form.complex")}
               </button>
               </div>
-              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0">
+              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0">
                 {/* Маршрут: Откуда + Куда со свапом */}
                 <div className="relative flex min-w-0 flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 xl:min-w-[26rem] xl:flex-[2.6]">
                   {/* Скругления по брейкпоинтам: <sm — верхняя ячейка колонки, sm..xl — левый
                       верхний угол бара, xl+ — левый торец строки. */}
-                  <div className={`group relative min-w-0 flex-1 ${boxBase} rounded-t-[var(--radius-md)] sm:rounded-tr-none xl:rounded-bl-[var(--radius-md)] ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                  <div className={`group relative min-w-0 flex-1 ${boxBase} rounded-t-lg sm:rounded-tr-none xl:rounded-bl-lg ${errors.origin ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
                     <span className="nav-icon nav-icon--spin360 inline-flex shrink-0 items-center justify-center">
                       <IconPlane size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
@@ -550,7 +550,7 @@ export default function Home() {
                   </button>
 
                   {/* sm..xl «Куда» замыкает правый верхний угол бара, на xl+ — рядовая ячейка */}
-                  <div className={`group relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-[var(--radius-md)] xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
+                  <div className={`group relative min-w-0 flex-1 ${boxBase} sm:rounded-tr-lg xl:rounded-tr-none ${errors.destination ? "z-10 ring-1 ring-inset ring-red-400" : ""}`}>
                     <span className="nav-icon nav-icon--flip inline-flex shrink-0 items-center justify-center">
                       <IconPin size={22} className="nav-icon__img text-[var(--color-primary)] shrink-0" />
                     </span>
@@ -659,7 +659,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={searching}
-                  className="group relative flex min-h-14 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-b-[var(--radius-md)] bg-[var(--color-primary)] px-6 text-[16px] font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] active:brightness-95 disabled:cursor-default sm:min-h-16 sm:px-8 xl:w-[10.5rem] xl:rounded-b-none xl:rounded-r-[var(--radius-md)]"
+                  className="group relative flex min-h-14 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-b-lg bg-[var(--color-primary)] px-6 text-[16px] font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] active:brightness-95 disabled:cursor-default sm:min-h-16 sm:px-8 xl:w-[10.5rem] xl:rounded-b-none xl:rounded-r-lg"
                 >
                   {searching ? (
                     <>
@@ -681,7 +681,7 @@ export default function Home() {
 
             {/* --- Сложный маршрут --- */}
             {mode === "multi" && (
-              <div className="min-w-0 overflow-visible rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)]">
+              <div className="min-w-0 overflow-visible rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-soft)]">
                 <div className="flex min-w-0 items-center px-4 pt-2.5 sm:px-5">
                   <button
                     type="button"

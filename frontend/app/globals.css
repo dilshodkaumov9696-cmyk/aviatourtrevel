@@ -446,9 +446,16 @@ textarea:focus-visible {
 }
 
 /* ===== Глобус MapLibre («живой глобус маршрутов») ===== */
-/* Тёмный холст героя: без неона и цветных пятен, глобус остаётся главным. */
+/* Тёмный холст героя: без неона. Если WebGL/тайлы не поднялись, страница
+   не должна становиться белой — глобус по-прежнему монтируется сверху. */
 .home-hero-canvas {
   background: #0b1220;
+}
+.globe-canvas,
+.globe-canvas.maplibregl-map,
+.globe-canvas .maplibregl-canvas-container,
+.globe-canvas .maplibregl-canvas {
+  background: #0b1220 !important;
 }
 
 .globe-canvas {
@@ -456,7 +463,7 @@ textarea:focus-visible {
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.92;
+  opacity: 1;
   pointer-events: none;
 }
 .globe-canvas .globe-dot { pointer-events: auto; }
