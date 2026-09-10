@@ -72,7 +72,7 @@ export default function DirectionsCarousel() {
           {/* Left Arrow */}
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden lg:flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            className="absolute left-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] lg:flex"
             aria-label="Предыдущие"
           >
             ‹
@@ -95,7 +95,7 @@ export default function DirectionsCarousel() {
               <a
                 key={dir.iata}
                 href="#search"
-                className="carousel-card group flex-shrink-0 relative w-48 h-48 rounded-xl overflow-hidden shadow-md transition hover:shadow-lg"
+                className="carousel-card group relative h-48 w-48 flex-shrink-0 overflow-hidden rounded-lg border border-[var(--color-border)]"
               >
                 <img
                   src={cityPhotoUrl(dir.iata)}
@@ -104,13 +104,10 @@ export default function DirectionsCarousel() {
                   className="absolute inset-0 w-full h-full object-cover transition group-hover:scale-105"
                 />
                 {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                {/* IATA Badge */}
-                <div className="absolute top-3 right-3 rounded-lg bg-white/20 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                <div className="absolute right-3 top-3 rounded-md bg-[var(--color-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text)]">
                   {dir.iata}
                 </div>
-                {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <div className="absolute inset-x-0 bottom-0 bg-[var(--color-ink)]/80 p-4 text-white">
                   <div className="text-lg font-bold">{dir.city}</div>
                   <div className="text-sm text-white/80">{dir.country}</div>
                 </div>
@@ -121,7 +118,7 @@ export default function DirectionsCarousel() {
           {/* Right Arrow */}
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden lg:flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+            className="absolute right-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] lg:flex"
             aria-label="Следующие"
           >
             ›

@@ -11,11 +11,7 @@ import { useAuth } from "../context/auth";
 import { useSettings } from "../context/settings";
 
 const NAV_BTN =
-  "group inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-2 text-[12px] font-medium tracking-[0.01em] whitespace-nowrap transition-all duration-200 sm:gap-2 sm:px-3 sm:py-2.5 sm:text-[13px]";
-const NAV_IDLE =
-  "bg-white/[0.045] text-white/78 ring-1 ring-inset ring-white/10 hover:bg-white/14 hover:text-white hover:ring-white/22";
-const NAV_ACTIVE =
-  "bg-white/16 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] ring-1 ring-inset ring-white/28";
+  "group inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-2 text-[12px] font-medium tracking-[0.01em] whitespace-nowrap transition-colors duration-200 sm:gap-2 sm:px-3 sm:py-2 sm:text-[13px]";
 
 function ThemeToggle() {
   const [dark, setDark] = useState<boolean | null>(null);
@@ -33,8 +29,11 @@ function ThemeToggle() {
 
   if (dark === null) {
     return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10" aria-hidden>
-        <FolderIcon name="moon" size={18} invert />
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)]"
+        aria-hidden
+      >
+        <FolderIcon name="moon" size={18} />
       </div>
     );
   }
@@ -43,10 +42,10 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+      className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)]"
       title={dark ? "Светлая тема" : "Тёмная тема"}
     >
-      <FolderIcon name={dark ? "sun" : "moon"} size={18} invert />
+      <FolderIcon name={dark ? "sun" : "moon"} size={18} invert={dark} />
     </button>
   );
 }
@@ -66,35 +65,44 @@ export default function SiteHeader({
   return (
     <>
       <header
-        className={`sticky top-0 z-50 border-b backdrop-blur-xl transition-all duration-300 ${
-          scrolled ? "border-white/10 shadow-[0_12px_40px_rgba(2,8,20,0.45)]" : "border-white/[0.06]"
+        className={`sticky top-0 z-50 border-b bg-[var(--color-surface)] transition-colors duration-300 ${
+          scrolled ? "border-[var(--color-border)]" : "border-transparent"
         }`}
-        style={{
-          background: scrolled
-            ? "linear-gradient(180deg, #06101f 0%, #0a1c38 100%)"
-            : "linear-gradient(180deg, #071428 0%, #0a1d3c 58%, #0c274c 100%)",
-        }}
       >
-        <div className={`mx-auto flex max-w-[1760px] items-center gap-2 px-3 sm:gap-3 sm:px-5 xl:px-6 2xl:px-8 ${scrolled ? "py-3" : "py-5"}`}>
-          <Link href="/" className="flex shrink-0 items-center gap-2">
+        <div
+          className={`mx-auto flex max-w-[1760px] items-center gap-2 px-3 sm:gap-3 sm:px-5 xl:px-6 2xl:px-8 ${
+            scrolled ? "py-3" : "py-4"
+          }`}
+        >
+          <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <LogoMark size={36} className="xl:hidden" />
             <LogoMark size={42} className="hidden xl:block" />
-            <span className="hidden font-heading text-lg font-bold tracking-tight text-white xl:inline">Aviator</span>
+            <span className="hidden font-heading text-lg font-semibold tracking-tight text-[var(--color-text)] xl:inline">
+              Aviator
+            </span>
           </Link>
 
           <nav
             className="min-w-0 flex-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label={t("nav.menu")}
           >
-            <div className="flex w-max items-center gap-1 pr-1 sm:gap-1.5">
+            <div className="flex w-max items-center gap-0.5 pr-1 sm:gap-1">
               {NAV_ITEMS.map(({ key, icon, href }) => {
                 const label = t(`nav.${key}`);
                 const active =
-                  key === "flights" ? activeSection === "search" : key === "deals" ? activeSection === "deals" : comingSoon === label;
-                const className = `${NAV_BTN} ${active ? NAV_ACTIVE : NAV_IDLE}`;
+                  key === "flights"
+                    ? activeSection === "search"
+                    : key === "deals"
+                      ? activeSection === "deals"
+                      : comingSoon === label;
+                const className = `${NAV_BTN} ${
+                  active
+                    ? "text-[var(--color-primary)]"
+                    : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                }`;
                 const inner = (
                   <>
-                    <FolderIcon name={icon} size={20} invert />
+                    <FolderIcon name={icon} size={18} />
                     <span>{label}</span>
                   </>
                 );
@@ -111,7 +119,10 @@ export default function SiteHeader({
                       type="button"
                       onClick={() => {
                         setComingSoon(label);
-                        window.setTimeout(() => setComingSoon((cur) => (cur === label ? null : cur)), 1600);
+                        window.setTimeout(
+                          () => setComingSoon((cur) => (cur === label ? null : cur)),
+                          1600,
+                        );
                       }}
                       className={className}
                       title={label}
@@ -119,7 +130,7 @@ export default function SiteHeader({
                       {inner}
                     </button>
                     {comingSoon === label && (
-                      <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-semibold text-white shadow-lg ring-1 ring-white/10">
+                      <span className="animate-fade-in-down pointer-events-none absolute left-1/2 top-full z-30 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--color-ink)] px-2.5 py-1 text-[11px] font-medium text-white">
                         {t("nav.coming_soon")}
                       </span>
                     )}
@@ -135,20 +146,20 @@ export default function SiteHeader({
               onClick={() => window.dispatchEvent(new CustomEvent("open-chat"))}
               title={`${t("nav.support")} — ${t("nav.support_247")}`}
               aria-label={`${t("nav.support")} — ${t("nav.support_247")}`}
-              className="group hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/90 transition hover:border-white/40 hover:bg-white/10 2xl:inline-flex"
+              className="group hidden h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] transition hover:border-[var(--color-primary)] 2xl:inline-flex"
             >
-              <FolderIcon name="support" size={22} invert className="shrink-0" />
+              <FolderIcon name="support" size={20} className="shrink-0" />
             </button>
             <ThemeToggle />
             <div className="hidden items-center xl:flex">
-              <SettingsSwitcher variant="dark" />
+              <SettingsSwitcher />
             </div>
             {user ? (
               <Link
                 href="/account"
-                className="hidden items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
+                className="hidden items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[13px] font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] lg:inline-flex"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-[11px] font-bold text-[var(--color-accent-foreground)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-primary)] text-[11px] font-semibold text-white">
                   {(user.fullName || user.email)[0]?.toUpperCase()}
                 </span>
                 <span className="max-w-[7.5rem] truncate">{user.fullName || user.email.split("@")[0]}</span>
@@ -157,7 +168,7 @@ export default function SiteHeader({
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="group hidden items-center gap-2 rounded-full bg-[var(--color-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--color-accent-foreground)] transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:inline-flex"
+                className="group hidden items-center gap-2 rounded-md bg-[var(--color-primary)] px-4 py-2 text-[13px] font-medium text-white transition hover:bg-[var(--color-primary-dark)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-primary)] lg:inline-flex"
               >
                 <FolderIcon name="login" size={18} invert />
                 {t("nav.login")}

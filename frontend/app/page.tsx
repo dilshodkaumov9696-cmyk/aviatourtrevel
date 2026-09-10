@@ -460,17 +460,8 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       <SiteHeader scrolled={isScrolled} activeSection={activeSection} />
 
-      {/* Глобус теперь фон не только hero, а всего этого блока: hero + статистика + "Почему
-          выбирают нас" сидят на одном непрерывном полотне карты, без переключения на белый фон
-          между ними — попросили, чтобы глобус было видно и за карточками ниже, а не только
-          в самом верху. */}
-      <div
-        className="relative text-white"
-        style={{
-          background:
-            "radial-gradient(circle at 15% 12%, rgba(47,217,138,0.10) 0%, transparent 30%), radial-gradient(circle at 88% 8%, rgba(46,107,255,0.20) 0%, transparent 35%), linear-gradient(160deg, #050b18 0%, #0a1730 55%, #0d1f3d 100%)",
-        }}
-      >
+      {/* Глобус — фон блока hero + WhyUs, на том же месте, с тем же функционалом. */}
+      <div className="relative bg-[var(--color-bg)] text-[var(--color-text)]">
         <div className="absolute inset-x-0 top-0 z-0 h-[620px] overflow-hidden sm:h-[700px] md:h-full">
           <GlobeHero origin={globeOrigin} destination={globeDestination} onCityClick={handleGlobeCityClick} />
         </div>
@@ -480,7 +471,7 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setFormCollapsed((v) => !v)}
-            className="group absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-full bg-white/15 px-3 py-2 text-[12px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/25 sm:right-4 sm:top-4 md:right-6 md:top-6"
+            className="group absolute right-3 top-3 z-20 flex min-h-10 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-[12px] font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] sm:right-4 sm:top-4 md:right-6 md:top-6"
           >
             {formCollapsed ? (
               <>
@@ -524,7 +515,7 @@ export default function Home() {
                 {t("form.complex")}
               </button>
               </div>
-              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_24px_60px_rgba(10,27,56,0.28)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0 dark:bg-[var(--color-bg-soft)]">
+              <div className="flex min-w-0 flex-col divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)] xl:flex-row xl:items-stretch xl:divide-x xl:divide-y-0">
                 {/* Маршрут: Откуда + Куда со свапом */}
                 <div className="relative flex min-w-0 flex-col divide-y divide-[var(--color-border)] sm:flex-row sm:divide-x sm:divide-y-0 xl:min-w-[26rem] xl:flex-[2.6]">
                   {/* Скругления по брейкпоинтам: <sm — верхняя ячейка колонки, sm..xl — левый
@@ -549,7 +540,7 @@ export default function Home() {
                     type="button"
                     onClick={swap}
                     title="Поменять местами"
-                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] shadow-md hover:bg-[var(--color-primary-light)] hover:shadow-lg transition"
+                    className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-primary)] transition hover:bg-[var(--color-primary-light)]"
                   >
                     <IconSwap size={15} className="rotate-90 sm:rotate-0 hover:rotate-180 transition-transform duration-300" />
                   </button>
@@ -662,7 +653,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={searching}
-                  className="group relative flex min-h-[56px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-bl-2xl rounded-br-2xl bg-[var(--color-accent)] px-6 text-[16px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 disabled:cursor-default sm:min-h-[76px] sm:px-10 xl:min-h-[84px] xl:w-[11.5rem] xl:rounded-bl-none xl:rounded-tr-2xl"
+                  className="group relative flex min-h-[56px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-b-xl bg-[var(--color-primary)] px-6 text-[16px] font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:cursor-default sm:min-h-[76px] sm:px-10 xl:min-h-[84px] xl:w-[11.5rem] xl:rounded-b-none xl:rounded-r-xl"
                 >
                   {searching ? (
                     <>
@@ -684,7 +675,7 @@ export default function Home() {
 
             {/* --- Сложный маршрут --- */}
             {mode === "multi" && (
-              <div className="min-w-0 overflow-visible rounded-2xl border border-[var(--color-border)] bg-white shadow-[0_24px_60px_rgba(10,27,56,0.28)] dark:bg-[var(--color-bg-soft)]">
+              <div className="min-w-0 overflow-visible rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
                 <div className="flex min-w-0 items-center px-4 pt-2.5 sm:px-5">
                   <button
                     type="button"
@@ -728,7 +719,7 @@ export default function Home() {
                   </div>
                   <button
                     type="submit"
-                    className="group flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[var(--color-accent)] px-6 text-[15px] font-bold text-[var(--color-accent-foreground)] transition-colors duration-200 hover:brightness-[1.06] active:brightness-95 sm:w-auto sm:min-w-[12.5rem] sm:px-8"
+                    className="group flex min-h-[52px] w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-[var(--color-primary)] px-6 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] sm:w-auto sm:min-w-[12.5rem] sm:px-8"
                   >
                     <span className="nav-icon nav-icon--zoom inline-flex shrink-0 items-center justify-center">
                       <IconSearch size={18} className="nav-icon__img" />
@@ -826,7 +817,7 @@ export default function Home() {
                   key={origin.iata}
                   type="button"
                   onClick={() => setLocalOrigin(origin.iata as keyof typeof ORIGIN_DEALS)}
-                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  className={`rounded-md border px-4 py-2 text-sm font-medium transition ${
                     localOrigin === origin.iata
                       ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-primary)]"
@@ -839,16 +830,16 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="relative min-h-[360px] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-soft)]">
+            <div className="relative min-h-[360px] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-soft)]">
               <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "url('/world-map.svg')", backgroundSize: "cover", backgroundPosition: "center" }} />
-              <div className="absolute left-[42%] top-[42%] z-10 rounded-full bg-[var(--color-primary)] px-3 py-1.5 text-xs font-bold text-white shadow-lg">
+              <div className="absolute left-[42%] top-[42%] z-10 rounded-md bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white">
                 {localDeals.city}
               </div>
               {localDeals.items.map((deal) => (
                 <Link
                   key={deal.iata}
                   href={searchHref(deal.city, deal.iata, futureDateISO(14), localDeals.city, localDeals.iata)}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/50 bg-white/90 px-3 py-2 text-xs font-bold text-[#1A2B3A] shadow-lg transition hover:-translate-y-[55%] hover:bg-[var(--color-accent)]"
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs font-semibold text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   style={{ left: deal.x, top: deal.y }}
                 >
                   {deal.city}
@@ -856,20 +847,20 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+            <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
               <h3 className="mb-4 text-lg font-bold text-[var(--color-text)]">Популярно из города {localDeals.city}</h3>
               <div className="space-y-3">
                 {localDeals.items.map((deal) => (
                   <Link
                     key={deal.iata}
                     href={searchHref(deal.city, deal.iata, futureDateISO(14), localDeals.city, localDeals.iata)}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 transition hover:border-[var(--color-primary)]"
+                    className="flex items-center justify-between gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-bg-soft)] px-4 py-3 transition hover:border-[var(--color-primary)]"
                   >
                     <span>
                       <span className="block text-sm font-bold text-[var(--color-text)]">{localDeals.city} → {deal.city}</span>
                       <span className="text-xs text-[var(--color-text-muted)]">{deal.country} · {deal.iata}</span>
                     </span>
-                    <span className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">
+                    <span className="rounded-md border border-[var(--color-border)] px-3 py-1 text-xs font-medium text-[var(--color-text-muted)]">
                       {popularPrices[`${localDeals.iata}-${deal.iata}`] != null
                         ? `${t("filters.price_from")} ${format(popularPrices[`${localDeals.iata}-${deal.iata}`]!)}`
                         : t("popular.price_tba")}
@@ -903,7 +894,7 @@ export default function Home() {
               <Link
                 key={d.city}
                 href={searchHref(d.city, d.iata)}
-                className="group relative block h-72 overflow-hidden rounded-2xl shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                className="group relative block h-72 overflow-hidden rounded-lg border border-[var(--color-border)] transition-colors duration-300 hover:border-[var(--color-primary)]"
               >
                 <img
                   src={cityPhotoUrl(d.iata)}
@@ -911,15 +902,14 @@ export default function Home() {
                   onError={cityPhotoFallback}
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-                <span className="absolute right-3 top-3 rounded-lg bg-white/20 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+                <span className="absolute right-3 top-3 rounded-md bg-[var(--color-surface)] px-2 py-1 text-xs font-semibold text-[var(--color-text)]">
                   {d.iata}
                 </span>
-                <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                  <div className="text-2xl font-bold">{d.city}</div>
+                <div className="absolute inset-x-0 bottom-0 bg-[var(--color-ink)]/80 p-4 text-white">
+                  <div className="text-2xl font-semibold">{d.city}</div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-sm text-white/85">{d.country}</span>
-                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                    <span className="text-sm text-white/80">{d.country}</span>
+                    <span className="rounded-md bg-white/10 px-3 py-1 text-xs font-medium text-white">
                       {popularPrices[d.iata] != null ? `${t("filters.price_from")} ${format(popularPrices[d.iata]!)}` : t("popular.price_tba")}
                     </span>
                   </div>
@@ -948,7 +938,7 @@ export default function Home() {
               { route: "Москва — Дубай", city: "Дубай", iata: "DXB" },
               { route: "Москва — Анталья", city: "Анталья", iata: "AYT" },
             ].map((d) => (
-              <div key={d.route} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-md transition hover:shadow-xl">
+              <div key={d.route} className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] transition hover:border-[var(--color-primary)]">
                 <div className="relative h-36 overflow-hidden">
                   <img
                     src={cityPhotoUrl(d.iata)}

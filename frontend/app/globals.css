@@ -4,62 +4,58 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* Основной — глубокий премиальный синий (не электрик, а «авиационный») */
-  --color-primary: #2454D6;
-  --color-primary-dark: #16389E;
-  --color-primary-light: #E8EDFC;
-  --color-secondary: #2E6FA8;
-  --color-tertiary: #1897A8;
-  /* Тёмный «чернильный» синий — хедер, футер, якорные поверхности бренда */
-  --color-ink: #0A1B38;
-  --color-ink-soft: #12274D;
-  --color-ink-border: rgba(255, 255, 255, 0.12);
-  /* Акцент — приглушённый премиальный изумруд (был неоново-мятный) */
-  --color-accent: #189A63;
-  --color-accent-dark: #0F7A4C;
-  --color-accent-foreground: #FFFFFF; /* светлый текст на тёмном акценте */
-  /* Золото — точечный премиальный штрих: логотип, «лучший выбор», разделители */
-  --color-gold: #E2A63B;
-  --color-gold-dark: #C08A24;
-  --color-highlight: #FF4FA0;
-  --color-warm: #FFE3C2;
-  /* База */
-  --color-bg: #FFFFFF;
-  --color-bg-soft: #F4F7FB;
+  /* Premium / Minimal / Editorial Travel — light */
+  --color-primary: #1E4FD8;
+  --color-primary-dark: #163CAB;
+  --color-primary-light: #E8EEFA;
+  --color-secondary: #3A4A63;
+  --color-tertiary: #5A6B82;
+  --color-ink: #121820;
+  --color-ink-soft: #1B2430;
+  --color-ink-border: rgba(18, 24, 32, 0.08);
+  --color-accent: #1E4FD8;
+  --color-accent-dark: #163CAB;
+  --color-accent-foreground: #FFFFFF;
+  --color-gold: #1E4FD8;
+  --color-gold-dark: #163CAB;
+  --color-highlight: #1E4FD8;
+  --color-warm: #F4F5F7;
+  --color-bg: #F7F8FA;
+  --color-bg-soft: #EEF0F3;
   --color-surface: #FFFFFF;
-  --color-text: #0F1B2E;
-  --color-text-muted: #5B6B82;
-  --color-border: #DDE5F0;
-  --radius-sm: 0.65rem;
-  --radius-md: 0.9rem;
-  --radius-lg: 1.2rem;
-  --shadow-soft: 0 12px 40px rgba(10, 27, 56, 0.07);
-  --shadow-card: 0 16px 48px rgba(10, 27, 56, 0.12);
+  --color-text: #121820;
+  --color-text-muted: #5C6775;
+  --color-border: #E4E7EC;
+  --radius-sm: 0.4rem;
+  --radius-md: 0.55rem;
+  --radius-lg: 0.75rem;
+  --shadow-soft: 0 1px 0 rgba(18, 24, 32, 0.04);
+  --shadow-card: 0 1px 2px rgba(18, 24, 32, 0.06);
 }
 
 .dark {
-  --color-primary: #6C9CF2;
-  --color-primary-dark: #3E6FD1;
-  --color-primary-light: #16294D;
-  --color-secondary: #69C5F2;
-  --color-tertiary: #2FC4D6;
-  --color-ink: #060F22;
-  --color-ink-soft: #0D1B36;
-  --color-ink-border: rgba(255, 255, 255, 0.1);
-  --color-accent: #2FD98A;
-  --color-accent-dark: #22B873;
-  --color-accent-foreground: #04331F;
-  --color-gold: #E9B65B;
-  --color-gold-dark: #C6932E;
-  --color-warm: #F4D1A9;
-  --color-bg: #07131A;
-  --color-bg-soft: #11212A;
-  --color-surface: #0F1D27;
-  --color-text: #eef6fb;
-  --color-text-muted: #95a9b7;
-  --color-border: #254455;
-  --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.28);
-  --shadow-card: 0 18px 55px rgba(0, 0, 0, 0.34);
+  --color-primary: #6B8FE8;
+  --color-primary-dark: #4C73D6;
+  --color-primary-light: #1A2436;
+  --color-secondary: #A8B4C4;
+  --color-tertiary: #7E8B9A;
+  --color-ink: #0E1218;
+  --color-ink-soft: #161C26;
+  --color-ink-border: rgba(255, 255, 255, 0.08);
+  --color-accent: #6B8FE8;
+  --color-accent-dark: #4C73D6;
+  --color-accent-foreground: #FFFFFF;
+  --color-gold: #6B8FE8;
+  --color-gold-dark: #4C73D6;
+  --color-warm: #161C26;
+  --color-bg: #12171F;
+  --color-bg-soft: #1A202A;
+  --color-surface: #1C232E;
+  --color-text: #F2F4F7;
+  --color-text-muted: #9AA6B4;
+  --color-border: #2A3340;
+  --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 @theme inline {
@@ -82,7 +78,7 @@ html {
 }
 
 body {
-  background: #ffffff;
+  background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -92,9 +88,7 @@ body {
 }
 
 .dark body {
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 28%),
-    linear-gradient(135deg, #07131a 0%, #0f202c 45%, #112730 100%);
+  background: var(--color-bg);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -111,7 +105,7 @@ code, pre {
 }
 
 ::selection {
-  background: rgba(255, 216, 77, 0.35);
+  background: var(--color-primary-light);
   color: var(--color-text);
 }
 

@@ -5,7 +5,7 @@ import { useSettings, CURRENCIES, LANGS, Currency, Lang } from "../context/setti
 
 function CheckMark() {
   return (
-    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)] text-white">
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-text)] text-[var(--color-bg)]">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="20 6 9 17 4 12" />
       </svg>

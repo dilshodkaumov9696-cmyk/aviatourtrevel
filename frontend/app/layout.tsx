@@ -78,7 +78,7 @@ export const metadata: Metadata = {
 export const metadataBase = new URL("https://aviatour.travel");
 
 export const viewport: Viewport = {
-  themeColor: "#1E5C80",
+  themeColor: "#1E4FD8",
 };
 
 export default function RootLayout({

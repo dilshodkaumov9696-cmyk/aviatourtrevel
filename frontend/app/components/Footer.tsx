@@ -154,10 +154,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer
-      className="mt-20 border-t border-[var(--color-ink-border)] text-white"
-      style={{ background: "linear-gradient(180deg, var(--color-ink-soft) 0%, var(--color-ink) 100%)" }}
-    >
+    <footer className="mt-20 border-t border-[var(--color-ink-border)] bg-[var(--color-ink)] text-white">
       <div className="mx-auto max-w-[1400px] px-6 py-16 sm:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr] mb-10">
           <div>
@@ -190,7 +187,7 @@ export default function Footer() {
                   title={s.label}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-[var(--color-gold)] hover:text-white hover:bg-white/5"
+                  className="flex h-9 w-9 items-center justify-center rounded-md border border-white/15 text-white/70 transition hover:border-white hover:text-white"
                 >
                   <SocialIcon icon={s.icon} />
                 </a>
@@ -234,7 +231,7 @@ export default function Footer() {
           <a
             href="#top"
             aria-label="Наверх"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/70 transition hover:border-[var(--color-gold)] hover:text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/15 text-white/70 transition hover:border-white hover:text-white"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 19V5M5 12l7-7 7 7" />
