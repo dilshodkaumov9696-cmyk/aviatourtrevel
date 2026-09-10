@@ -129,7 +129,7 @@ export default function AirportInput({ airport, onChange, label = "", placeholde
   return (
     <div ref={ref} className="min-w-0 flex-1">
       {label ? (
-        <label className="mb-0.5 block text-xs font-semibold text-[var(--color-text-muted)]">
+        <label className="mb-0.5 block text-[12px] font-semibold text-[var(--color-text)]">
           {label}
         </label>
       ) : null}
