@@ -343,10 +343,7 @@ export default function SearchResults() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-soft)]">
       {/* Хедер */}
-      <header
-        className="sticky top-0 z-30 border-b border-[var(--color-ink-border)] text-white"
-        style={{ background: "linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-soft) 100%)" }}
-      >
+      <header className="sticky top-0 z-30 border-b border-[var(--color-ink-border)] bg-[var(--color-ink)] text-white">
         <div className="mx-auto max-w-[1760px] px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex shrink-0 items-center gap-2">
@@ -612,14 +609,14 @@ export default function SearchResults() {
           <button
             type="button"
             onClick={reset}
-            className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)]"
+            className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm text-[var(--color-text-muted)] transition hover:border-[var(--color-primary)]"
           >
             {t("search.reset")}
           </button>
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm font-medium text-[var(--color-text)] lg:hidden"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-1.5 text-sm font-medium text-[var(--color-text)] lg:hidden"
           >
             {t("search.filters")}
             {activeFilterCount > 0 && <span className="text-[var(--color-primary)]">({activeFilterCount})</span>}
@@ -891,7 +888,7 @@ function SortMenu({ sort, setSort, t }: { sort: Sort; setSort: (s: Sort) => void
         value={sort}
         onChange={(e) => setSort(e.target.value as Sort)}
         aria-label={t("search.sort_best")}
-        className="cursor-pointer appearance-none rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pl-3.5 pr-7 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+        className="cursor-pointer appearance-none rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1.5 pl-3.5 pr-7 text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
       >
         {SORT_ORDER.map((s) => (
           <option key={s} value={s}>{t(SORT_KEY[s])}</option>
@@ -907,9 +904,9 @@ function Chip({ children, active, onClick }: { children: React.ReactNode; active
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+      className={`rounded-md border px-3.5 py-1.5 text-sm font-medium transition ${
         active
-          ? "border-green-600 bg-green-600 text-white"
+          ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
           : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-[var(--color-primary)]"
       }`}
     >

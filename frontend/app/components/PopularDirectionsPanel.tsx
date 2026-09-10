@@ -22,10 +22,10 @@ export default function PopularDirectionsPanel({ routes, prices, onSelect }: Pro
   const { format, t } = useSettings();
 
   return (
-    <div className="relative z-[20] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-[var(--color-text)] shadow-[var(--shadow-card)] dark:border-white/12 dark:bg-[var(--color-ink)]/55 dark:text-white dark:backdrop-blur-md">
-      <div className="flex items-center gap-2 px-1.5 py-1 text-[12px] font-bold uppercase tracking-[0.08em] text-[var(--color-text-muted)] dark:text-white/70">
+    <div className="relative z-[20] overflow-hidden rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-[var(--color-text)]">
+      <div className="flex items-center gap-2 px-1.5 py-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
         <span className="nav-icon nav-icon--drop inline-flex shrink-0 items-center justify-center">
-          <IconPin size={15} className="nav-icon__img text-[var(--color-text)] dark:text-white" />
+          <IconPin size={15} className="nav-icon__img text-[var(--color-primary)]" />
         </span>
         {t("popular.title")}
       </div>
@@ -38,7 +38,7 @@ export default function PopularDirectionsPanel({ routes, prices, onSelect }: Pro
               key={key}
               type="button"
               onClick={() => onSelect(d)}
-              className="group flex min-h-11 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left transition hover:bg-[var(--color-bg-soft)] dark:hover:bg-white/10"
+              className="group flex min-h-11 items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left transition hover:bg-[var(--color-bg-soft)]"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[13px] font-semibold">
@@ -46,11 +46,11 @@ export default function PopularDirectionsPanel({ routes, prices, onSelect }: Pro
                   <span className="mx-1 inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
                   {d.toCity}
                 </span>
-                <span className="block truncate font-mono text-[11px] text-[var(--color-text-muted)] dark:text-white/55">
+                <span className="block truncate font-mono text-[11px] text-[var(--color-text-muted)]">
                   {d.fromIata} · {d.toIata}
                 </span>
               </span>
-              <span className="shrink-0 text-[12px] font-semibold text-[var(--color-text)] dark:text-white/90">
+              <span className="shrink-0 text-[12px] font-semibold text-[var(--color-primary)]">
                 {price != null ? `${t("filters.price_from")} ${format(price)}` : t("popular.price_tba")}
               </span>
             </button>

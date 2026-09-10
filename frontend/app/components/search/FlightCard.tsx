@@ -63,9 +63,9 @@ export default function FlightCard({
 
   const conditionPill = (icon: React.ReactNode, text: string, tone: "neutral" | "positive" | "negative" = "neutral") => (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium ${
+      className={`inline-flex w-fit items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium ${
         tone === "positive"
-          ? "bg-[var(--color-accent)]/15 text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A]"
+          ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]"
           : tone === "negative"
           ? "bg-[var(--color-bg-soft)] text-[var(--color-text-muted)]"
           : "bg-[var(--color-bg-soft)] text-[var(--color-text)]"
@@ -169,11 +169,11 @@ export default function FlightCard({
   return (
     <>
       <article
-        className={`overflow-hidden rounded-2xl border transition hover:shadow-lg ${
+        className={`overflow-hidden rounded-lg border transition ${
           isSelected
-            ? "border-green-500 bg-green-50/50 ring-1 ring-green-500/40 dark:bg-green-950/20"
+            ? "border-[var(--color-primary)] bg-[var(--color-primary-light)]"
             : isBest
-            ? "border-[var(--color-gold)] bg-[var(--color-surface)]"
+            ? "border-[var(--color-primary)] bg-[var(--color-surface)]"
             : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]"
         }`}
       >
@@ -188,7 +188,7 @@ export default function FlightCard({
                 <span className="truncate text-sm font-semibold text-[var(--color-text)]">{airlineDisplayName}</span>
                 <span className="shrink-0 text-[12px] text-[var(--color-text-muted)]">· {f.flightNumber}</span>
                 {f.bookingUrl && (
-                  <span className="hidden shrink-0 rounded-full bg-[var(--color-accent)]/15 px-2 py-0.5 text-[11px] font-medium text-[#0F7A4C] dark:bg-[var(--color-accent)]/20 dark:text-[#2FD98A] sm:inline-block">
+                  <span className="hidden shrink-0 rounded-md bg-[var(--color-primary-light)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-primary)] sm:inline-block">
                     Aviasales
                   </span>
                 )}
@@ -198,7 +198,7 @@ export default function FlightCard({
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {isBest ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-gold)]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-gold-dark)] dark:text-[var(--color-gold)]">
+              <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-primary-light)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--color-primary)]">
                 <IconStarFilled size={11} />
                 Лучший выбор
               </span>

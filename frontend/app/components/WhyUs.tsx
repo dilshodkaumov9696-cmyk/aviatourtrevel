@@ -54,7 +54,7 @@ export default function WhyUs() {
   return (
     <section
       ref={ref}
-      className={`py-10 transition-all duration-700 sm:py-14 ${
+      className={`py-12 transition-all duration-700 sm:py-16 ${
         isInView ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
       }`}
     >
@@ -63,9 +63,9 @@ export default function WhyUs() {
           {ITEMS.map((it) => (
             <div
               key={it.title}
-              className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 p-5 shadow-[var(--shadow-soft)] backdrop-blur-sm transition duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-white/[0.04]"
+              className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-5"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-bg-soft)] text-[var(--color-text)] dark:bg-white/10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-primary-light)] text-[var(--color-primary)]">
                 {it.icon}
               </div>
               <h3 className="mt-4 text-[15px] font-semibold text-[var(--color-text)]">{it.title}</h3>
