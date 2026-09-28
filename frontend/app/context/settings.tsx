@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useEffect, useSyncExternalStore, ReactNode } from "react";
 
 export type Currency = "RUB" | "TJS" | "USD";
 export type Lang = "ru" | "tj" | "uz" | "ky" | "en";
@@ -33,52 +33,80 @@ interface Ctx {
   ready: boolean;
 }
 
-const SettingsContext = createContext<Ctx | null>(null);
+// Не React Context: Turbopack отдельно рисует сегмент страницы поиска и в этот
+// момент useContext не видит SettingsProvider из layout — страница падала с
+// «useSettings must be used within SettingsProvider». Общий модульный стор
+// один и на сервере, и в любом чанке.
+type SettingsState = { currency: Currency; lang: Lang; ready: boolean };
+
+const SERVER_STATE: SettingsState = { currency: "RUB", lang: "ru", ready: false };
+const LANG_CODES = ["ru", "tj", "uz", "ky", "en"];
+
+let state: SettingsState = SERVER_STATE;
+const listeners = new Set<() => void>();
+
+function emit() {
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getSnapshot() {
+  return state;
+}
+
+function getServerSnapshot() {
+  return SERVER_STATE;
+}
+
+function hydrateSettings() {
+  if (typeof window === "undefined" || state.ready) return;
+  const c = localStorage.getItem("currency") as Currency | null;
+  const l = localStorage.getItem("lang");
+  const currency = c && RATES[c] !== undefined ? c : state.currency;
+  const lang = l && LANG_CODES.includes(l) ? (l as Lang) : state.lang;
+  document.documentElement.lang = lang;
+  state = { currency, lang, ready: true };
+  emit();
+}
+
+function setCurrency(c: Currency) {
+  state = { ...state, currency: c };
+  localStorage.setItem("currency", c);
+  emit();
+}
+
+function setLang(l: Lang) {
+  state = { ...state, lang: l };
+  localStorage.setItem("lang", l);
+  document.documentElement.lang = l;
+  emit();
+}
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<Currency>("RUB");
-  const [lang, setLangState] = useState<Lang>("ru");
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
-    const c = localStorage.getItem("currency") as Currency | null;
-    const l = localStorage.getItem("lang") as Lang | null;
-    if (c && RATES[c] !== undefined) setCurrencyState(c);
-    if (l && ["ru", "tj", "uz", "ky", "en"].includes(l)) {
-      setLangState(l);
-      document.documentElement.lang = l;
-    }
-    setReady(true);
+    hydrateSettings();
+  }, []);
+  return children;
+}
+
+export function useSettings(): Ctx {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  useEffect(() => {
+    hydrateSettings();
   }, []);
 
-  const setCurrency = (c: Currency) => {
-    setCurrencyState(c);
-    localStorage.setItem("currency", c);
-  };
-  const setLang = (l: Lang) => {
-    setLangState(l);
-    localStorage.setItem("lang", l);
-    document.documentElement.lang = l;
-  };
-
+  const { currency, lang, ready } = snapshot;
   const format = (rub: number) => {
     const v = Math.round(rub * RATES[currency]);
     return `${v.toLocaleString("ru-RU")} ${SYMBOL[currency]}`;
   };
-
   const t = (key: string) => DICT[lang][key] ?? DICT.ru[key] ?? key;
 
-  return (
-    <SettingsContext.Provider value={{ currency, setCurrency, lang, setLang, format, t, ready }}>
-      {children}
-    </SettingsContext.Provider>
-  );
-}
-
-export function useSettings() {
-  const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
-  return ctx;
+  return { currency, setCurrency, lang, setLang, format, t, ready };
 }
 
 // Словарь. Покрывает флоу поиск→бронь и шапку/герой главной.
